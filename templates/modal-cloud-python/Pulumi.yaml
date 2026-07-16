@@ -1,0 +1,22 @@
+name: ${PROJECT}
+description: ${DESCRIPTION}
+runtime: python
+
+template:
+  description: A Python program to provision a Modal Secret, Volume, and Queue.
+  config:
+    tokenId:
+      description: Modal API token ID. Leave blank to fall back to the MODAL_TOKEN_ID environment variable.
+      secret: true
+    tokenSecret:
+      description: Modal API token secret. Leave blank to fall back to the MODAL_TOKEN_SECRET environment variable.
+      secret: true
+    secretName:
+      description: Name for the Modal Secret.
+      default: app-secrets
+    volumeName:
+      description: Name for the Modal Volume.
+      default: app-volume
+    queueName:
+      description: Name for the Modal Queue.
+      default: app-queue

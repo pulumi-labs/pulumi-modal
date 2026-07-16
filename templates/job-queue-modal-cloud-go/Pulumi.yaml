@@ -1,0 +1,19 @@
+name: ${PROJECT}
+description: ${DESCRIPTION}
+runtime: go
+
+template:
+  description: A Go program to provision a Modal Queue and its callback-authentication Secret for a background job pipeline.
+  config:
+    tokenId:
+      description: Modal API token ID. Leave blank to fall back to the MODAL_TOKEN_ID environment variable.
+      secret: true
+    tokenSecret:
+      description: Modal API token secret. Leave blank to fall back to the MODAL_TOKEN_SECRET environment variable.
+      secret: true
+    queueName:
+      description: Name for the Modal Queue.
+      default: background-jobs
+    workerApiKey:
+      description: API key background workers use to authenticate callbacks.
+      secret: true

@@ -1,0 +1,3 @@
+name: modal-java-ml-pipeline
+runtime: java
+description: Provision Modal infrastructure for an ML training and inference pipeline with Pulumi (Java)

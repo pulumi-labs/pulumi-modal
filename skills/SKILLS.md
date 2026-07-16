@@ -1,0 +1,180 @@
+# Modal Provider Skills
+
+## Component Overview
+
+| Property | Value |
+|---|---|
+| Type token prefix | `modal:index:` |
+| Resources | `Secret`, `Volume`, `Queue` |
+| Upstream API | Modal gRPC control-plane (`github.com/modal-labs/modal-client/go/proto/modal_proto`) |
+| Auth | `x-modal-token-id` / `x-modal-token-secret` gRPC metadata, injected per-RPC |
+| pulumi-go-provider | `infer` package (native provider) |
+| Resource count | 3 |
+
+## Architecture
+
+This is a **native provider** (not a TF bridge — Modal has no Terraform provider to
+bridge from). It uses `pulumi-go-provider`'s `infer` package and talks directly to
+Modal's public gRPC control-plane API via the generated Go protobuf client
+(`modal-client/go/proto/modal_proto`). All RPC calls go through `pkg/provider/client.go`,
+which wraps the generated stub with per-RPC credential injection via a unary
+interceptor. There is no separate HTTP client — Modal's control plane is gRPC-only.
+
+## Resource Behavior Matrix
+
+| Resource | Create | Read | Update | Delete |
+|---|---|---|---|---|
+| Secret | `SecretGetOrCreate` (`CREATE_FAIL_IF_EXISTS`) | `SecretGetOrCreate` (`UNSPECIFIED` — get-or-create semantics) | `SecretUpdate` (values only, in place) | `SecretDelete` |
+| Volume | `VolumeGetOrCreate` | `VolumeGetOrCreate` | **N/A — replace only** (name/environment/version force new) | `VolumeDelete` |
+| Queue | `QueueGetOrCreate` | `QueueGetOrCreate` | **N/A — replace only** (name/environment force new) | `QueueDelete` |
+
+Only `Secret.values` supports true in-place update (`SecretUpdate` diffs old vs. new
+keys and sends per-key upserts/deletes). Volume and Queue have no update RPCs at all in
+the Modal control-plane API — any input change other than `values` on Secret is a
+force-replace.
+
+## Force-Replace Rules
+
+- **Secret.name** — replace (no rename API)
+- **Secret.environment** — replace
+- **Volume.name** — replace
+- **Volume.environment** — replace
+- **Volume.version** — replace (changing FS backend requires a new volume)
+- **Queue.name** — replace
+- **Queue.environment** — replace
+
+Only `Secret.values` (the key/value map) diffs to an in-place update; every other field
+on every resource forces replacement.
+
+## Development Workflow
+
+| Step | Command | When to run |
+|---|---|---|
+| 1 | `go mod tidy` (in `provider/`) | Fresh checkout, after adding new dependencies |
+| 2 | `go build ./...` (in `provider/`) | After code changes |
+| 3 | `go test ./...` (in `provider/`) | Always before committing |
+| 4 | `gofmt -l .` (in `provider/`, must be empty) | Always before committing |
+
+**Go toolchain**: `$HOME/go-toolchain-1.25/bin/go` (Go 1.25.8). Add it to `PATH`, not
+`$HOME/go-toolchain-1.25/go/bin/go` — that nested path does not exist on this
+workstation image.
+
+**Build verification sequence**:
+
+```bash
+cd provider
+export PATH=$HOME/go-toolchain-1.25/bin:$PATH
+go mod tidy
+go build ./...
+go vet ./...
+go test ./... -v
+gofmt -l .
+```
+
+## Repository Layout
+
+```
+lib/providers/modal/
+├── CHANGELOG.md
+├── README.md
+├── .gitignore                      # bin/, sdk/, provider/vendor/
+├── version.txt                     # 0.1.0
+├── examples/
+│   ├── modal-ts/                   # TypeScript — Secret/Volume/Queue
+│   ├── modal-ts-ml-pipeline/       # TypeScript — ML inference scenario
+│   ├── modal-python/               # Python
+│   ├── modal-python-ml-pipeline/   # Python — ML inference scenario
+│   ├── modal-go/                   # Go
+│   ├── modal-go-ml-pipeline/       # Go — ML inference scenario
+│   ├── modal-csharp/               # C#
+│   ├── modal-csharp-ml-pipeline/   # C# — ML inference scenario
+│   ├── modal-java/                 # Java
+│   ├── modal-java-ml-pipeline/     # Java — ML inference scenario
+│   ├── modal-yaml/                 # YAML
+│   └── modal-yaml-ml-pipeline/     # YAML — ML inference scenario
+├── templates/                      # pulumi new templates, ×6 languages ×3 scenarios
+│   ├── modal-cloud-{typescript,python,go,csharp,java,yaml}/
+│   ├── ml-training-modal-cloud-{typescript,python,go,csharp,java,yaml}/
+│   └── job-queue-modal-cloud-{typescript,python,go,csharp,java,yaml}/
+├── provider/
+│   ├── go.mod
+│   ├── go.sum
+│   ├── cmd/pulumi-resource-modal/main.go
+│   └── pkg/
+│       ├── provider/
+│       │   ├── provider.go         # infer.NewProviderBuilder() wiring, ProviderConfig
+│       │   ├── client.go           # gRPC client + auth interceptor + env-var validation
+│       │   ├── secret.go           # Secret CRUD (Create/Read/Update/Delete)
+│       │   ├── volume.go           # Volume CRUD (Create/Read/Delete — no Update)
+│       │   ├── queue.go            # Queue CRUD (Create/Read/Delete — no Update)
+│       │   └── provider_test.go    # Unit tests (no network)
+│       └── version/
+│           └── version.go
+└── skills/
+    └── SKILLS.md
+```
+
+## Common Mistakes
+
+| Mistake | Consequence | Correct approach |
+|---|---|---|
+| Passing `*ProviderConfig` where a value is expected | Type mismatch — `infer.GetConfig` returns a value, not a pointer | `clientFor(cfg ProviderConfig, ...)` takes a value receiver |
+| Assuming `grpc.NewClient` dials eagerly | Believing client construction needs network access (breaking unit tests) | `grpc.NewClient` is lazy without `WithBlock()` — safe to construct in tests with fake credentials |
+| Calling `Volume`/`Queue` `Update` | No such method exists — these resources are create/read/delete only | Any field change other than what's absent from `Diff`'s `ForceReplace` set is impossible; every field currently forces replace |
+| Forgetting the `SecretUpdate` nil-value-means-delete convention | Silently fails to remove a key from a Secret | Send `pb.SecretUpdateRequest_Update_builder{Key: k, Value: nil}` to delete a key, not an update with an empty string |
+| Using `$HOME/go-toolchain-1.25/go/bin/go` | `No such file or directory` | Correct path is `$HOME/go-toolchain-1.25/bin/go` |
+
+## API Quirks
+
+### Secret API
+
+- **Get-or-create semantics on Read**: `SecretGetOrCreate` with
+  `ObjectCreationType: OBJECT_CREATION_TYPE_UNSPECIFIED` is used for *both* Create (with
+  `CREATE_FAIL_IF_EXISTS`) and Read (unspecified — tolerant of an already-existing
+  object). This mirrors the Modal Python SDK's `Secret.from_name(..., create_if_missing=...)`
+  pattern.
+- **Values are secret**: The `values` map is tagged `provider:"secret"` — every value is
+  encrypted in the Pulumi state file, not just token credentials.
+- **Env var key validation**: Secret keys must match `^[a-zA-Z_][a-zA-Z0-9_]*$` (mirrors
+  Modal's own server-side validation) — enforced client-side in `client.go` before the
+  RPC to fail fast with a clear error instead of a generic gRPC `InvalidArgument`.
+- **Update deletes by omission is NOT how it works**: `Update` diffs old vs. new key
+  sets and explicitly sends a `nil`-value update for keys present in the old set but
+  missing from the new one; it does not send a bulk replace.
+
+### Volume API
+
+- **Two filesystem backends**: `version` selects `VOLUME_FS_VERSION_V1` (legacy) or
+  `VOLUME_FS_VERSION_V2` (default, recommended). Passing an unrecognized string returns
+  `VOLUME_FS_VERSION_UNSPECIFIED` plus an error — validate before the RPC.
+  Filesystem version cannot be changed on an existing volume, hence force-replace.
+- **No content management via this provider**: This resource manages the durable
+  Volume object itself (existence, name, environment, FS version) — file contents are
+  written/read by Modal Functions at runtime via the Modal Python/JS/Go client
+  libraries, not by Pulumi.
+
+### Queue API
+
+- **No capacity or retention config exposed**: The gRPC `QueueGetOrCreate` API only
+  takes name/environment — there is no `maxSize`, `ttl`, or similar field to
+  provision. Do not invent one; if a future Modal API version adds queue-level config,
+  extend `QueueArgs` then.
+- **FIFO/LIFO behavior is a client-side property**, not a create-time provider setting —
+  callers choose ordering with `queue.get(..., partition=...)` semantics at the Modal
+  client level, not via this Pulumi resource.
+
+## Test Coverage
+
+Tests in `pkg/provider/provider_test.go`:
+
+- `TestProvider_DoesNotPanic` — schema construction sanity check (`infer.NewProviderBuilder().Build()` succeeds)
+- `TestProviderConfig_DefaultsNil` — provider-level config fields default to nil when unset
+- `TestResolveStr_ResourceWins` — resource-level override takes precedence over provider-level config
+- `TestResolveStr_FallsBackToProvider` — provider-level config used when resource-level is nil
+- `TestResolveStr_EmptyResourceFallsBackToProvider` — empty-string resource override still falls back
+- `TestResolveStr_NeitherSetReturnsEmpty` — both unset returns ""
+- `TestClientFor_UsesResourceOverrideTokens` — `clientFor` prefers resource-level tokenId/tokenSecret
+- `TestClientFor_FallsBackToProviderTokens` — `clientFor` falls back to provider-level tokens
+- `TestSecretArgs_RequiredFields` — `SecretArgs.Name`/`Values` required-field shape
+- `TestVolumeArgs_RequiredFields` — `VolumeArgs.Name` required-field shape
+- `TestQueueArgs_RequiredFields` — `QueueArgs.Name` required-field shape

@@ -1,0 +1,3 @@
+name: modal-ts-ml-pipeline
+runtime: nodejs
+description: Provision the Modal Secrets, Volumes, and Queues backing an ML training/inference pipeline (TypeScript)

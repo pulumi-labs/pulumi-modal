@@ -1,0 +1,3 @@
+name: modal-go-ml-pipeline
+runtime: go
+description: Provision Modal infrastructure for an ML training and inference pipeline with Pulumi (Go)
