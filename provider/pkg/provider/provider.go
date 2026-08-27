@@ -56,10 +56,16 @@ func clientFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string)
 // New returns the configured Modal Pulumi provider.
 func New() (pgp.Provider, error) {
 	return infer.NewProviderBuilder().
-		WithDisplayName("modal").
+		WithDisplayName("Modal").
 		WithDescription(
 			"Manage Modal (modal.com) serverless compute resources — Secrets, Volumes, and Queues — as infrastructure with Pulumi.",
 		).
+		WithHomepage("https://modal.com").
+		WithRepository("https://github.com/pulumi/autoregistry").
+		WithGoImportPath("github.com/pulumi/pulumi-modal/sdk/go/modal").
+		WithPublisher("Pulumi").
+		WithLicense("Apache-2.0").
+		WithKeywords("pulumi", "modal", "serverless", "ai", "compute", "category/cloud").
 		WithModuleMap(map[tokens.ModuleName]tokens.ModuleName{
 			"provider": "index",
 		}).
