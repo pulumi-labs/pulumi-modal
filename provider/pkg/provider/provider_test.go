@@ -340,3 +340,56 @@ func TestQueueDiff_ProviderLevelEnvironment_NoSpuriousReplace(t *testing.T) {
 			"on both sides")
 	}
 }
+
+// ---------------------------------------------------------------------------
+// CheckConfig — environment variable fallbacks
+// ---------------------------------------------------------------------------
+
+// TestCheckConfig_EnvFallbacks verifies that unset provider config is filled
+// from the MODAL_* environment variables, so the default provider works with
+// no explicit modal:* config, and that explicit config still wins.
+func TestCheckConfig_EnvFallbacks(t *testing.T) {
+	tests := []struct {
+		name   string
+		key    string
+		envVar string
+		config map[string]property.Value
+		want   string
+	}{
+		{name: "token id from env", key: "tokenId", envVar: "MODAL_TOKEN_ID", want: "ak-from-env"},
+		{name: "token secret from env", key: "tokenSecret", envVar: "MODAL_TOKEN_SECRET", want: "ak-from-env"},
+		{name: "environment from env", key: "environment", envVar: "MODAL_ENVIRONMENT", want: "ak-from-env"},
+		{name: "server addr from env", key: "serverAddr", envVar: "MODAL_SERVER_ADDR", want: "ak-from-env"},
+		{
+			name:   "explicit config wins over env",
+			key:    "tokenId",
+			envVar: "MODAL_TOKEN_ID",
+			config: map[string]property.Value{"tokenId": property.New("ak-from-config")},
+			want:   "ak-from-config",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(tt.envVar, "ak-from-env")
+
+			p, err := New()
+			require.NoError(t, err)
+			s, err := integration.NewServer(t.Context(), "modal", semver.MustParse("0.0.1"), integration.WithProvider(p))
+			require.NoError(t, err)
+
+			resp, err := s.CheckConfig(pgp.CheckRequest{
+				Urn:    resource.NewURN("stack", "proj", "", "pulumi:providers:modal", "default"),
+				Inputs: property.NewMap(tt.config),
+			})
+			require.NoError(t, err)
+			require.Empty(t, resp.Failures)
+
+			got, ok := resp.Inputs.GetOk(tt.key)
+			require.True(t, ok, "%s should be populated", tt.key)
+			if got.Secret() {
+				got = got.WithSecret(false)
+			}
+			require.Equal(t, tt.want, got.AsString())
+		})
+	}
+}

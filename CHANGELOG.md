@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Provider config now falls back to `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`,
+  `MODAL_ENVIRONMENT` and `MODAL_SERVER_ADDR`. The fallbacks were declared as `env`
+  struct tags, which `infer` ignores, so the default provider failed with
+  "both tokenId and tokenSecret are required" unless `modal:*` config was set.
+
 ### Added
 
 - Initial release of the Modal provider. Manages Modal (modal.com) serverless

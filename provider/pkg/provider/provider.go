@@ -10,22 +10,29 @@ import (
 // resources. Every field can be overridden per-resource.
 type ProviderConfig struct {
 	// TokenID is the Modal API token ID. Falls back to MODAL_TOKEN_ID.
-	TokenID *string `pulumi:"tokenId,optional" provider:"secret" env:"MODAL_TOKEN_ID"`
+	TokenID *string `pulumi:"tokenId,optional" provider:"secret"`
 
 	// TokenSecret is the Modal API token secret. Falls back to MODAL_TOKEN_SECRET.
-	TokenSecret *string `pulumi:"tokenSecret,optional" provider:"secret" env:"MODAL_TOKEN_SECRET"`
+	TokenSecret *string `pulumi:"tokenSecret,optional" provider:"secret"`
 
 	// Environment is the default Modal environment (workspace sub-namespace)
 	// resources are created in when not overridden per-resource. Falls back
 	// to MODAL_ENVIRONMENT, then to the account's default environment.
-	Environment *string `pulumi:"environment,optional" env:"MODAL_ENVIRONMENT"`
+	Environment *string `pulumi:"environment,optional"`
 
 	// ServerAddr overrides Modal's gRPC control-plane endpoint. Intended for
 	// testing against a mock server; almost never set in production.
-	ServerAddr *string `pulumi:"serverAddr,optional" env:"MODAL_SERVER_ADDR"`
+	ServerAddr *string `pulumi:"serverAddr,optional"`
 }
 
+// Annotate describes the provider config fields and wires their environment
+// variable fallbacks; infer reads env defaults only from SetDefault, not from
+// struct tags.
 func (c *ProviderConfig) Annotate(a infer.Annotator) {
+	a.SetDefault(&c.TokenID, nil, "MODAL_TOKEN_ID")
+	a.SetDefault(&c.TokenSecret, nil, "MODAL_TOKEN_SECRET")
+	a.SetDefault(&c.Environment, nil, "MODAL_ENVIRONMENT")
+	a.SetDefault(&c.ServerAddr, nil, "MODAL_SERVER_ADDR")
 	a.Describe(&c.TokenID, "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.")
 	a.Describe(&c.TokenSecret, "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.")
 	a.Describe(&c.Environment, "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.")
