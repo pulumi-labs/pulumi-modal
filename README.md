@@ -66,7 +66,7 @@ with the Modal CLI.
 Set them via provider config:
 
 ```bash
-pulumi config set modal:tokenId ak-xxxxxxxxxxxxxxxx
+pulumi config set --secret modal:tokenId ak-xxxxxxxxxxxxxxxx
 pulumi config set --secret modal:tokenSecret as-xxxxxxxxxxxxxxxx
 ```
 
