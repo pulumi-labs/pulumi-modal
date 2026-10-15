@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated the Modal Go SDK (`github.com/modal-labs/modal-client/go`) from v0.9.0 to v0.11.0 and gRPC
+  from v1.83.0 to v1.83.2 (clears GO-2026-6443). No resource or schema changes.
+
 ### Fixed
 
 - Provider config now falls back to `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`,

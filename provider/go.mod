@@ -4,11 +4,11 @@ go 1.26.0
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/modal-labs/modal-client/go v0.9.0
+	github.com/modal-labs/modal-client/go v0.11.0
 	github.com/pulumi/pulumi-go-provider v1.3.1
 	github.com/pulumi/pulumi/sdk/v3 v3.229.0
 	github.com/stretchr/testify v1.12.1
-	google.golang.org/grpc v1.83.0
+	google.golang.org/grpc v1.83.2
 )
 
 require (
