@@ -18,8 +18,6 @@ import * as modal from "@pulumi/modal";
 
 const config = new pulumi.Config();
 
-const tokenId = config.getSecret("tokenId");
-const tokenSecret = config.getSecret("tokenSecret");
 const hfToken = config.requireSecret("hfToken");
 
 const checkpointVolumeName = config.get("checkpointVolumeName") ?? "training-checkpoints";
@@ -28,8 +26,6 @@ const trainingQueueName = config.get("trainingQueueName") ?? "training-jobs";
 // Hugging Face Hub token training Functions use to pull gated model
 // weights/datasets.
 const secret = new modal.Secret("secret", {
-    tokenId,
-    tokenSecret,
     name: "training-secrets",
     values: {
         HF_TOKEN: hfToken,
@@ -38,8 +34,6 @@ const secret = new modal.Secret("secret", {
 
 // Durable checkpoint storage that persists across training runs.
 const volume = new modal.Volume("volume", {
-    tokenId,
-    tokenSecret,
     name: checkpointVolumeName,
     version: "v2",
 });
@@ -47,8 +41,6 @@ const volume = new modal.Volume("volume", {
 // Queue a training-job dispatcher enqueues onto; worker Functions pull
 // from it to run training jobs asynchronously.
 const queue = new modal.Queue("queue", {
-    tokenId,
-    tokenSecret,
     name: trainingQueueName,
 });
 

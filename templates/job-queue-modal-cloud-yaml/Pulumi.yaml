@@ -15,12 +15,6 @@ runtime: yaml
 template:
   description: A YAML program to provision a Modal Queue and its callback-authentication Secret for a background job pipeline.
   config:
-    tokenId:
-      description: Modal API token ID. Leave blank to fall back to the MODAL_TOKEN_ID environment variable.
-      secret: true
-    tokenSecret:
-      description: Modal API token secret. Leave blank to fall back to the MODAL_TOKEN_SECRET environment variable.
-      secret: true
     queueName:
       description: Name for the Modal Queue.
       default: background-jobs
@@ -29,12 +23,6 @@ template:
       secret: true
 
 config:
-  tokenId:
-    type: string
-    secret: true
-  tokenSecret:
-    type: string
-    secret: true
   queueName:
     type: string
     default: background-jobs
@@ -48,8 +36,6 @@ resources:
   secret:
     type: modal:index:Secret
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: worker-callback-secret
       values:
         WORKER_API_KEY: ${workerApiKey}
@@ -59,8 +45,6 @@ resources:
   queue:
     type: modal:index:Queue
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: ${queueName}
 
 outputs:

@@ -19,8 +19,6 @@ import (
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
 		cfg := config.New(ctx, "")
-		tokenId := cfg.GetSecret("tokenId")
-		tokenSecret := cfg.GetSecret("tokenSecret")
 		queueName := cfg.Get("queueName")
 		if queueName == "" {
 			queueName = "background-jobs"
@@ -30,9 +28,7 @@ func main() {
 		// API key background workers use to authenticate callbacks to
 		// your application once a job completes.
 		secret, err := modal.NewSecret(ctx, "secret", &modal.SecretArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String("worker-callback-secret"),
+			Name: pulumi.String("worker-callback-secret"),
 			Values: pulumi.StringMap{
 				"WORKER_API_KEY": workerApiKey,
 			},
@@ -44,9 +40,7 @@ func main() {
 		// Durable queue a dispatcher enqueues jobs onto; a pool of
 		// worker Functions pulls from it to process them asynchronously.
 		queue, err := modal.NewQueue(ctx, "queue", &modal.QueueArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String(queueName),
+			Name: pulumi.String(queueName),
 		})
 		if err != nil {
 			return err

@@ -2,21 +2,11 @@ name: modal-yaml
 runtime: yaml
 description: Provision Modal secrets, volumes, and queues for serverless GPU workloads with Pulumi (YAML)
 
-config:
-  tokenId:
-    type: string
-    secret: true
-  tokenSecret:
-    type: string
-    secret: true
-
 resources:
   # Secrets mount as environment variables into Modal Functions at runtime.
   api-keys:
     type: modal:index:Secret
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: api-keys
       values:
         STRIPE_API_KEY: sk_live_xxx_placeholder
@@ -26,8 +16,6 @@ resources:
   model-cache:
     type: modal:index:Volume
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: model-cache
       version: v2
 
@@ -35,8 +23,6 @@ resources:
   job-queue:
     type: modal:index:Queue
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: job-queue
 
 outputs:

@@ -5,12 +5,6 @@ runtime: java
 template:
   description: A Java program to provision a Modal secret, volume, and queue for serverless GPU workloads.
   config:
-    tokenId:
-      description: Modal token ID (falls back to MODAL_TOKEN_ID if unset).
-      secret: true
-    tokenSecret:
-      description: Modal token secret (falls back to MODAL_TOKEN_SECRET if unset).
-      secret: true
     secretName:
       description: Name for the Modal secret.
       default: app-secrets

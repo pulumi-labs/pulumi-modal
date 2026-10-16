@@ -3,20 +3,13 @@ package main
 import (
 	"github.com/pulumi/pulumi-modal/sdk/go/modal"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
-		cfg := config.New(ctx, "")
-		tokenId := cfg.RequireSecret("tokenId")
-		tokenSecret := cfg.RequireSecret("tokenSecret")
-
 		// Secrets mount as environment variables into Modal Functions at runtime.
 		secret, err := modal.NewSecret(ctx, "api-keys", &modal.SecretArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String("api-keys"),
+			Name: pulumi.String("api-keys"),
 			Values: pulumi.StringMap{
 				"STRIPE_API_KEY":   pulumi.String("sk_live_xxx_placeholder"),
 				"SENDGRID_API_KEY": pulumi.String("SG.xxx_placeholder"),
@@ -28,10 +21,8 @@ func main() {
 
 		// Volumes are durable network filesystems that Modal Functions mount for shared, persistent state (e.g. model weights).
 		volume, err := modal.NewVolume(ctx, "model-cache", &modal.VolumeArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String("model-cache"),
-			Version:     pulumi.String("v2"),
+			Name:    pulumi.String("model-cache"),
+			Version: pulumi.String("v2"),
 		})
 		if err != nil {
 			return err
@@ -39,9 +30,7 @@ func main() {
 
 		// Queues are durable FIFO/LIFO dispatch queues used to coordinate work between Modal Functions.
 		queue, err := modal.NewQueue(ctx, "job-queue", &modal.QueueArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String("job-queue"),
+			Name: pulumi.String("job-queue"),
 		})
 		if err != nil {
 			return err

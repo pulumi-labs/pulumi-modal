@@ -22,8 +22,6 @@ import (
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
 		cfg := config.New(ctx, "")
-		tokenId := cfg.GetSecret("tokenId")
-		tokenSecret := cfg.GetSecret("tokenSecret")
 		hfToken := cfg.RequireSecret("hfToken")
 
 		checkpointVolumeName := cfg.Get("checkpointVolumeName")
@@ -38,9 +36,7 @@ func main() {
 		// Hugging Face Hub token training Functions use to pull gated
 		// model weights/datasets.
 		secret, err := modal.NewSecret(ctx, "secret", &modal.SecretArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String("training-secrets"),
+			Name: pulumi.String("training-secrets"),
 			Values: pulumi.StringMap{
 				"HF_TOKEN": hfToken,
 			},
@@ -51,10 +47,8 @@ func main() {
 
 		// Durable checkpoint storage that persists across training runs.
 		volume, err := modal.NewVolume(ctx, "volume", &modal.VolumeArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String(checkpointVolumeName),
-			Version:     pulumi.String("v2"),
+			Name:    pulumi.String(checkpointVolumeName),
+			Version: pulumi.String("v2"),
 		})
 		if err != nil {
 			return err
@@ -63,9 +57,7 @@ func main() {
 		// Queue a training-job dispatcher enqueues onto; worker Functions
 		// pull from it to run training jobs asynchronously.
 		queue, err := modal.NewQueue(ctx, "queue", &modal.QueueArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String(trainingQueueName),
+			Name: pulumi.String(trainingQueueName),
 		})
 		if err != nil {
 			return err

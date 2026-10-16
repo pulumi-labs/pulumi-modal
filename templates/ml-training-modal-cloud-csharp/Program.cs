@@ -18,8 +18,6 @@ using System.Collections.Generic;
 return await Deployment.RunAsync(() =>
 {
     var config = new global::Pulumi.Config();
-    var tokenId = config.GetSecret("tokenId");
-    var tokenSecret = config.GetSecret("tokenSecret");
     var hfToken = config.RequireSecret("hfToken");
 
     var checkpointVolumeName = config.Get("checkpointVolumeName") ?? "training-checkpoints";
@@ -29,8 +27,6 @@ return await Deployment.RunAsync(() =>
     // weights/datasets.
     var secret = new Secret("secret", new SecretArgs
     {
-        TokenId = tokenId,
-        TokenSecret = tokenSecret,
         Name = "training-secrets",
         Values = new InputMap<string>
         {
@@ -41,8 +37,6 @@ return await Deployment.RunAsync(() =>
     // Durable checkpoint storage that persists across training runs.
     var volume = new Volume("volume", new VolumeArgs
     {
-        TokenId = tokenId,
-        TokenSecret = tokenSecret,
         Name = checkpointVolumeName,
         Version = "v2",
     });
@@ -51,8 +45,6 @@ return await Deployment.RunAsync(() =>
     // pull from it to run training jobs asynchronously.
     var queue = new Queue("queue", new QueueArgs
     {
-        TokenId = tokenId,
-        TokenSecret = tokenSecret,
         Name = trainingQueueName,
     });
 

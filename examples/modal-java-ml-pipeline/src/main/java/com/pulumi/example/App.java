@@ -20,15 +20,9 @@ import java.util.Map;
 public class App {
     public static void main(String[] args) {
         Pulumi.run(ctx -> {
-            var config = ctx.config();
-            var tokenId = config.requireSecret("tokenId");
-            var tokenSecret = config.requireSecret("tokenSecret");
-
             // Credentials Modal Functions read at runtime via modal.Secret.from_name("inference-secrets").
             var secret = new Secret("inference-secrets",
                 SecretArgs.builder()
-                    .tokenId(tokenId)
-                    .tokenSecret(tokenSecret)
                     .name("inference-secrets")
                     .values(Map.of(
                         "HF_TOKEN", "hf_placeholder_token",
@@ -39,8 +33,6 @@ public class App {
             // Durable model checkpoint storage mounted via modal.Volume.from_name("checkpoint-storage").
             var checkpoints = new Volume("checkpoint-storage",
                 VolumeArgs.builder()
-                    .tokenId(tokenId)
-                    .tokenSecret(tokenSecret)
                     .name("checkpoint-storage")
                     .version("v2")
                     .build());
@@ -48,8 +40,6 @@ public class App {
             // Dispatch queue for training job requests, consumed via modal.Queue.from_name("training-jobs").
             var trainingJobs = new Queue("training-jobs",
                 QueueArgs.builder()
-                    .tokenId(tokenId)
-                    .tokenSecret(tokenSecret)
                     .name("training-jobs")
                     .build());
 

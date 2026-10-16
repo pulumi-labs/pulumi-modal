@@ -63,18 +63,22 @@ Create a Modal API token pair (token ID + token secret) from the
 [Modal dashboard](https://modal.com/settings/tokens), or by running `modal token new`
 with the Modal CLI.
 
-Set them via provider config:
-
-```bash
-pulumi config set --secret modal:tokenId ak-xxxxxxxxxxxxxxxx
-pulumi config set --secret modal:tokenSecret as-xxxxxxxxxxxxxxxx
-```
-
-Or via environment variables — the same ones the Modal Python SDK and CLI read:
+Export them as environment variables, the same ones the Modal Python SDK and CLI read.
+The default provider picks them up, so no explicit `Provider` resource and no stack config
+is needed. Every program under [`examples/`](./examples) and [`templates/`](./templates)
+runs this way:
 
 ```bash
 export MODAL_TOKEN_ID=ak-xxxxxxxxxxxxxxxx
 export MODAL_TOKEN_SECRET=as-xxxxxxxxxxxxxxxx
+export MODAL_ENVIRONMENT=production   # optional
+```
+
+Or set them via provider config:
+
+```bash
+pulumi config set --secret modal:tokenId ak-xxxxxxxxxxxxxxxx
+pulumi config set --secret modal:tokenSecret as-xxxxxxxxxxxxxxxx
 ```
 
 Per-resource override is also supported via the `tokenId` / `tokenSecret` inputs on each
@@ -156,8 +160,8 @@ Java, YAML).
 
 | Key | Environment Variable | Description |
 |---|---|---|
-| `modal:tokenId` | `MODAL_TOKEN_ID` | Modal API token ID. Required (provider- or resource-level). |
-| `modal:tokenSecret` (secret) | `MODAL_TOKEN_SECRET` | Modal API token secret. Required (provider- or resource-level). |
+| `modal:tokenId` | `MODAL_TOKEN_ID` | Modal API token ID. Required unless set per resource. Falls back to the environment variable. |
+| `modal:tokenSecret` (secret) | `MODAL_TOKEN_SECRET` | Modal API token secret. Required unless set per resource. Falls back to the environment variable. |
 | `modal:environment` | `MODAL_ENVIRONMENT` | Default Modal environment for resources that don't set their own. |
 | `modal:serverAddr` | `MODAL_SERVER_ADDR` | Override for Modal's gRPC endpoint. Testing only. |
 

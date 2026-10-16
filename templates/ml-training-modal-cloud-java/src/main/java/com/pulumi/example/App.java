@@ -26,8 +26,6 @@ public class App {
     public static void main(String[] args) {
         Pulumi.run(ctx -> {
             var config = ctx.config();
-            var tokenId = config.getSecret("tokenId").orElse(null);
-            var tokenSecret = config.getSecret("tokenSecret").orElse(null);
             var hfToken = config.requireSecret("hfToken");
             var checkpointVolumeName = config.get("checkpointVolumeName").orElse("training-checkpoints");
             var trainingQueueName = config.get("trainingQueueName").orElse("training-jobs");
@@ -36,8 +34,6 @@ public class App {
             // gated model weights/datasets.
             var secret = new Secret("secret",
                 SecretArgs.builder()
-                    .tokenId(tokenId)
-                    .tokenSecret(tokenSecret)
                     .name("training-secrets")
                     .values(Map.of("HF_TOKEN", hfToken))
                     .build());
@@ -46,8 +42,6 @@ public class App {
             // runs.
             var volume = new Volume("volume",
                 VolumeArgs.builder()
-                    .tokenId(tokenId)
-                    .tokenSecret(tokenSecret)
                     .name(checkpointVolumeName)
                     .version("v2")
                     .build());
@@ -56,8 +50,6 @@ public class App {
             // Functions pull from it to run training jobs asynchronously.
             var queue = new Queue("queue",
                 QueueArgs.builder()
-                    .tokenId(tokenId)
-                    .tokenSecret(tokenSecret)
                     .name(trainingQueueName)
                     .build());
 

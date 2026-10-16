@@ -18,12 +18,6 @@ runtime: yaml
 template:
   description: A YAML program to provision the Modal Secret, Volume, and Queue backing an ML training pipeline.
   config:
-    tokenId:
-      description: Modal API token ID. Leave blank to fall back to the MODAL_TOKEN_ID environment variable.
-      secret: true
-    tokenSecret:
-      description: Modal API token secret. Leave blank to fall back to the MODAL_TOKEN_SECRET environment variable.
-      secret: true
     hfToken:
       description: Hugging Face access token used by training Functions.
       secret: true
@@ -35,12 +29,6 @@ template:
       default: training-jobs
 
 config:
-  tokenId:
-    type: string
-    secret: true
-  tokenSecret:
-    type: string
-    secret: true
   hfToken:
     type: string
     secret: true
@@ -57,8 +45,6 @@ resources:
   secret:
     type: modal:index:Secret
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: training-secrets
       values:
         HF_TOKEN: ${hfToken}
@@ -67,8 +53,6 @@ resources:
   volume:
     type: modal:index:Volume
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: ${checkpointVolumeName}
       version: v2
 
@@ -77,8 +61,6 @@ resources:
   queue:
     type: modal:index:Queue
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: ${trainingQueueName}
 
 outputs:

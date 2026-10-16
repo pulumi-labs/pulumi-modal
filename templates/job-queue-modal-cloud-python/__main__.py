@@ -15,8 +15,6 @@ import pulumi_modal as modal
 
 config = pulumi.Config()
 
-token_id = config.get_secret("tokenId")
-token_secret = config.get_secret("tokenSecret")
 queue_name = config.get("queueName") or "background-jobs"
 worker_api_key = config.require_secret("workerApiKey")
 
@@ -24,8 +22,6 @@ worker_api_key = config.require_secret("workerApiKey")
 # application once a job completes.
 secret = modal.Secret(
     "secret",
-    token_id=token_id,
-    token_secret=token_secret,
     name="worker-callback-secret",
     values={
         "WORKER_API_KEY": worker_api_key,
@@ -36,8 +32,6 @@ secret = modal.Secret(
 # Functions pulls from it to process them asynchronously.
 queue = modal.Queue(
     "queue",
-    token_id=token_id,
-    token_secret=token_secret,
     name=queue_name,
 )
 

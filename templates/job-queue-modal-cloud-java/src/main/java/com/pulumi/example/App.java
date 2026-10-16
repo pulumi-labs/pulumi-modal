@@ -21,8 +21,6 @@ public class App {
     public static void main(String[] args) {
         Pulumi.run(ctx -> {
             var config = ctx.config();
-            var tokenId = config.getSecret("tokenId").orElse(null);
-            var tokenSecret = config.getSecret("tokenSecret").orElse(null);
             var queueName = config.get("queueName").orElse("background-jobs");
             var workerApiKey = config.requireSecret("workerApiKey");
 
@@ -30,8 +28,6 @@ public class App {
             // to your application once a job completes.
             var secret = new Secret("secret",
                 SecretArgs.builder()
-                    .tokenId(tokenId)
-                    .tokenSecret(tokenSecret)
                     .name("worker-callback-secret")
                     .values(Map.of("WORKER_API_KEY", workerApiKey))
                     .build());
@@ -41,8 +37,6 @@ public class App {
             // asynchronously.
             var queue = new Queue("queue",
                 QueueArgs.builder()
-                    .tokenId(tokenId)
-                    .tokenSecret(tokenSecret)
                     .name(queueName)
                     .build());
 

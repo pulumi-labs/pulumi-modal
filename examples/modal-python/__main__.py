@@ -1,17 +1,11 @@
 import pulumi
 import pulumi_modal as modal
 
-config = pulumi.Config()
-token_id = config.require_secret("tokenId")
-token_secret = config.require_secret("tokenSecret")
-
 # Secrets are durable, named key/value collections that Modal mounts as
 # environment variables into your Functions at runtime. Values can be
 # rotated in place without replacing the Secret itself.
 api_keys = modal.Secret(
     "api-keys",
-    token_id=token_id,
-    token_secret=token_secret,
     name="api-keys",
     values={
         "STRIPE_API_KEY": "sk_test_placeholder",
@@ -24,8 +18,6 @@ api_keys = modal.Secret(
 # across container restarts and between separate Function invocations.
 model_cache = modal.Volume(
     "model-cache",
-    token_id=token_id,
-    token_secret=token_secret,
     name="model-cache",
     version="v2",
 )
@@ -35,8 +27,6 @@ model_cache = modal.Volume(
 # worker Functions consumes asynchronously).
 job_queue = modal.Queue(
     "job-queue",
-    token_id=token_id,
-    token_secret=token_secret,
     name="job-queue",
 )
 

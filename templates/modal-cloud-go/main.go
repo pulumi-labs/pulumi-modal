@@ -9,8 +9,6 @@ import (
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
 		cfg := config.New(ctx, "")
-		tokenId := cfg.RequireSecret("tokenId")
-		tokenSecret := cfg.RequireSecret("tokenSecret")
 		secretName := cfg.Get("secretName")
 		if secretName == "" {
 			secretName = "app-secrets"
@@ -25,9 +23,7 @@ func main() {
 		}
 
 		secret, err := modal.NewSecret(ctx, "secret", &modal.SecretArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String(secretName),
+			Name: pulumi.String(secretName),
 			Values: pulumi.StringMap{
 				"API_KEY": pulumi.String("changeme"),
 			},
@@ -37,18 +33,14 @@ func main() {
 		}
 
 		volume, err := modal.NewVolume(ctx, "volume", &modal.VolumeArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String(volumeName),
+			Name: pulumi.String(volumeName),
 		})
 		if err != nil {
 			return err
 		}
 
 		queue, err := modal.NewQueue(ctx, "queue", &modal.QueueArgs{
-			TokenId:     tokenId,
-			TokenSecret: tokenSecret,
-			Name:        pulumi.String(queueName),
+			Name: pulumi.String(queueName),
 		})
 		if err != nil {
 			return err

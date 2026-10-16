@@ -18,8 +18,6 @@ import pulumi_modal as modal
 
 config = pulumi.Config()
 
-token_id = config.get_secret("tokenId")
-token_secret = config.get_secret("tokenSecret")
 hf_token = config.require_secret("hfToken")
 
 checkpoint_volume_name = config.get("checkpointVolumeName") or "training-checkpoints"
@@ -29,8 +27,6 @@ training_queue_name = config.get("trainingQueueName") or "training-jobs"
 # weights/datasets.
 secret = modal.Secret(
     "secret",
-    token_id=token_id,
-    token_secret=token_secret,
     name="training-secrets",
     values={
         "HF_TOKEN": hf_token,
@@ -40,8 +36,6 @@ secret = modal.Secret(
 # Durable checkpoint storage that persists across training runs.
 volume = modal.Volume(
     "volume",
-    token_id=token_id,
-    token_secret=token_secret,
     name=checkpoint_volume_name,
     version="v2",
 )
@@ -50,8 +44,6 @@ volume = modal.Volume(
 # from it to run training jobs asynchronously.
 queue = modal.Queue(
     "queue",
-    token_id=token_id,
-    token_secret=token_secret,
     name=training_queue_name,
 )
 

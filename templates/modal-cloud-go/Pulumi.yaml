@@ -5,12 +5,6 @@ runtime: go
 template:
   description: A Go program to provision a Modal secret, volume, and queue for serverless GPU workloads.
   config:
-    tokenId:
-      description: Modal API token ID.
-      secret: true
-    tokenSecret:
-      description: Modal API token secret.
-      secret: true
     secretName:
       description: Name for the Modal secret.
       default: app-secrets

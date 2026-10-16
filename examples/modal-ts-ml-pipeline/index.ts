@@ -25,16 +25,10 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as modal from "@pulumi/modal";
 
-const config = new pulumi.Config();
-const tokenId = config.requireSecret("tokenId");
-const tokenSecret = config.requireSecret("tokenSecret");
-
 // Credentials training and inference Functions need: a Hugging Face Hub
 // token to pull gated model weights/datasets, and an OpenAI key used for
 // eval scoring during training.
 const inferenceSecrets = new modal.Secret("inference-secrets", {
-    tokenId,
-    tokenSecret,
     name: "inference-secrets",
     values: {
         HF_TOKEN: "hf_placeholder",
@@ -46,8 +40,6 @@ const inferenceSecrets = new modal.Secret("inference-secrets", {
 // training Function to write checkpoints and by inference Functions to
 // load the latest trained weights.
 const checkpointStorage = new modal.Volume("checkpoint-storage", {
-    tokenId,
-    tokenSecret,
     name: "checkpoint-storage",
     version: "v2",
 });
@@ -55,8 +47,6 @@ const checkpointStorage = new modal.Volume("checkpoint-storage", {
 // Queue that a training-job dispatcher enqueues onto; a pool of GPU worker
 // Functions pulls from it to run training jobs asynchronously.
 const trainingJobs = new modal.Queue("training-jobs", {
-    tokenId,
-    tokenSecret,
     name: "training-jobs",
 });
 

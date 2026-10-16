@@ -5,12 +5,6 @@ runtime: yaml
 template:
   description: A YAML program to provision a Modal secret, volume, and queue for serverless GPU workloads.
   config:
-    tokenId:
-      description: Modal token ID (falls back to MODAL_TOKEN_ID if unset).
-      secret: true
-    tokenSecret:
-      description: Modal token secret (falls back to MODAL_TOKEN_SECRET if unset).
-      secret: true
     secretName:
       description: Name for the Modal secret.
       default: app-secrets
@@ -22,12 +16,6 @@ template:
       default: app-queue
 
 config:
-  tokenId:
-    type: string
-    secret: true
-  tokenSecret:
-    type: string
-    secret: true
   secretName:
     type: string
     default: app-secrets
@@ -42,8 +30,6 @@ resources:
   secret:
     type: modal:index:Secret
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: ${secretName}
       values:
         API_KEY: changeme
@@ -51,15 +37,11 @@ resources:
   volume:
     type: modal:index:Volume
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: ${volumeName}
 
   queue:
     type: modal:index:Queue
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: ${queueName}
 
 outputs:

@@ -15,8 +15,6 @@ using System.Collections.Generic;
 return await Deployment.RunAsync(() =>
 {
     var config = new global::Pulumi.Config();
-    var tokenId = config.GetSecret("tokenId");
-    var tokenSecret = config.GetSecret("tokenSecret");
     var queueName = config.Get("queueName") ?? "background-jobs";
     var workerApiKey = config.RequireSecret("workerApiKey");
 
@@ -24,8 +22,6 @@ return await Deployment.RunAsync(() =>
     // application once a job completes.
     var secret = new Secret("secret", new SecretArgs
     {
-        TokenId = tokenId,
-        TokenSecret = tokenSecret,
         Name = "worker-callback-secret",
         Values = new InputMap<string>
         {
@@ -37,8 +33,6 @@ return await Deployment.RunAsync(() =>
     // Functions pulls from it to process them asynchronously.
     var queue = new Queue("queue", new QueueArgs
     {
-        TokenId = tokenId,
-        TokenSecret = tokenSecret,
         Name = queueName,
     });
 

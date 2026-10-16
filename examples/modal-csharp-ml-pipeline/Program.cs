@@ -12,15 +12,9 @@ using System.Collections.Generic;
 // modal.Queue.from_name("training-jobs") respectively.
 return await Deployment.RunAsync(() =>
 {
-    var config = new global::Pulumi.Config();
-    var tokenId = config.RequireSecret("tokenId");
-    var tokenSecret = config.RequireSecret("tokenSecret");
-
     // Credentials Modal Functions read at runtime via modal.Secret.from_name("inference-secrets").
     var secret = new Secret("inference-secrets", new SecretArgs
     {
-        TokenId = tokenId,
-        TokenSecret = tokenSecret,
         Name = "inference-secrets",
         Values = new InputMap<string>
         {
@@ -32,8 +26,6 @@ return await Deployment.RunAsync(() =>
     // Durable model checkpoint storage mounted via modal.Volume.from_name("checkpoint-storage").
     var checkpoints = new Volume("checkpoint-storage", new VolumeArgs
     {
-        TokenId = tokenId,
-        TokenSecret = tokenSecret,
         Name = "checkpoint-storage",
         Version = "v2",
     });
@@ -41,8 +33,6 @@ return await Deployment.RunAsync(() =>
     // Dispatch queue for training job requests, consumed via modal.Queue.from_name("training-jobs").
     var trainingJobs = new Queue("training-jobs", new QueueArgs
     {
-        TokenId = tokenId,
-        TokenSecret = tokenSecret,
         Name = "training-jobs",
     });
 

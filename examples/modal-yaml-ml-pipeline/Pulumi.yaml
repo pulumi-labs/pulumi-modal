@@ -2,21 +2,11 @@ name: modal-yaml-ml-pipeline
 runtime: yaml
 description: Provision Modal infrastructure for an ML training and inference pipeline with Pulumi (YAML)
 
-config:
-  tokenId:
-    type: string
-    secret: true
-  tokenSecret:
-    type: string
-    secret: true
-
 resources:
   # Credentials Modal Functions read at runtime via modal.Secret.from_name("inference-secrets").
   inference-secrets:
     type: modal:index:Secret
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: inference-secrets
       values:
         HF_TOKEN: hf_placeholder_token
@@ -26,8 +16,6 @@ resources:
   checkpoint-storage:
     type: modal:index:Volume
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: checkpoint-storage
       version: v2
 
@@ -35,8 +23,6 @@ resources:
   training-jobs:
     type: modal:index:Queue
     properties:
-      tokenId: ${tokenId}
-      tokenSecret: ${tokenSecret}
       name: training-jobs
 
 outputs:

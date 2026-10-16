@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Examples and templates no longer read `tokenId` / `tokenSecret` from stack config or pass them to
+  each resource. All 12 examples and 18 templates now run through the default provider using only
+  `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` and the optional `MODAL_ENVIRONMENT`. The `tokenId` /
+  `tokenSecret` prompts were removed from the template `Pulumi.yaml` files. README documents the
+  environment-variable flow.
 - Provider config now falls back to `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`,
   `MODAL_ENVIRONMENT` and `MODAL_SERVER_ADDR`. The fallbacks were declared as `env`
   struct tags, which `infer` ignores, so the default provider failed with

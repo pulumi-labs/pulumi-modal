@@ -15,16 +15,12 @@ import * as modal from "@pulumi/modal";
 
 const config = new pulumi.Config();
 
-const tokenId = config.getSecret("tokenId");
-const tokenSecret = config.getSecret("tokenSecret");
 const queueName = config.get("queueName") ?? "background-jobs";
 const workerApiKey = config.requireSecret("workerApiKey");
 
 // API key background workers use to authenticate callbacks to your
 // application once a job completes.
 const secret = new modal.Secret("secret", {
-    tokenId,
-    tokenSecret,
     name: "worker-callback-secret",
     values: {
         WORKER_API_KEY: workerApiKey,
@@ -34,8 +30,6 @@ const secret = new modal.Secret("secret", {
 // Durable queue a dispatcher enqueues jobs onto; a pool of worker
 // Functions pulls from it to process them asynchronously.
 const queue = new modal.Queue("queue", {
-    tokenId,
-    tokenSecret,
     name: queueName,
 });
 

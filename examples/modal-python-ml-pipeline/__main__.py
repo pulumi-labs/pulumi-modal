@@ -25,17 +25,11 @@ at runtime -- it never needs the Pulumi outputs directly:
 import pulumi
 import pulumi_modal as modal
 
-config = pulumi.Config()
-token_id = config.require_secret("tokenId")
-token_secret = config.require_secret("tokenSecret")
-
 # Credentials training and inference Functions need: a Hugging Face Hub
 # token to pull gated model weights/datasets, and an OpenAI key used for
 # eval scoring during training.
 inference_secrets = modal.Secret(
     "inference-secrets",
-    token_id=token_id,
-    token_secret=token_secret,
     name="inference-secrets",
     values={
         "HF_TOKEN": "hf_placeholder",
@@ -48,8 +42,6 @@ inference_secrets = modal.Secret(
 # load the latest trained weights.
 checkpoint_storage = modal.Volume(
     "checkpoint-storage",
-    token_id=token_id,
-    token_secret=token_secret,
     name="checkpoint-storage",
     version="v2",
 )
@@ -58,8 +50,6 @@ checkpoint_storage = modal.Volume(
 # Functions pulls from it to run training jobs asynchronously.
 training_jobs = modal.Queue(
     "training-jobs",
-    token_id=token_id,
-    token_secret=token_secret,
     name="training-jobs",
 )
 
