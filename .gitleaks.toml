@@ -1,0 +1,15 @@
+# Reviewed gitleaks allowlist for the modal provider. Anything added here needs
+# human review in a monorepo PR: name the literal and say why it is not a secret.
+title = "modal provider gitleaks allowlist"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documentation placeholders in modal examples history"
+# `sk_test_placeholder` is a documentation placeholder that stood in for an
+# app secret (STRIPE_API_KEY) in lib/providers/modal/examples/modal-python and
+# examples/modal-ts. It is not a credential: it is not a Stripe key, only
+# looks like one to the stripe-access-token rule. The current tree no longer
+# contains it; it stays in git history, which gitleaks scans.
+regexes = ['''sk_test_placeholder''']

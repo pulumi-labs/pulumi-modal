@@ -7,7 +7,7 @@ import * as modal from "@pulumi/modal";
 const apiKeys = new modal.Secret("api-keys", {
     name: "api-keys",
     values: {
-        STRIPE_API_KEY: "sk_test_placeholder",
+        STRIPE_API_KEY: "sk_test_xxx_placeholder",
         SENDGRID_API_KEY: "SG.placeholder",
     },
 });
