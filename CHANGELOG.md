@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   app secret instead of `sk_test_placeholder`, which gitleaks reports as a Stripe access token.
 - Added `.gitleaks.toml`, a reviewed allowlist for the single literal `sk_test_placeholder` that remains in git
   history (documentation placeholder, not a credential).
-- Updated the Modal Go SDK (`github.com/modal-labs/modal-client/go`) from v0.9.0 to v0.11.0 and gRPC
+- Updated the Modal Go SDK (`github.com/modal-labs/modal-client/go`) from v0.9.0 to v0.11.1 and gRPC
   from v1.83.0 to v1.83.2 (clears GO-2026-6443). No resource or schema changes.
 
 ### Fixed
