@@ -29,7 +29,7 @@ public class App {
             var secret = new Secret("secret",
                 SecretArgs.builder()
                     .name("worker-callback-secret")
-                    .values(Map.of("WORKER_API_KEY", workerApiKey))
+                    .values(workerApiKey.applyValue(k -> Map.of("WORKER_API_KEY", k)))
                     .build());
 
             // Durable queue a dispatcher enqueues jobs onto; a pool of

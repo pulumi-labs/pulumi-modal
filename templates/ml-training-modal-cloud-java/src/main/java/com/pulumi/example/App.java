@@ -35,7 +35,7 @@ public class App {
             var secret = new Secret("secret",
                 SecretArgs.builder()
                     .name("training-secrets")
-                    .values(Map.of("HF_TOKEN", hfToken))
+                    .values(hfToken.applyValue(t -> Map.of("HF_TOKEN", t)))
                     .build());
 
             // Durable checkpoint storage that persists across training

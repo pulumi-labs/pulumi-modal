@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The `job-queue-modal-cloud-java` and `ml-training-modal-cloud-java` templates pass the secret `values` as an `Output<Map<String,String>>`, so they compile and the secret stays secret.
 - Added the Apache-2.0 "Copyright 2026, Pulumi Corporation." header to every Go source file under `provider/`
   (`make check_copyright` in the archetype requires it). Comment-only change, no behavior or schema change.
 - The `modal-python` and `modal-ts` examples use the placeholder `sk_test_xxx_placeholder` for the `STRIPE_API_KEY`
