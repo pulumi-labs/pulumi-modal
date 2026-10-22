@@ -79,12 +79,28 @@ func New() (pgp.Provider, error) {
 	return infer.NewProviderBuilder().
 		WithDisplayName("Modal").
 		WithDescription(
-			"Manage Modal (modal.com) serverless compute resources — Secrets, Volumes, and Queues — as infrastructure with Pulumi.",
+			"Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, and Queues — as infrastructure with Pulumi.",
 		).
 		WithHomepage("https://modal.com").
-		WithRepository("https://github.com/pulumi/autoregistry").
-		WithGoImportPath("github.com/pulumi/pulumi-modal/sdk/go/modal").
-		WithPublisher("Pulumi").
+		WithRepository("https://github.com/pulumi-labs/pulumi-modal").
+		WithPublisher("Pulumi Labs").
+		WithLanguageMap(map[string]any{
+			"go": map[string]any{"generateResourceContainerTypes": true, "respectSchemaVersion": true},
+			"nodejs": map[string]any{
+				"packageName":          "@pulumi-labs/modal",
+				"packageDescription":   "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, and Queues — as infrastructure with Pulumi.",
+				"respectSchemaVersion": true,
+			},
+			"python": map[string]any{
+				"packageName":          "pulumi_labs_modal",
+				"respectSchemaVersion": true,
+				"pyproject":            map[string]any{"enabled": true},
+			},
+			"csharp": map[string]any{"rootNamespace": "Pulumi.Labs", "respectSchemaVersion": true},
+			"java":   map[string]any{"basePackage": "com.pulumi.labs", "respectSchemaVersion": true},
+		}).
+		WithGoImportPath("github.com/pulumi-labs/pulumi-modal/sdk/go/modal").
+		WithPluginDownloadURL("github://api.github.com/pulumi-labs/pulumi-modal").
 		WithLicense("Apache-2.0").
 		WithKeywords("pulumi", "modal", "serverless", "ai", "compute", "category/cloud").
 		WithModuleMap(map[tokens.ModuleName]tokens.ModuleName{

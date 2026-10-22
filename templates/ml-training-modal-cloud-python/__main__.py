@@ -14,7 +14,7 @@ Your Modal application code looks these up by name at runtime:
     queue = modal.Queue.from_name("training-jobs")
 """
 import pulumi
-import pulumi_modal as modal
+import pulumi_labs_modal as modal
 
 config = pulumi.Config()
 

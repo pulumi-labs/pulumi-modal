@@ -11,7 +11,7 @@
 package main
 
 import (
-	"github.com/pulumi/pulumi-modal/sdk/go/modal"
+	"github.com/pulumi-labs/pulumi-modal/sdk/go/modal"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )

@@ -1,5 +1,5 @@
 import pulumi
-import pulumi_modal as modal
+import pulumi_labs_modal as modal
 
 # Secrets are durable, named key/value collections that Modal mounts as
 # environment variables into your Functions at runtime. Values can be

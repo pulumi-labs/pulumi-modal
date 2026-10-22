@@ -23,7 +23,7 @@ at runtime -- it never needs the Pulumi outputs directly:
     def train(): ...
 """
 import pulumi
-import pulumi_modal as modal
+import pulumi_labs_modal as modal
 
 # Credentials training and inference Functions need: a Hugging Face Hub
 # token to pull gated model weights/datasets, and an OpenAI key used for

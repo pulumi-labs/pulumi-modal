@@ -1,12 +1,12 @@
 package com.pulumi.example;
 
 import com.pulumi.Pulumi;
-import com.pulumi.modal.Secret;
-import com.pulumi.modal.SecretArgs;
-import com.pulumi.modal.Volume;
-import com.pulumi.modal.VolumeArgs;
-import com.pulumi.modal.Queue;
-import com.pulumi.modal.QueueArgs;
+import com.pulumi.labs.modal.Secret;
+import com.pulumi.labs.modal.SecretArgs;
+import com.pulumi.labs.modal.Volume;
+import com.pulumi.labs.modal.VolumeArgs;
+import com.pulumi.labs.modal.Queue;
+import com.pulumi.labs.modal.QueueArgs;
 import java.util.Map;
 
 // This example provisions the shared infrastructure backing an ML training and

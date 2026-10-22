@@ -12,7 +12,7 @@
 //   volume = modal.Volume.from_name("training-checkpoints")
 //   queue = modal.Queue.from_name("training-jobs")
 using Pulumi;
-using Pulumi.Modal;
+using Pulumi.Labs.Modal;
 using System.Collections.Generic;
 
 return await Deployment.RunAsync(() =>

@@ -9,7 +9,7 @@
 //   queue = modal.Queue.from_name("background-jobs")
 //   secret = modal.Secret.from_name("worker-callback-secret")
 using Pulumi;
-using Pulumi.Modal;
+using Pulumi.Labs.Modal;
 using System.Collections.Generic;
 
 return await Deployment.RunAsync(() =>

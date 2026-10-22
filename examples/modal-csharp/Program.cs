@@ -1,5 +1,5 @@
 using Pulumi;
-using Pulumi.Modal;
+using Pulumi.Labs.Modal;
 using System.Collections.Generic;
 
 return await Deployment.RunAsync(() =>

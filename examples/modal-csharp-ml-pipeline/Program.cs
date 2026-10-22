@@ -1,5 +1,5 @@
 using Pulumi;
-using Pulumi.Modal;
+using Pulumi.Labs.Modal;
 using System.Collections.Generic;
 
 // This example provisions the shared infrastructure backing an ML training and

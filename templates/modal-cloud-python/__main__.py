@@ -1,5 +1,5 @@
 import pulumi
-import pulumi_modal as modal
+import pulumi_labs_modal as modal
 
 config = pulumi.Config()
 

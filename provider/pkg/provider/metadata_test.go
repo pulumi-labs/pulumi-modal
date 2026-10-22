@@ -50,6 +50,14 @@ func mustMetadataSchema(t *testing.T) map[string]any {
 		"repository":  spec.Repository,
 		"keywords":    spec.Keywords,
 		"goLanguage":  string(spec.Language["go"]),
+		"description": spec.Description,
+		"pluginURL":   spec.PluginDownloadURL,
+		"language": map[string]string{
+			"nodejs": string(spec.Language["nodejs"]),
+			"python": string(spec.Language["python"]),
+			"csharp": string(spec.Language["csharp"]),
+			"java":   string(spec.Language["java"]),
+		},
 	}
 }
 
@@ -60,10 +68,10 @@ func TestMetadata_DisplayNameIsHumanBranded(t *testing.T) {
 	}
 }
 
-func TestMetadata_PublisherIsPulumi(t *testing.T) {
+func TestMetadata_PublisherIsPulumiLabs(t *testing.T) {
 	m := mustMetadataSchema(t)
-	if got := m["publisher"].(string); got != "Pulumi" {
-		t.Errorf("Publisher = %q, want %q", got, "Pulumi")
+	if got := m["publisher"].(string); got != "Pulumi Labs" {
+		t.Errorf("Publisher = %q, want %q", got, "Pulumi Labs")
 	}
 }
 
@@ -103,8 +111,53 @@ func TestMetadata_GoImportPathIsNotFabricated(t *testing.T) {
 	if strings.Contains(goLang, "local-package") {
 		t.Fatalf("Go SDK importBasePath was fabricated by the framework default: %s", goLang)
 	}
-	const want = "github.com/pulumi/pulumi-modal/sdk/go/modal"
+	const want = "github.com/pulumi-labs/pulumi-modal/sdk/go/modal"
 	if !strings.Contains(goLang, want) {
 		t.Errorf("Go SDK importBasePath = %s, want it to contain %q", goLang, want)
+	}
+}
+
+func TestMetadata_PluginDownloadURLIsPulumiLabsRepo(t *testing.T) {
+	m := mustMetadataSchema(t)
+	const want = "github://api.github.com/pulumi-labs/pulumi-modal"
+	if got := m["pluginURL"].(string); got != want {
+		t.Errorf("PluginDownloadURL = %q, want %q", got, want)
+	}
+}
+
+func TestMetadata_IsMarkedExperimental(t *testing.T) {
+	m := mustMetadataSchema(t)
+	if got := m["description"].(string); !strings.Contains(got, "Experimental") {
+		t.Errorf("Description = %q, want it to be marked experimental", got)
+	}
+	langs := m["language"].(map[string]string)
+	if got := langs["nodejs"]; !strings.Contains(got, "Experimental") {
+		t.Errorf("nodejs packageDescription is not marked experimental: %s", got)
+	}
+}
+
+// TestMetadata_LanguageMapCarriesPulumiLabsNames guards the language map: the
+// package names, plus respectSchemaVersion without which gen-sdk --version is
+// ignored and the .NET SDK does not build.
+func TestMetadata_LanguageMapCarriesPulumiLabsNames(t *testing.T) {
+	m := mustMetadataSchema(t)
+	langs := m["language"].(map[string]string)
+	goLang := m["goLanguage"].(string)
+	want := map[string][]string{
+		"nodejs": {`"packageName":"@pulumi-labs/modal"`, `"respectSchemaVersion":true`},
+		"python": {`"packageName":"pulumi_labs_modal"`, `"respectSchemaVersion":true`},
+		"csharp": {`"rootNamespace":"Pulumi.Labs"`, `"respectSchemaVersion":true`},
+		"java":   {`"basePackage":"com.pulumi.labs"`},
+	}
+	for lang, subs := range want {
+		got := strings.ReplaceAll(langs[lang], " ", "")
+		for _, sub := range subs {
+			if !strings.Contains(got, sub) {
+				t.Errorf("%s language settings %s missing %s", lang, langs[lang], sub)
+			}
+		}
+	}
+	if g := strings.ReplaceAll(goLang, " ", ""); !strings.Contains(g, `"respectSchemaVersion":true`) {
+		t.Errorf("go language settings %s missing respectSchemaVersion", goLang)
 	}
 }

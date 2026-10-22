@@ -1,5 +1,8 @@
 # Modal Pulumi Provider
 
+> [!NOTE]
+> **Experimental.** This provider is experimental, versions are `0.x`, and its API may change without notice.
+
 Manage [Modal](https://modal.com) — serverless GPU/CPU compute — as infrastructure with
 Pulumi.
 
@@ -26,32 +29,32 @@ This is the only IaC provider for Modal, built natively on `pulumi-go-provider/i
 ### TypeScript / JavaScript
 
 ```bash
-npm install @pulumi/modal
+npm install @pulumi-labs/modal
 ```
 
 ### Python
 
 ```bash
-pip install pulumi_modal
+pip install pulumi_labs_modal
 ```
 
 ### Go
 
 ```bash
-go get github.com/pulumi/pulumi-modal/sdk/go/modal
+go get github.com/pulumi-labs/pulumi-modal/sdk/go/modal
 ```
 
 ### .NET
 
 ```bash
-dotnet add package Pulumi.Modal
+dotnet add package Pulumi.Labs.Modal
 ```
 
 ### Java (Maven)
 
 ```xml
 <dependency>
-  <groupId>com.pulumi</groupId>
+  <groupId>com.pulumi.labs</groupId>
   <artifactId>modal</artifactId>
   <version>[0.1,1.0)</version>
 </dependency>
@@ -103,7 +106,7 @@ When omitted entirely, Modal uses the account's default environment.
 
 ```typescript
 import * as pulumi from "@pulumi/pulumi";
-import * as modal from "@pulumi/modal";
+import * as modal from "@pulumi-labs/modal";
 
 // A Secret exposed to Modal Functions as environment variables.
 const apiKeys = new modal.Secret("api-keys", {
@@ -133,7 +136,7 @@ export const queueId = jobQueue.id;
 
 ```python
 import pulumi
-import pulumi_modal as modal
+import pulumi_labs_modal as modal
 
 api_keys = modal.Secret(
     "api-keys",

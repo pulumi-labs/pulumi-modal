@@ -23,7 +23,7 @@
  *   def train(): ...
  */
 import * as pulumi from "@pulumi/pulumi";
-import * as modal from "@pulumi/modal";
+import * as modal from "@pulumi-labs/modal";
 
 // Credentials training and inference Functions need: a Hugging Face Hub
 // token to pull gated model weights/datasets, and an OpenAI key used for

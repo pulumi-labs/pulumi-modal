@@ -18,7 +18,7 @@
       <version>1.1.0</version>
     </dependency>
     <dependency>
-      <groupId>com.pulumi</groupId>
+      <groupId>com.pulumi.labs</groupId>
       <artifactId>modal</artifactId>
       <version>[0.1,1.0)</version>
     </dependency>

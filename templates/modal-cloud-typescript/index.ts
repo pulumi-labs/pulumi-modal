@@ -1,5 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
-import * as modal from "@pulumi/modal";
+import * as modal from "@pulumi-labs/modal";
 
 const config = new pulumi.Config();
 

@@ -11,7 +11,7 @@ Your Modal application code looks these up by name at runtime:
     secret = modal.Secret.from_name("worker-callback-secret")
 """
 import pulumi
-import pulumi_modal as modal
+import pulumi_labs_modal as modal
 
 config = pulumi.Config()
 

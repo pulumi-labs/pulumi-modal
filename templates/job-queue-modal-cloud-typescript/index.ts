@@ -11,7 +11,7 @@
  *   secret = modal.Secret.from_name("worker-callback-secret")
  */
 import * as pulumi from "@pulumi/pulumi";
-import * as modal from "@pulumi/modal";
+import * as modal from "@pulumi-labs/modal";
 
 const config = new pulumi.Config();
 
