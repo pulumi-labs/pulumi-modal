@@ -1,0 +1,356 @@
+{
+  "name": "modal",
+  "displayName": "Modal",
+  "description": "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, and Queues — as infrastructure with Pulumi.",
+  "keywords": [
+    "pulumi",
+    "modal",
+    "serverless",
+    "ai",
+    "compute",
+    "category/cloud"
+  ],
+  "homepage": "https://modal.com",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/pulumi-labs/pulumi-modal",
+  "pluginDownloadURL": "github://api.github.com/pulumi-labs/pulumi-modal",
+  "publisher": "Pulumi Labs",
+  "language": {
+    "csharp": {
+      "respectSchemaVersion": true,
+      "rootNamespace": "Pulumi.Labs"
+    },
+    "go": {
+      "generateResourceContainerTypes": true,
+      "importBasePath": "github.com/pulumi-labs/pulumi-modal/sdk/go/modal",
+      "respectSchemaVersion": true
+    },
+    "java": {
+      "basePackage": "com.pulumi.labs",
+      "respectSchemaVersion": true
+    },
+    "nodejs": {
+      "packageDescription": "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, and Queues — as infrastructure with Pulumi.",
+      "packageName": "@pulumi-labs/modal",
+      "respectSchemaVersion": true
+    },
+    "python": {
+      "packageName": "pulumi_labs_modal",
+      "pyproject": {
+        "enabled": true
+      },
+      "respectSchemaVersion": true
+    }
+  },
+  "config": {
+    "variables": {
+      "environment": {
+        "type": "string",
+        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_ENVIRONMENT"
+          ]
+        }
+      },
+      "serverAddr": {
+        "type": "string",
+        "description": "Override for Modal's gRPC control-plane endpoint. Only used for testing.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_SERVER_ADDR"
+          ]
+        }
+      },
+      "tokenId": {
+        "type": "string",
+        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_TOKEN_ID"
+          ]
+        },
+        "secret": true
+      },
+      "tokenSecret": {
+        "type": "string",
+        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_TOKEN_SECRET"
+          ]
+        },
+        "secret": true
+      }
+    }
+  },
+  "provider": {
+    "properties": {
+      "environment": {
+        "type": "string",
+        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_ENVIRONMENT"
+          ]
+        }
+      },
+      "serverAddr": {
+        "type": "string",
+        "description": "Override for Modal's gRPC control-plane endpoint. Only used for testing.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_SERVER_ADDR"
+          ]
+        }
+      },
+      "tokenId": {
+        "type": "string",
+        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_TOKEN_ID"
+          ]
+        },
+        "secret": true
+      },
+      "tokenSecret": {
+        "type": "string",
+        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_TOKEN_SECRET"
+          ]
+        },
+        "secret": true
+      }
+    },
+    "inputProperties": {
+      "environment": {
+        "type": "string",
+        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_ENVIRONMENT"
+          ]
+        }
+      },
+      "serverAddr": {
+        "type": "string",
+        "description": "Override for Modal's gRPC control-plane endpoint. Only used for testing.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_SERVER_ADDR"
+          ]
+        }
+      },
+      "tokenId": {
+        "type": "string",
+        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_TOKEN_ID"
+          ]
+        },
+        "secret": true
+      },
+      "tokenSecret": {
+        "type": "string",
+        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.",
+        "defaultInfo": {
+          "environment": [
+            "MODAL_TOKEN_SECRET"
+          ]
+        },
+        "secret": true
+      }
+    }
+  },
+  "resources": {
+    "modal:index:Queue": {
+      "description": "A Modal Queue — a distributed FIFO/LIFO queue for passing data between Modal Functions, Sandboxes, and external callers. See https://modal.com/docs/guide/queues.",
+      "properties": {
+        "environment": {
+          "type": "string",
+          "description": "The Modal environment the queue lives in. Changing this forces a new resource."
+        },
+        "name": {
+          "type": "string",
+          "description": "The queue's unique name. Changing this forces a new resource."
+        },
+        "queueId": {
+          "type": "string"
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        }
+      },
+      "required": [
+        "name",
+        "queueId"
+      ],
+      "inputProperties": {
+        "environment": {
+          "type": "string",
+          "description": "The Modal environment the queue lives in. Changing this forces a new resource."
+        },
+        "name": {
+          "type": "string",
+          "description": "The queue's unique name. Changing this forces a new resource."
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        }
+      },
+      "requiredInputs": [
+        "name"
+      ]
+    },
+    "modal:index:Secret": {
+      "description": "A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. See https://modal.com/docs/guide/secrets.",
+      "properties": {
+        "environment": {
+          "type": "string",
+          "description": "The Modal environment the Secret lives in. Changing this forces a new resource."
+        },
+        "name": {
+          "type": "string",
+          "description": "The unique Secret name. Changing this forces a new resource."
+        },
+        "secretId": {
+          "type": "string"
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        },
+        "values": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Key/value pairs exposed as environment variables to Functions that mount this Secret.",
+          "secret": true
+        }
+      },
+      "required": [
+        "name",
+        "values",
+        "secretId"
+      ],
+      "inputProperties": {
+        "environment": {
+          "type": "string",
+          "description": "The Modal environment the Secret lives in. Changing this forces a new resource."
+        },
+        "name": {
+          "type": "string",
+          "description": "The unique Secret name. Changing this forces a new resource."
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        },
+        "values": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Key/value pairs exposed as environment variables to Functions that mount this Secret.",
+          "secret": true
+        }
+      },
+      "requiredInputs": [
+        "name",
+        "values"
+      ]
+    },
+    "modal:index:Volume": {
+      "description": "A Modal Volume — a persistent, distributed filesystem mountable into Modal Functions and Sandboxes for caching model weights, datasets, or other large files across runs. See https://modal.com/docs/guide/volumes.",
+      "properties": {
+        "environment": {
+          "type": "string",
+          "description": "The Modal environment the volume lives in. Changing this forces a new resource."
+        },
+        "name": {
+          "type": "string",
+          "description": "The volume's unique name. Changing this forces a new resource."
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        },
+        "version": {
+          "type": "string",
+          "description": "Volume filesystem version: \"v1\" or \"v2\" (default). Changing this forces a new resource."
+        },
+        "volumeId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "volumeId"
+      ],
+      "inputProperties": {
+        "environment": {
+          "type": "string",
+          "description": "The Modal environment the volume lives in. Changing this forces a new resource."
+        },
+        "name": {
+          "type": "string",
+          "description": "The volume's unique name. Changing this forces a new resource."
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        },
+        "version": {
+          "type": "string",
+          "description": "Volume filesystem version: \"v1\" or \"v2\" (default). Changing this forces a new resource."
+        }
+      },
+      "requiredInputs": [
+        "name"
+      ]
+    }
+  }
+}

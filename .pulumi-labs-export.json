@@ -1,0 +1,11 @@
+{
+  "archetype_repo": "pulumi-labs/pulumi-nvidia-aicr",
+  "archetype_sha": "1d262e3db83fd120e8454b9162e762eaf743de8d",
+  "display_name": "Modal",
+  "exclude_platforms": [],
+  "provider": "modal",
+  "skill_commit": "14c21e872431ac1c42f969dd979ee5c2d3cd3c34",
+  "source_repo": "pulumi/autoregistry",
+  "source_sha": "d9ab5ed01e89dcf9d470233f425b5272db42c1a5",
+  "source_version": "0.1.0"
+}

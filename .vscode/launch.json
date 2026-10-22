@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug modal provider",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/provider/cmd/pulumi-resource-modal",
+            "console": "integratedTerminal"
+        }
+    ]
+}

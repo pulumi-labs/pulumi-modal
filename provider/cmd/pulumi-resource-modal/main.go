@@ -23,8 +23,8 @@ import (
 
 	pgp "github.com/pulumi/pulumi-go-provider"
 
-	"github.com/pulumi/autoregistry/lib/providers/modal/provider/pkg/provider"
-	"github.com/pulumi/autoregistry/lib/providers/modal/provider/pkg/version"
+	"github.com/pulumi-labs/pulumi-modal/provider/pkg/provider"
+	"github.com/pulumi-labs/pulumi-modal/provider/pkg/version"
 )
 
 func main() {
