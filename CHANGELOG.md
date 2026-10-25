@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- No user-facing change: the monorepo source module moved to the provider root (`go.mod`/`go.sum` out of `provider/`); the published module path `github.com/pulumi-labs/pulumi-modal` is unchanged, and so are the provider binary, schema and SDKs. `CLAUDE.md` (from `skills/SKILLS.md`) now describes building from the repository root.
 - The `job-queue-modal-cloud-java` and `ml-training-modal-cloud-java` templates pass the secret `values` as an `Output<Map<String,String>>`, so they compile and the secret stays secret.
 - Added the Apache-2.0 "Copyright 2026, Pulumi Corporation." header to every Go source file under `provider/`
   (`make check_copyright` in the archetype requires it). Comment-only change, no behavior or schema change.

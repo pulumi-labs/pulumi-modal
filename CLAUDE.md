@@ -52,10 +52,10 @@ on every resource forces replacement.
 
 | Step | Command | When to run |
 |---|---|---|
-| 1 | `go mod tidy` (in `provider/`) | Fresh checkout, after adding new dependencies |
-| 2 | `go build ./...` (in `provider/`) | After code changes |
-| 3 | `go test ./...` (in `provider/`) | Always before committing |
-| 4 | `gofmt -l .` (in `provider/`, must be empty) | Always before committing |
+| 1 | `go mod tidy` (provider root) | Fresh checkout, after adding new dependencies |
+| 2 | `go build ./...` (provider root) | After code changes |
+| 3 | `go test ./...` (provider root) | Always before committing |
+| 4 | `gofmt -l .` (provider root, must be empty) | Always before committing |
 
 **Go toolchain**: `$HOME/go-toolchain-1.25/bin/go` (Go 1.25.8). Add it to `PATH`, not
 `$HOME/go-toolchain-1.25/go/bin/go` — that nested path does not exist on this
@@ -64,7 +64,6 @@ workstation image.
 **Build verification sequence**:
 
 ```bash
-cd provider
 export PATH=$HOME/go-toolchain-1.25/bin:$PATH
 go mod tidy
 go build ./...
@@ -98,9 +97,9 @@ lib/providers/modal/
 │   ├── modal-cloud-{typescript,python,go,csharp,java,yaml}/
 │   ├── ml-training-modal-cloud-{typescript,python,go,csharp,java,yaml}/
 │   └── job-queue-modal-cloud-{typescript,python,go,csharp,java,yaml}/
+├── go.mod
+├── go.sum
 ├── provider/
-│   ├── go.mod
-│   ├── go.sum
 │   ├── cmd/pulumi-resource-modal/main.go
 │   └── pkg/
 │       ├── provider/
