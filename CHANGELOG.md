@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-27
+
 ### Changed
 
 - No user-facing change: the monorepo source module moved to the provider root (`go.mod`/`go.sum` out of `provider/`); the published module path `github.com/pulumi-labs/pulumi-modal` is unchanged, and so are the provider binary, schema and SDKs. `CLAUDE.md` (from `skills/SKILLS.md`) now describes building from the repository root.
