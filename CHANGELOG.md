@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `google.golang.org/protobuf` v1.36.12 and `google.golang.org/grpc` v1.84.0 (indirect dependencies; only go.mod and go.sum change).
+- Security: `golang.org/x/net` v0.61.0 to v0.62.0 (indirect dependency; fixes GO-2026-6860 and GO-2026-6866; only go.mod and go.sum change).
+
 ## [0.1.0] - 2026-10-27
 
 ### Changed
