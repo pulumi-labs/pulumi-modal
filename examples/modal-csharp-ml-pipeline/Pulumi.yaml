@@ -1,3 +1,0 @@
-name: modal-csharp-ml-pipeline
-runtime: dotnet
-description: Provision Modal infrastructure for an ML training and inference pipeline with Pulumi (C#)
