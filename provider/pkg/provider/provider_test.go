@@ -180,18 +180,18 @@ func TestSecretArgs_RequiredFields(t *testing.T) {
 }
 
 // TestVolumeArgs_RequiredFields is a compile-time check that VolumeArgs has
-// the expected field shape: Name is required, Version/Environment/token
+// the expected field shape: Name is required, FsVersion/Environment/token
 // overrides are optional.
 func TestVolumeArgs_RequiredFields(t *testing.T) {
 	args := VolumeArgs{
-		Name:    "my-volume",
-		Version: strPtr("v2"),
+		Name:      "my-volume",
+		FsVersion: strPtr("v2"),
 	}
 	if args.Name != "my-volume" {
 		t.Errorf("Name = %q, want %q", args.Name, "my-volume")
 	}
-	if args.Version == nil || *args.Version != "v2" {
-		t.Error("Version should be set to v2")
+	if args.FsVersion == nil || *args.FsVersion != "v2" {
+		t.Error("FsVersion should be set to v2")
 	}
 }
 
@@ -297,13 +297,6 @@ func TestSecretDiff_ProviderLevelEnvironment_NoSpuriousReplace(t *testing.T) {
 func TestVolumeDiff_ProviderLevelEnvironment_NoSpuriousReplace(t *testing.T) {
 	s := newTestServer(t, "prod-env")
 
-	// Deliberately omit "version" from both sides: the infer framework's
-	// diff() helper strips any input property literally named "version"
-	// unconditionally (it assumes that key is the engine-reserved schema
-	// version, not a resource field), which would make Version look changed
-	// on every Diff call regardless of the environment fix under test here.
-	// That's a separate, pre-existing quirk unrelated to environment
-	// resolution, so it is excluded to keep this test isolated.
 	diff, err := s.Diff(pgp.DiffRequest{
 		Urn: modalUrn("Volume", "myvolume"),
 		State: property.NewMap(map[string]property.Value{
@@ -384,6 +377,11 @@ func TestCheckConfig_EnvFallbacks(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Blank every MODAL_* variable first so a developer's real
+			// credentials cannot leak into the expectations.
+			for _, v := range []string{"MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET", "MODAL_ENVIRONMENT", "MODAL_SERVER_ADDR"} {
+				t.Setenv(v, "")
+			}
 			t.Setenv(tt.envVar, "ak-from-env")
 
 			p, err := New()

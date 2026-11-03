@@ -29,8 +29,8 @@ func main() {
 
 		// Durable model checkpoint storage mounted via modal.Volume.from_name("checkpoint-storage").
 		checkpoints, err := modal.NewVolume(ctx, "checkpoint-storage", &modal.VolumeArgs{
-			Name:    pulumi.String("checkpoint-storage"),
-			Version: pulumi.String("v2"),
+			Name:      pulumi.String("checkpoint-storage"),
+			FsVersion: pulumi.String("v2"),
 		})
 		if err != nil {
 			return err

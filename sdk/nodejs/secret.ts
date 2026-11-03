@@ -5,7 +5,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
 /**
- * A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. See https://modal.com/docs/guide/secrets.
+ * A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes the values from your program. See https://modal.com/docs/guide/secrets.
  */
 export class Secret extends pulumi.CustomResource {
     /**
@@ -35,13 +35,20 @@ export class Secret extends pulumi.CustomResource {
     }
 
     /**
-     * The Modal environment the Secret lives in. Changing this forces a new resource.
+     * The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
      */
     declare public readonly environment: pulumi.Output<string | undefined>;
+    /**
+     * Sorted names of the keys currently stored in the Secret, as last read from Modal.
+     */
+    declare public /*out*/ readonly keys: pulumi.Output<string[] | undefined>;
     /**
      * The unique Secret name. Changing this forces a new resource.
      */
     declare public readonly name: pulumi.Output<string>;
+    /**
+     * The Modal-assigned identifier of the Secret.
+     */
     declare public /*out*/ readonly secretId: pulumi.Output<string>;
     /**
      * Modal API token ID. Overrides the provider-level tokenId.
@@ -52,7 +59,7 @@ export class Secret extends pulumi.CustomResource {
      */
     declare public readonly tokenSecret: pulumi.Output<string | undefined>;
     /**
-     * Key/value pairs exposed as environment variables to Functions that mount this Secret.
+     * Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
      */
     declare public readonly values: pulumi.Output<{[key: string]: string}>;
 
@@ -78,9 +85,11 @@ export class Secret extends pulumi.CustomResource {
             resourceInputs["tokenId"] = args?.tokenId ? pulumi.secret(args.tokenId) : undefined;
             resourceInputs["tokenSecret"] = args?.tokenSecret ? pulumi.secret(args.tokenSecret) : undefined;
             resourceInputs["values"] = args?.values ? pulumi.secret(args.values) : undefined;
+            resourceInputs["keys"] = undefined /*out*/;
             resourceInputs["secretId"] = undefined /*out*/;
         } else {
             resourceInputs["environment"] = undefined /*out*/;
+            resourceInputs["keys"] = undefined /*out*/;
             resourceInputs["name"] = undefined /*out*/;
             resourceInputs["secretId"] = undefined /*out*/;
             resourceInputs["tokenId"] = undefined /*out*/;
@@ -99,7 +108,7 @@ export class Secret extends pulumi.CustomResource {
  */
 export interface SecretArgs {
     /**
-     * The Modal environment the Secret lives in. Changing this forces a new resource.
+     * The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
      */
     environment?: pulumi.Input<string | undefined>;
     /**
@@ -115,7 +124,7 @@ export interface SecretArgs {
      */
     tokenSecret?: pulumi.Input<string | undefined>;
     /**
-     * Key/value pairs exposed as environment variables to Functions that mount this Secret.
+     * Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
      */
     values: pulumi.Input<{[key: string]: pulumi.Input<string>}>;
 }

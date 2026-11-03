@@ -19,7 +19,7 @@ api_keys = modal.Secret(
 model_cache = modal.Volume(
     "model-cache",
     name="model-cache",
-    version="v2",
+    fs_version="v2",
 )
 
 # Queues are durable FIFO/LIFO queues Modal Functions use to pass work to

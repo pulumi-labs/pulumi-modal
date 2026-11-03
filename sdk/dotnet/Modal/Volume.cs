@@ -17,13 +17,19 @@ namespace Pulumi.Labs.Modal
     public partial class Volume : global::Pulumi.CustomResource
     {
         /// <summary>
-        /// The Modal environment the volume lives in. Changing this forces a new resource.
+        /// The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
         /// </summary>
         [Output("environment")]
         public Output<string?> Environment { get; private set; } = null!;
 
         /// <summary>
-        /// The volume's unique name. Changing this forces a new resource.
+        /// Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+        /// </summary>
+        [Output("fsVersion")]
+        public Output<string?> FsVersion { get; private set; } = null!;
+
+        /// <summary>
+        /// The volume's unique name within its environment. Changing this renames the volume in place.
         /// </summary>
         [Output("name")]
         public Output<string> Name { get; private set; } = null!;
@@ -39,12 +45,6 @@ namespace Pulumi.Labs.Modal
         /// </summary>
         [Output("tokenSecret")]
         public Output<string?> TokenSecret { get; private set; } = null!;
-
-        /// <summary>
-        /// Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-        /// </summary>
-        [Output("version")]
-        public Output<string?> Version { get; private set; } = null!;
 
         [Output("volumeId")]
         public Output<string> VolumeId { get; private set; } = null!;
@@ -101,13 +101,19 @@ namespace Pulumi.Labs.Modal
     public sealed class VolumeArgs : global::Pulumi.ResourceArgs
     {
         /// <summary>
-        /// The Modal environment the volume lives in. Changing this forces a new resource.
+        /// The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
         /// </summary>
         [Input("environment")]
         public Input<string>? Environment { get; set; }
 
         /// <summary>
-        /// The volume's unique name. Changing this forces a new resource.
+        /// Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+        /// </summary>
+        [Input("fsVersion")]
+        public Input<string>? FsVersion { get; set; }
+
+        /// <summary>
+        /// The volume's unique name within its environment. Changing this renames the volume in place.
         /// </summary>
         [Input("name", required: true)]
         public Input<string> Name { get; set; } = null!;
@@ -143,12 +149,6 @@ namespace Pulumi.Labs.Modal
                 _tokenSecret = Output.Tuple<Input<string>?, int>(value, emptySecret).Apply(t => t.Item1);
             }
         }
-
-        /// <summary>
-        /// Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-        /// </summary>
-        [Input("version")]
-        public Input<string>? Version { get; set; }
 
         public VolumeArgs()
         {

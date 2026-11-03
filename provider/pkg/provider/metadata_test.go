@@ -161,3 +161,31 @@ func TestMetadata_LanguageMapCarriesPulumiLabsNames(t *testing.T) {
 		t.Errorf("go language settings %s missing respectSchemaVersion", goLang)
 	}
 }
+
+// TestSchema_VolumeFsVersionNotVersion guards the Volume filesystem-version
+// property name. pulumi-go-provider drops any input named "version" before
+// Diff runs (pulumi/pulumi-go-provider#704), so reintroducing it would bring
+// back the bug where every update replaced the volume.
+func TestSchema_VolumeFsVersionNotVersion(t *testing.T) {
+	prov, err := New()
+	if err != nil {
+		t.Fatalf("New() returned error: %v", err)
+	}
+	spec, err := pgp.GetSchema(context.Background(), "modal", "0.1.0", prov)
+	if err != nil {
+		t.Fatalf("GetSchema failed: %v", err)
+	}
+	volume, ok := spec.Resources["modal:index:Volume"]
+	if !ok {
+		t.Fatal("modal:index:Volume is missing from the schema")
+	}
+	if _, ok := volume.InputProperties["fsVersion"]; !ok {
+		t.Error("Volume must declare an fsVersion input")
+	}
+	if _, ok := volume.InputProperties["version"]; ok {
+		t.Error("Volume must not declare an input named version: the framework drops it before Diff")
+	}
+	if _, ok := volume.Properties["fsVersion"]; !ok {
+		t.Error("Volume must report fsVersion as an output")
+	}
+}

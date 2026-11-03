@@ -35,11 +35,15 @@ export class Volume extends pulumi.CustomResource {
     }
 
     /**
-     * The Modal environment the volume lives in. Changing this forces a new resource.
+     * The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
      */
     declare public readonly environment: pulumi.Output<string | undefined>;
     /**
-     * The volume's unique name. Changing this forces a new resource.
+     * Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+     */
+    declare public readonly fsVersion: pulumi.Output<string | undefined>;
+    /**
+     * The volume's unique name within its environment. Changing this renames the volume in place.
      */
     declare public readonly name: pulumi.Output<string>;
     /**
@@ -50,10 +54,6 @@ export class Volume extends pulumi.CustomResource {
      * Modal API token secret. Overrides the provider-level tokenSecret.
      */
     declare public readonly tokenSecret: pulumi.Output<string | undefined>;
-    /**
-     * Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-     */
-    declare public readonly version: pulumi.Output<string | undefined>;
     declare public /*out*/ readonly volumeId: pulumi.Output<string>;
 
     /**
@@ -71,17 +71,17 @@ export class Volume extends pulumi.CustomResource {
                 throw new Error("Missing required property 'name'");
             }
             resourceInputs["environment"] = args?.environment;
+            resourceInputs["fsVersion"] = args?.fsVersion;
             resourceInputs["name"] = args?.name;
             resourceInputs["tokenId"] = args?.tokenId ? pulumi.secret(args.tokenId) : undefined;
             resourceInputs["tokenSecret"] = args?.tokenSecret ? pulumi.secret(args.tokenSecret) : undefined;
-            resourceInputs["version"] = args?.version;
             resourceInputs["volumeId"] = undefined /*out*/;
         } else {
             resourceInputs["environment"] = undefined /*out*/;
+            resourceInputs["fsVersion"] = undefined /*out*/;
             resourceInputs["name"] = undefined /*out*/;
             resourceInputs["tokenId"] = undefined /*out*/;
             resourceInputs["tokenSecret"] = undefined /*out*/;
-            resourceInputs["version"] = undefined /*out*/;
             resourceInputs["volumeId"] = undefined /*out*/;
         }
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
@@ -96,11 +96,15 @@ export class Volume extends pulumi.CustomResource {
  */
 export interface VolumeArgs {
     /**
-     * The Modal environment the volume lives in. Changing this forces a new resource.
+     * The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
      */
     environment?: pulumi.Input<string | undefined>;
     /**
-     * The volume's unique name. Changing this forces a new resource.
+     * Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+     */
+    fsVersion?: pulumi.Input<string | undefined>;
+    /**
+     * The volume's unique name within its environment. Changing this renames the volume in place.
      */
     name: pulumi.Input<string>;
     /**
@@ -111,8 +115,4 @@ export interface VolumeArgs {
      * Modal API token secret. Overrides the provider-level tokenSecret.
      */
     tokenSecret?: pulumi.Input<string | undefined>;
-    /**
-     * Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-     */
-    version?: pulumi.Input<string | undefined>;
 }

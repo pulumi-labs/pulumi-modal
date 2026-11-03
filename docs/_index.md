@@ -1,6 +1,6 @@
 ---
 title: Modal Provider
-meta_desc: Manage Modal serverless compute resources (Secrets, Volumes, and Queues) with Pulumi.
+meta_desc: Manage Modal serverless compute resources (Secrets, Volumes, Queues, Dicts, Environments, Apps and Images) with Pulumi.
 layout: package
 ---
 

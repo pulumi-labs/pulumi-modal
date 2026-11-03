@@ -17,12 +17,12 @@ package provider
 import (
 	"context"
 	"fmt"
+	"slices"
+	"sort"
 
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
 	pgp "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // ---------------------------------------------------------------------------
@@ -64,25 +64,65 @@ type SecretState struct {
 	// SecretId is the Modal-assigned unique identifier for the secret
 	// (distinct from its human-readable Name).
 	SecretId string `pulumi:"secretId"`
+
+	// Keys are the names of the keys currently stored in the Secret, sorted.
+	// Modal never returns the values, so keys are what refresh can compare.
+	Keys []string `pulumi:"keys,optional"`
 }
 
 func (r *Secret) Annotate(a infer.Annotator) {
-	a.Describe(&r, "A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. See https://modal.com/docs/guide/secrets.")
+	a.Describe(&r, "A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. "+
+		"Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes "+
+		"the values from your program. See https://modal.com/docs/guide/secrets.")
 }
 
 func (a *SecretArgs) Annotate(ann infer.Annotator) {
 	ann.Describe(&a.TokenID, "Modal API token ID. Overrides the provider-level tokenId.")
 	ann.Describe(&a.TokenSecret, "Modal API token secret. Overrides the provider-level tokenSecret.")
 	ann.Describe(&a.Name, "The unique Secret name. Changing this forces a new resource.")
-	ann.Describe(&a.Environment, "The Modal environment the Secret lives in. Changing this forces a new resource.")
-	ann.Describe(&a.Values, "Key/value pairs exposed as environment variables to Functions that mount this Secret.")
+	ann.Describe(&a.Environment, "The Modal environment the Secret lives in. Changing this forces a new resource. "+
+		"When unset, the provider-level environment or the account's default environment is used.")
+	ann.Describe(&a.Values, "Key/value pairs exposed as environment variables to Functions that mount this Secret. "+
+		"Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).")
+}
+
+func (s *SecretState) Annotate(ann infer.Annotator) {
+	ann.Describe(&s.SecretId, "The Modal-assigned identifier of the Secret.")
+	ann.Describe(&s.Keys, "Sorted names of the keys currently stored in the Secret, as last read from Modal.")
 }
 
 var _ infer.CustomResource[SecretArgs, SecretState] = (*Secret)(nil)
 var _ infer.CustomDiff[SecretArgs, SecretState] = (*Secret)(nil)
+var _ infer.CustomCheck[SecretArgs] = (*Secret)(nil)
+var _ infer.CustomRead[SecretArgs, SecretState] = (*Secret)(nil)
+var _ infer.CustomUpdate[SecretArgs, SecretState] = (*Secret)(nil)
+var _ infer.CustomDelete[SecretState] = (*Secret)(nil)
+
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// Check rejects invalid key names at preview time instead of at apply time.
+func (r *Secret) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckResponse[SecretArgs], error) {
+	args, failures, err := infer.DefaultCheck[SecretArgs](ctx, req.NewInputs)
+	if err != nil {
+		return infer.CheckResponse[SecretArgs]{}, err
+	}
+	for _, k := range sortedKeys(args.Values) {
+		if verr := validateEnvVarName(k); verr != nil {
+			failures = append(failures, pgp.CheckFailure{Property: "values", Reason: verr.Error()})
+		}
+	}
+	return infer.CheckResponse[SecretArgs]{Inputs: args, Failures: failures}, nil
+}
 
 // Diff forces replacement when the name or environment changes; value changes
-// are handled in place via SecretUpdate.
+// are handled in place via Update.
 func (r *Secret) Diff(ctx context.Context, req infer.DiffRequest[SecretArgs, SecretState]) (infer.DiffResponse, error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	resp := infer.DiffResponse{DetailedDiff: map[string]pgp.PropertyDiff{}}
@@ -90,7 +130,7 @@ func (r *Secret) Diff(ctx context.Context, req infer.DiffRequest[SecretArgs, Sec
 		resp.DetailedDiff["name"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
-	if resolveStr(req.Inputs.Environment, cfg.Environment) != resolveStr(req.State.Environment, cfg.Environment) {
+	if environmentChanged(req.Inputs.Environment, req.State.Environment, cfg) {
 		resp.DetailedDiff["environment"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
@@ -103,6 +143,11 @@ func (r *Secret) Diff(ctx context.Context, req infer.DiffRequest[SecretArgs, Sec
 			}
 		}
 	}
+	// Drift: keys added or removed outside Pulumi show up in the refreshed keys.
+	if !valuesChanged && req.State.Keys != nil &&
+		!slices.Equal(slices.Clone(req.State.Keys), sortedKeys(req.Inputs.Values)) {
+		valuesChanged = true
+	}
 	if valuesChanged {
 		resp.DetailedDiff["values"] = pgp.PropertyDiff{Kind: pgp.Update}
 		resp.HasChanges = true
@@ -112,8 +157,13 @@ func (r *Secret) Diff(ctx context.Context, req infer.DiffRequest[SecretArgs, Sec
 
 func (r *Secret) Create(ctx context.Context, req infer.CreateRequest[SecretArgs]) (infer.CreateResponse[SecretState], error) {
 	args := req.Inputs
+	cfg := infer.GetConfig[ProviderConfig](ctx)
 	if req.DryRun {
-		return infer.CreateResponse[SecretState]{ID: args.Name, Output: SecretState{SecretArgs: args}}, nil
+		state := SecretState{SecretArgs: args, Keys: sortedKeys(args.Values)}
+		if env := resolveStr(args.Environment, cfg.Environment); env != "" {
+			state.Environment = &env
+		}
+		return infer.CreateResponse[SecretState]{ID: args.Name, Output: state}, nil
 	}
 	for k := range args.Values {
 		if err := validateEnvVarName(k); err != nil {
@@ -121,17 +171,15 @@ func (r *Secret) Create(ctx context.Context, req infer.CreateRequest[SecretArgs]
 		}
 	}
 
-	cfg := infer.GetConfig[ProviderConfig](ctx)
 	client, err := clientFor(cfg, args.TokenID, args.TokenSecret)
 	if err != nil {
 		return infer.CreateResponse[SecretState]{}, fmt.Errorf("modal: %w", err)
 	}
 	defer client.Close()
 
-	environment := resolveStr(args.Environment, cfg.Environment)
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-
+	environment := effectiveEnvironment(rpcCtx, client, args.Environment, cfg)
 	resp, err := client.stub.SecretGetOrCreate(rpcCtx, pb.SecretGetOrCreateRequest_builder{
 		DeploymentName:     args.Name,
 		EnvironmentName:    environment,
@@ -142,52 +190,73 @@ func (r *Secret) Create(ctx context.Context, req infer.CreateRequest[SecretArgs]
 		return infer.CreateResponse[SecretState]{}, fmt.Errorf("modal: create secret %q: %w", args.Name, err)
 	}
 
-	return infer.CreateResponse[SecretState]{
-		ID:     resp.GetSecretId(),
-		Output: SecretState{SecretArgs: args, SecretId: resp.GetSecretId()},
-	}, nil
+	state := SecretState{SecretArgs: args, SecretId: resp.GetSecretId(), Keys: sortedKeys(args.Values)}
+	if environment != "" {
+		state.Environment = &environment
+	}
+	return infer.CreateResponse[SecretState]{ID: resp.GetSecretId(), Output: state}, nil
 }
 
+// Read refreshes the secret by ID: name, environment and key names. Values
+// cannot be read back from Modal, so they stay as recorded in state.
 func (r *Secret) Read(ctx context.Context, req infer.ReadRequest[SecretArgs, SecretState]) (infer.ReadResponse[SecretArgs, SecretState], error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
+	empty := infer.ReadResponse[SecretArgs, SecretState]{}
 	client, err := clientFor(cfg, req.State.TokenID, req.State.TokenSecret)
 	if err != nil {
-		return infer.ReadResponse[SecretArgs, SecretState]{}, fmt.Errorf("modal: %w", err)
+		return empty, fmt.Errorf("modal: %w", err)
 	}
 	defer client.Close()
 
-	environment := resolveStr(req.State.Environment, cfg.Environment)
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-
-	resp, err := client.stub.SecretGetOrCreate(rpcCtx, pb.SecretGetOrCreateRequest_builder{
-		DeploymentName:     req.State.Name,
-		EnvironmentName:    environment,
-		ObjectCreationType: pb.ObjectCreationType_OBJECT_CREATION_TYPE_UNSPECIFIED,
-	}.Build())
-	if status.Code(err) == codes.NotFound {
-		// Deleted externally — signal removal.
-		return infer.ReadResponse[SecretArgs, SecretState]{}, nil
+	resp, err := client.stub.SecretGetInfo(rpcCtx, pb.SecretGetInfoRequest_builder{SecretId: req.ID}.Build())
+	if isNotFound(err) {
+		// Deleted outside Pulumi: signal removal.
+		return empty, nil
 	}
 	if err != nil {
-		return infer.ReadResponse[SecretArgs, SecretState]{}, fmt.Errorf("modal: read secret %q: %w", req.State.Name, err)
+		return empty, fmt.Errorf("modal: read secret %q: %w", req.ID, err)
+	}
+	meta := resp.GetMetadata()
+
+	importing := req.State.Name == "" && req.Inputs.Name == ""
+	state := req.State
+	state.SecretId = req.ID
+	state.Name = meta.GetName()
+	keys := slices.Clone(meta.GetKeys())
+	sort.Strings(keys)
+	state.Keys = keys
+	environment := meta.GetEnvironmentName()
+	if environment == "" {
+		environment = derefStr(state.Environment)
+	}
+	if environment != "" {
+		state.Environment = &environment
 	}
 
-	state := req.State
-	state.SecretId = resp.GetSecretId()
-
-	return infer.ReadResponse[SecretArgs, SecretState]{
-		ID:     resp.GetSecretId(),
-		Inputs: req.Inputs,
-		State:  state,
-	}, nil
+	inputs := req.Inputs
+	inputs.TokenID, inputs.TokenSecret = state.TokenID, state.TokenSecret
+	inputs.Name = meta.GetName()
+	if importing {
+		// Values are required properties but Modal never returns them: import
+		// them as empty so the next update writes the program's values.
+		inputs.Values = map[string]string{}
+		state.Values = map[string]string{}
+		if environment != "" {
+			inputs.Environment = &environment
+		}
+	}
+	return infer.ReadResponse[SecretArgs, SecretState]{ID: req.ID, Inputs: inputs, State: state}, nil
 }
 
 func (r *Secret) Update(ctx context.Context, req infer.UpdateRequest[SecretArgs, SecretState]) (infer.UpdateResponse[SecretState], error) {
 	args := req.Inputs
+	state := req.State
+	state.SecretArgs = args
+	state.Environment = req.State.Environment
+	state.Keys = sortedKeys(args.Values)
 	if req.DryRun {
-		state := req.State
-		state.SecretArgs = args
 		return infer.UpdateResponse[SecretState]{Output: state}, nil
 	}
 	for k := range args.Values {
@@ -204,15 +273,28 @@ func (r *Secret) Update(ctx context.Context, req infer.UpdateRequest[SecretArgs,
 	defer client.Close()
 
 	var updates []*pb.SecretUpdateRequest_Update
-	for k, v := range args.Values {
-		val := v
+	for _, k := range sortedKeys(args.Values) {
+		val := args.Values[k]
 		updates = append(updates, pb.SecretUpdateRequest_Update_builder{Key: k, Value: &val}.Build())
 	}
-	// Remove keys present in state but no longer in inputs.
+	// Remove keys that exist (per state values or the last refresh) but are no
+	// longer in the program.
+	stale := map[string]bool{}
 	for k := range req.State.Values {
+		stale[k] = true
+	}
+	for _, k := range req.State.Keys {
+		stale[k] = true
+	}
+	var staleKeys []string
+	for k := range stale {
 		if _, ok := args.Values[k]; !ok {
-			updates = append(updates, pb.SecretUpdateRequest_Update_builder{Key: k, Value: nil}.Build())
+			staleKeys = append(staleKeys, k)
 		}
+	}
+	sort.Strings(staleKeys)
+	for _, k := range staleKeys {
+		updates = append(updates, pb.SecretUpdateRequest_Update_builder{Key: k, Value: nil}.Build())
 	}
 
 	rpcCtx, cancel := callCtx()
@@ -224,9 +306,6 @@ func (r *Secret) Update(ctx context.Context, req infer.UpdateRequest[SecretArgs,
 	if err != nil {
 		return infer.UpdateResponse[SecretState]{}, fmt.Errorf("modal: update secret %q: %w", req.State.Name, err)
 	}
-
-	state := req.State
-	state.SecretArgs = args
 	return infer.UpdateResponse[SecretState]{Output: state}, nil
 }
 
@@ -241,7 +320,7 @@ func (r *Secret) Delete(ctx context.Context, req infer.DeleteRequest[SecretState
 	rpcCtx, cancel := callCtx()
 	defer cancel()
 	_, err = client.stub.SecretDelete(rpcCtx, pb.SecretDeleteRequest_builder{SecretId: req.ID}.Build())
-	if err != nil && status.Code(err) != codes.NotFound {
+	if err != nil && !isNotFound(err) {
 		return infer.DeleteResponse{}, fmt.Errorf("modal: delete secret %q: %w", req.State.Name, err)
 	}
 	return infer.DeleteResponse{}, nil

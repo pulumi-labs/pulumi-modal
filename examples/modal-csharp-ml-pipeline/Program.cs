@@ -27,7 +27,7 @@ return await Deployment.RunAsync(() =>
     var checkpoints = new Volume("checkpoint-storage", new VolumeArgs
     {
         Name = "checkpoint-storage",
-        Version = "v2",
+        FsVersion = "v2",
     });
 
     // Dispatch queue for training job requests, consumed via modal.Queue.from_name("training-jobs").

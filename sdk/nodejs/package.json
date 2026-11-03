@@ -1,7 +1,7 @@
 {
     "name": "@pulumi-labs/modal",
     "version": "0.0.1-dev",
-    "description": "Experimental: manage Modal (modal.com) serverless compute resources \u2014 Secrets, Volumes, and Queues \u2014 as infrastructure with Pulumi.",
+    "description": "Experimental: manage Modal (modal.com) serverless compute resources \u2014 Secrets, Volumes, Queues, Dicts, Environments, Apps and Images \u2014 as infrastructure with Pulumi.",
     "keywords": [
         "pulumi",
         "modal",

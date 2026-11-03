@@ -17,14 +17,14 @@ public final class VolumeArgs extends com.pulumi.resources.ResourceArgs {
     public static final VolumeArgs Empty = new VolumeArgs();
 
     /**
-     * The Modal environment the volume lives in. Changing this forces a new resource.
+     * The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume&#39;s data. When unset, the provider-level environment or the account&#39;s default environment is used.
      * 
      */
     @Import(name="environment")
     private @Nullable Output<String> environment;
 
     /**
-     * @return The Modal environment the volume lives in. Changing this forces a new resource.
+     * @return The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume&#39;s data. When unset, the provider-level environment or the account&#39;s default environment is used.
      * 
      */
     public Optional<Output<String>> environment() {
@@ -32,14 +32,29 @@ public final class VolumeArgs extends com.pulumi.resources.ResourceArgs {
     }
 
     /**
-     * The volume&#39;s unique name. Changing this forces a new resource.
+     * Volume filesystem version: &#34;v1&#34; or &#34;v2&#34;. Defaults to &#34;v2&#34; (Modal&#39;s recommended backend; note that Modal&#39;s own SDKs default to &#34;v1&#34;). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume&#39;s data: the old volume is deleted before the new one is created because both share a name.
+     * 
+     */
+    @Import(name="fsVersion")
+    private @Nullable Output<String> fsVersion;
+
+    /**
+     * @return Volume filesystem version: &#34;v1&#34; or &#34;v2&#34;. Defaults to &#34;v2&#34; (Modal&#39;s recommended backend; note that Modal&#39;s own SDKs default to &#34;v1&#34;). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume&#39;s data: the old volume is deleted before the new one is created because both share a name.
+     * 
+     */
+    public Optional<Output<String>> fsVersion() {
+        return Optional.ofNullable(this.fsVersion);
+    }
+
+    /**
+     * The volume&#39;s unique name within its environment. Changing this renames the volume in place.
      * 
      */
     @Import(name="name", required=true)
     private Output<String> name;
 
     /**
-     * @return The volume&#39;s unique name. Changing this forces a new resource.
+     * @return The volume&#39;s unique name within its environment. Changing this renames the volume in place.
      * 
      */
     public Output<String> name() {
@@ -76,29 +91,14 @@ public final class VolumeArgs extends com.pulumi.resources.ResourceArgs {
         return Optional.ofNullable(this.tokenSecret);
     }
 
-    /**
-     * Volume filesystem version: &#34;v1&#34; or &#34;v2&#34; (default). Changing this forces a new resource.
-     * 
-     */
-    @Import(name="version")
-    private @Nullable Output<String> version;
-
-    /**
-     * @return Volume filesystem version: &#34;v1&#34; or &#34;v2&#34; (default). Changing this forces a new resource.
-     * 
-     */
-    public Optional<Output<String>> version() {
-        return Optional.ofNullable(this.version);
-    }
-
     private VolumeArgs() {}
 
     private VolumeArgs(VolumeArgs $) {
         this.environment = $.environment;
+        this.fsVersion = $.fsVersion;
         this.name = $.name;
         this.tokenId = $.tokenId;
         this.tokenSecret = $.tokenSecret;
-        this.version = $.version;
     }
 
     public static Builder builder() {
@@ -120,7 +120,7 @@ public final class VolumeArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param environment The Modal environment the volume lives in. Changing this forces a new resource.
+         * @param environment The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume&#39;s data. When unset, the provider-level environment or the account&#39;s default environment is used.
          * 
          * @return builder
          * 
@@ -131,7 +131,7 @@ public final class VolumeArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param environment The Modal environment the volume lives in. Changing this forces a new resource.
+         * @param environment The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume&#39;s data. When unset, the provider-level environment or the account&#39;s default environment is used.
          * 
          * @return builder
          * 
@@ -141,7 +141,28 @@ public final class VolumeArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param name The volume&#39;s unique name. Changing this forces a new resource.
+         * @param fsVersion Volume filesystem version: &#34;v1&#34; or &#34;v2&#34;. Defaults to &#34;v2&#34; (Modal&#39;s recommended backend; note that Modal&#39;s own SDKs default to &#34;v1&#34;). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume&#39;s data: the old volume is deleted before the new one is created because both share a name.
+         * 
+         * @return builder
+         * 
+         */
+        public Builder fsVersion(@Nullable Output<String> fsVersion) {
+            $.fsVersion = fsVersion;
+            return this;
+        }
+
+        /**
+         * @param fsVersion Volume filesystem version: &#34;v1&#34; or &#34;v2&#34;. Defaults to &#34;v2&#34; (Modal&#39;s recommended backend; note that Modal&#39;s own SDKs default to &#34;v1&#34;). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume&#39;s data: the old volume is deleted before the new one is created because both share a name.
+         * 
+         * @return builder
+         * 
+         */
+        public Builder fsVersion(String fsVersion) {
+            return fsVersion(Output.of(fsVersion));
+        }
+
+        /**
+         * @param name The volume&#39;s unique name within its environment. Changing this renames the volume in place.
          * 
          * @return builder
          * 
@@ -152,7 +173,7 @@ public final class VolumeArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param name The volume&#39;s unique name. Changing this forces a new resource.
+         * @param name The volume&#39;s unique name within its environment. Changing this renames the volume in place.
          * 
          * @return builder
          * 
@@ -201,27 +222,6 @@ public final class VolumeArgs extends com.pulumi.resources.ResourceArgs {
          */
         public Builder tokenSecret(String tokenSecret) {
             return tokenSecret(Output.of(tokenSecret));
-        }
-
-        /**
-         * @param version Volume filesystem version: &#34;v1&#34; or &#34;v2&#34; (default). Changing this forces a new resource.
-         * 
-         * @return builder
-         * 
-         */
-        public Builder version(@Nullable Output<String> version) {
-            $.version = version;
-            return this;
-        }
-
-        /**
-         * @param version Volume filesystem version: &#34;v1&#34; or &#34;v2&#34; (default). Changing this forces a new resource.
-         * 
-         * @return builder
-         * 
-         */
-        public Builder version(String version) {
-            return version(Output.of(version));
         }
 
         public VolumeArgs build() {

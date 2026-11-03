@@ -43,7 +43,7 @@ public class App {
             var volume = new Volume("volume",
                 VolumeArgs.builder()
                     .name(checkpointVolumeName)
-                    .version("v2")
+                    .fsVersion("v2")
                     .build());
 
             // Queue a training-job dispatcher enqueues onto; worker

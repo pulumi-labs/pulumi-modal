@@ -21,8 +21,30 @@ This is the only IaC provider for Modal, built natively on `pulumi-go-provider/i
 | Resource | Description |
 |---|---|
 | `modal:index:Secret` | A durable, named collection of key/value pairs mounted as environment variables into Modal Functions. Values are updatable in place. |
-| `modal:index:Volume` | A durable, named distributed filesystem volume Modal Functions can mount for persistent storage. Name and environment changes force-replace. |
+| `modal:index:Volume` | A durable, named distributed filesystem volume Modal Functions can mount for persistent storage. Name changes rename in place; environment and `fsVersion` changes force-replace (and delete the volume's data). |
 | `modal:index:Queue` | A durable, named FIFO/LIFO queue for passing data between Modal Functions and external callers. Name and environment changes force-replace. |
+| `modal:index:Dict` | A durable, named distributed key/value store shared between Modal Functions. Name and environment changes force-replace. |
+| `modal:index:Environment` | A workspace-level Modal environment (sub-namespace). Name, web suffix and concurrency limits update in place. |
+| `modal:index:App` | A named, empty Modal App (deploying code is out of scope). Tags update in place; name and environment changes force-replace. |
+| `modal:index:Image` | A Modal Image built from a registry base image plus Dockerfile commands, optionally published under a stable name. Build input changes replace it; the published name updates in place. |
+
+### Lookup functions
+
+Existing objects, including ones created outside Pulumi, can be referenced without managing them. Lookups never create anything and fail with an error naming the object and environment when it does not exist.
+
+| Function | Looks up |
+|---|---|
+| `modal:index:getSecret` | A Secret's ID and key names (never values). |
+| `modal:index:getVolume` | A Volume's ID and filesystem version. |
+| `modal:index:getQueue` | A Queue's ID. |
+| `modal:index:getDict` | A Dict's ID. |
+| `modal:index:getEnvironment` | An environment's ID, web suffix, default flag and limits. |
+| `modal:index:getApp` | An App's ID and tags, including Apps created by `modal deploy`. |
+| `modal:index:getImage` | A published Image's ID by `name[:tag]`. |
+| `modal:index:getFunction` | A deployed Function's ID and web URL. |
+| `modal:index:getCls` | A deployed Cls's ID and method names. |
+| `modal:index:getProxy` | A Proxy's ID, region and static IPs. |
+| `modal:index:getWorkspace` | The workspace the token belongs to, its default environment and image builder version. |
 
 ## Installation
 
@@ -99,6 +121,45 @@ pulumi config set modal:environment production
 
 or via `MODAL_ENVIRONMENT`, or override per-resource with the `environment` input.
 When omitted entirely, Modal uses the account's default environment.
+
+The environment an object was created in is recorded in state (including when you
+relied on the account default). Pointing the stack at a different environment later
+therefore replaces the resource instead of silently looking in the wrong place.
+
+### Volume filesystem version
+
+`Volume.fsVersion` selects the filesystem backend, `"v1"` or `"v2"`. When omitted the
+provider creates a `v2` volume (Modal's recommended backend). Note that Modal's own SDKs
+default to `v1`, so set `fsVersion: "v1"` explicitly if you need that. The effective
+version is always reported as an output. Changing it replaces the volume and deletes its
+data. In v0.1.0 this property was called `version`; it was renamed because
+pulumi-go-provider silently drops any input named `version`
+([pulumi-go-provider#704](https://github.com/pulumi/pulumi-go-provider/issues/704)),
+which made every update replace the volume. State written by v0.1.0 migrates
+automatically; update your programs to use `fsVersion` (`fs_version` in Python).
+
+### Importing existing resources
+
+Secrets, Volumes, Queues, Dicts, Environments, Apps and Images import by their Modal ID alone (`st-...`, `vo-...`, `qu-...`, `di-...`, `en-...`, `ap-...`, `im-...`):
+
+```bash
+pulumi import modal:index:Volume model-cache vo-AbCdEf123
+```
+
+Modal does not report a Volume's or Queue's environment, so the import looks in the
+`modal:environment` / `MODAL_ENVIRONMENT` environment (or the account default) and fails
+with a clear message if the ID does not live there (Dicts behave like Volumes and Queues; Apps and Secrets report their environment). An imported Image has no build inputs, because Modal does not store them: it adopts whatever the program declares. Modal never returns Secret values:
+an imported Secret records its name, environment and key names, and the next
+`pulumi up` writes the values from your program.
+
+### Coverage
+
+The provider covers the Modal objects that are infrastructure: Secrets, Volumes, Queues, Dicts,
+Environments, Apps and Images, plus lookups for those and for deployed Functions, Classes, Proxies
+and the workspace. It does not deploy code (`modal deploy` packages Python code, which Pulumi
+cannot do) and has no Sandbox resource yet (Sandboxes expire after at most 24 hours, so they would
+drift). [`research/coverage/modal.md`](../../../research/coverage/modal.md) classifies every Modal SDK service and
+RPC group, with the reason for each decision; service users, proxy auth tokens and workspace settings are planned.
 
 ## Example
 

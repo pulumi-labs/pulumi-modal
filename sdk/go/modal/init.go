@@ -21,6 +21,14 @@ func (m *module) Version() semver.Version {
 
 func (m *module) Construct(ctx *pulumi.Context, name, typ, urn string) (r pulumi.Resource, err error) {
 	switch typ {
+	case "modal:index:App":
+		r = &App{}
+	case "modal:index:Dict":
+		r = &Dict{}
+	case "modal:index:Environment":
+		r = &Environment{}
+	case "modal:index:Image":
+		r = &Image{}
 	case "modal:index:Queue":
 		r = &Queue{}
 	case "modal:index:Secret":

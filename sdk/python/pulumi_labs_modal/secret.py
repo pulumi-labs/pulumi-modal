@@ -28,8 +28,8 @@ class SecretArgs:
         The set of arguments for constructing a Secret resource.
 
         :param pulumi.Input[_builtins.str] name: The unique Secret name. Changing this forces a new resource.
-        :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] values: Key/value pairs exposed as environment variables to Functions that mount this Secret.
-        :param pulumi.Input[_builtins.str] environment: The Modal environment the Secret lives in. Changing this forces a new resource.
+        :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] values: Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
+        :param pulumi.Input[_builtins.str] environment: The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
         :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Overrides the provider-level tokenId.
         :param pulumi.Input[_builtins.str] token_secret: Modal API token secret. Overrides the provider-level tokenSecret.
         """
@@ -58,7 +58,7 @@ class SecretArgs:
     @pulumi.getter
     def values(self) -> pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]:
         """
-        Key/value pairs exposed as environment variables to Functions that mount this Secret.
+        Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
         """
         return pulumi.get(self, "values")
 
@@ -70,7 +70,7 @@ class SecretArgs:
     @pulumi.getter
     def environment(self) -> Optional[pulumi.Input[_builtins.str]]:
         """
-        The Modal environment the Secret lives in. Changing this forces a new resource.
+        The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
         """
         return pulumi.get(self, "environment")
 
@@ -116,16 +116,16 @@ class Secret(pulumi.CustomResource):
                  values: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
                  __props__=None):
         """
-        A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. See https://modal.com/docs/guide/secrets.
+        A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes the values from your program. See https://modal.com/docs/guide/secrets.
 
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[_builtins.str] environment: The Modal environment the Secret lives in. Changing this forces a new resource.
+        :param pulumi.Input[_builtins.str] environment: The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
         :param pulumi.Input[_builtins.str] name: The unique Secret name. Changing this forces a new resource.
         :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Overrides the provider-level tokenId.
         :param pulumi.Input[_builtins.str] token_secret: Modal API token secret. Overrides the provider-level tokenSecret.
-        :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] values: Key/value pairs exposed as environment variables to Functions that mount this Secret.
+        :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] values: Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
         """
         ...
     @overload
@@ -134,7 +134,7 @@ class Secret(pulumi.CustomResource):
                  args: SecretArgs,
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
-        A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. See https://modal.com/docs/guide/secrets.
+        A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes the values from your program. See https://modal.com/docs/guide/secrets.
 
 
         :param str resource_name: The name of the resource.
@@ -175,6 +175,7 @@ class Secret(pulumi.CustomResource):
             if values is None and not opts.urn:
                 raise TypeError("Missing required property 'values'")
             __props__.__dict__["values"] = None if values is None else pulumi.Output.secret(values)
+            __props__.__dict__["keys"] = None
             __props__.__dict__["secret_id"] = None
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["tokenId", "tokenSecret", "values"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
@@ -201,6 +202,7 @@ class Secret(pulumi.CustomResource):
         __props__ = SecretArgs.__new__(SecretArgs)
 
         __props__.__dict__["environment"] = None
+        __props__.__dict__["keys"] = None
         __props__.__dict__["name"] = None
         __props__.__dict__["secret_id"] = None
         __props__.__dict__["token_id"] = None
@@ -212,9 +214,17 @@ class Secret(pulumi.CustomResource):
     @pulumi.getter
     def environment(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        The Modal environment the Secret lives in. Changing this forces a new resource.
+        The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
         """
         return pulumi.get(self, "environment")
+
+    @_builtins.property
+    @pulumi.getter
+    def keys(self) -> pulumi.Output[Optional[Sequence[_builtins.str]]]:
+        """
+        Sorted names of the keys currently stored in the Secret, as last read from Modal.
+        """
+        return pulumi.get(self, "keys")
 
     @_builtins.property
     @pulumi.getter
@@ -227,6 +237,9 @@ class Secret(pulumi.CustomResource):
     @_builtins.property
     @pulumi.getter(name="secretId")
     def secret_id(self) -> pulumi.Output[_builtins.str]:
+        """
+        The Modal-assigned identifier of the Secret.
+        """
         return pulumi.get(self, "secret_id")
 
     @_builtins.property
@@ -249,7 +262,7 @@ class Secret(pulumi.CustomResource):
     @pulumi.getter
     def values(self) -> pulumi.Output[Mapping[str, _builtins.str]]:
         """
-        Key/value pairs exposed as environment variables to Functions that mount this Secret.
+        Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
         """
         return pulumi.get(self, "values")
 

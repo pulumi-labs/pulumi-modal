@@ -26,7 +26,7 @@ public class App {
             var volume = new Volume("model-cache",
                 VolumeArgs.builder()
                     .name("model-cache")
-                    .version("v2")
+                    .fsVersion("v2")
                     .build());
 
             // Queues are durable FIFO/LIFO dispatch queues used to coordinate work between Modal Functions.

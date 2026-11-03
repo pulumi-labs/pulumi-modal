@@ -26,27 +26,37 @@ interceptor. There is no separate HTTP client — Modal's control plane is gRPC-
 
 | Resource | Create | Read | Update | Delete |
 |---|---|---|---|---|
-| Secret | `SecretGetOrCreate` (`CREATE_FAIL_IF_EXISTS`) | `SecretGetOrCreate` (`UNSPECIFIED` — get-or-create semantics) | `SecretUpdate` (values only, in place) | `SecretDelete` |
-| Volume | `VolumeGetOrCreate` | `VolumeGetOrCreate` | **N/A — replace only** (name/environment/version force new) | `VolumeDelete` |
-| Queue | `QueueGetOrCreate` | `QueueGetOrCreate` | **N/A — replace only** (name/environment force new) | `QueueDelete` |
+| Secret | `SecretGetOrCreate` (`CREATE_FAIL_IF_EXISTS`) | `SecretGetInfo` (by ID; keys and environment, never values) | `SecretUpdate` (values only, in place) | `SecretDelete` |
+| Volume | `VolumeGetOrCreate` | `VolumeGetById` | `VolumeRename` (name only; environment/fsVersion force new) | `VolumeDelete` |
+| Queue | `QueueGetOrCreate` | `QueueGetById` | **N/A — replace only** (name/environment force new) | `QueueDelete` |
+| Dict | `DictGetOrCreate` | `DictGetById` | **N/A — replace only** (name/environment force new) | `DictDelete` |
+| Environment | `EnvironmentCreate` | `EnvironmentList` (by ID) | `EnvironmentUpdate` (name, web suffix, task and GPU limits) | `EnvironmentDelete` |
+| App | `AppGetOrCreate` (`CREATE_FAIL_IF_EXISTS`) | `AppGetInfo` + `AppList` + `AppGetTags` | `AppSetTags` (name/environment force new) | `AppStop` |
+| Image | SDK `Build` (`ImageGetOrCreate`, `ImageJoinStreaming`) + `ImagePublish` | `ImageFromId` + `ImageListTags` | `ImagePublish` + `ImageNameDelete` (published name only; build inputs force new) | `ImageNameDelete` + `ImageDelete` |
 
-Only `Secret.values` supports true in-place update (`SecretUpdate` diffs old vs. new
-keys and sends per-key upserts/deletes). Volume and Queue have no update RPCs at all in
-the Modal control-plane API — any input change other than `values` on Secret is a
-force-replace.
+`Secret.values` updates in place (`SecretUpdate` diffs old vs. new keys and sends per-key
+upserts/deletes) and `Volume.name` renames in place (`VolumeRename`). Queue has no update
+RPC and Secret has no rename RPC, so every other change forces a replace.
+
+Read always goes by ID (`SecretGetInfo`, `VolumeGetById`, `QueueGetById`) so refresh and
+import work from the ID alone. Modal does not report a Volume's or Queue's environment:
+Create records the effective environment in state, and import looks in the configured
+(or default) environment and verifies the ID matches.
 
 ## Force-Replace Rules
 
 - **Secret.name** — replace (no rename API)
 - **Secret.environment** — replace
-- **Volume.name** — replace
 - **Volume.environment** — replace
-- **Volume.version** — replace (changing FS backend requires a new volume)
+- **Volume.fsVersion** — replace, delete-before-replace when name and environment are unchanged (changing FS backend requires a new volume and loses data)
 - **Queue.name** — replace
 - **Queue.environment** — replace
 
-Only `Secret.values` (the key/value map) diffs to an in-place update; every other field
-on every resource forces replacement.
+`Secret.values` and `Volume.name` diff to in-place updates; every other field forces
+replacement.
+
+**Never name an input `version`**: pulumi-go-provider drops it before Diff
+(pulumi/pulumi-go-provider#704), so Volume uses `fsVersion`.
 
 ## Development Workflow
 
@@ -145,10 +155,10 @@ lib/providers/modal/
 
 ### Volume API
 
-- **Two filesystem backends**: `version` selects `VOLUME_FS_VERSION_V1` (legacy) or
+- **Two filesystem backends**: `fsVersion` selects `VOLUME_FS_VERSION_V1` (legacy) or
   `VOLUME_FS_VERSION_V2` (default, recommended). Passing an unrecognized string returns
   `VOLUME_FS_VERSION_UNSPECIFIED` plus an error — validate before the RPC.
-  Filesystem version cannot be changed on an existing volume, hence force-replace.
+  Filesystem version cannot be changed on an existing volume, hence force-replace. When omitted we create v2 (Modal's Go SDK would default to v1; we keep v2 so existing programs do not change).
 - **No content management via this provider**: This resource manages the durable
   Volume object itself (existence, name, environment, FS version) — file contents are
   written/read by Modal Functions at runtime via the Modal Python/JS/Go client
@@ -179,3 +189,23 @@ Tests in `pkg/provider/provider_test.go`:
 - `TestSecretArgs_RequiredFields` — `SecretArgs.Name`/`Values` required-field shape
 - `TestVolumeArgs_RequiredFields` — `VolumeArgs.Name` required-field shape
 - `TestQueueArgs_RequiredFields` — `QueueArgs.Name` required-field shape
+
+
+## Dict, Environment, App, Image (v0.2 coverage)
+
+- **Coverage inventory**: `research/coverage/modal.md` lists every SDK service and RPC group with a class
+  (resource, lookup, runtime, deferred, out of scope) and a reason. Update it when the pinned SDK moves or a
+  resource is added.
+- **Environment** is workspace-level and has no `environment` input. Modal has no get-by-ID: Read lists
+  environments and matches the ID. Everything updates in place (`EnvironmentUpdate`).
+- **App** creates only the empty named App. Delete is `AppStop`; a stopped App reads as gone. The name is not in
+  the handle metadata, so Read lists the environment's Apps to find it.
+- **Image** builds through the SDK (`modal.NewClientWithOptions` with our authenticated stub as
+  `ControlPlaneClient`), so layer handling and the build-log stream stay upstream's. The stream needs the auth
+  stream interceptor in `client.go`. A build needs an App: the provider creates `pulumi-image-builds`. Deleting
+  an Image only removes the published name while it still points at this image, because a replacement may
+  already have taken the name. Imported Images have no build inputs (`baseImage` unset) and Diff ignores build
+  inputs in that case.
+- **Lookups** (`functions.go`) use the lookup-only creation type, so they never create. Do not add a lookup that
+  needs `GetOrCreate` semantics.
+- **Never name an input `version`** (see the Force-Replace Rules note).

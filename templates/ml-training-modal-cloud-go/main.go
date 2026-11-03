@@ -47,8 +47,8 @@ func main() {
 
 		// Durable checkpoint storage that persists across training runs.
 		volume, err := modal.NewVolume(ctx, "volume", &modal.VolumeArgs{
-			Name:    pulumi.String(checkpointVolumeName),
-			Version: pulumi.String("v2"),
+			Name:      pulumi.String(checkpointVolumeName),
+			FsVersion: pulumi.String("v2"),
 		})
 		if err != nil {
 			return err

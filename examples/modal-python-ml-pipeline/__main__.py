@@ -43,7 +43,7 @@ inference_secrets = modal.Secret(
 checkpoint_storage = modal.Volume(
     "checkpoint-storage",
     name="checkpoint-storage",
-    version="v2",
+    fs_version="v2",
 )
 
 # Queue that a training-job dispatcher enqueues onto; a pool of GPU worker

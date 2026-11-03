@@ -41,7 +41,7 @@ const inferenceSecrets = new modal.Secret("inference-secrets", {
 // load the latest trained weights.
 const checkpointStorage = new modal.Volume("checkpoint-storage", {
     name: "checkpoint-storage",
-    version: "v2",
+    fsVersion: "v2",
 });
 
 // Queue that a training-job dispatcher enqueues onto; a pool of GPU worker

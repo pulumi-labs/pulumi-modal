@@ -21,33 +21,33 @@ class VolumeArgs:
     def __init__(__self__, *,
                  name: pulumi.Input[_builtins.str],
                  environment: Optional[pulumi.Input[_builtins.str]] = None,
+                 fs_version: Optional[pulumi.Input[_builtins.str]] = None,
                  token_id: Optional[pulumi.Input[_builtins.str]] = None,
-                 token_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 version: Optional[pulumi.Input[_builtins.str]] = None):
+                 token_secret: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a Volume resource.
 
-        :param pulumi.Input[_builtins.str] name: The volume's unique name. Changing this forces a new resource.
-        :param pulumi.Input[_builtins.str] environment: The Modal environment the volume lives in. Changing this forces a new resource.
+        :param pulumi.Input[_builtins.str] name: The volume's unique name within its environment. Changing this renames the volume in place.
+        :param pulumi.Input[_builtins.str] environment: The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
+        :param pulumi.Input[_builtins.str] fs_version: Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
         :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Overrides the provider-level tokenId.
         :param pulumi.Input[_builtins.str] token_secret: Modal API token secret. Overrides the provider-level tokenSecret.
-        :param pulumi.Input[_builtins.str] version: Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
         """
         pulumi.set(__self__, "name", name)
         if environment is not None:
             pulumi.set(__self__, "environment", environment)
+        if fs_version is not None:
+            pulumi.set(__self__, "fs_version", fs_version)
         if token_id is not None:
             pulumi.set(__self__, "token_id", token_id)
         if token_secret is not None:
             pulumi.set(__self__, "token_secret", token_secret)
-        if version is not None:
-            pulumi.set(__self__, "version", version)
 
     @_builtins.property
     @pulumi.getter
     def name(self) -> pulumi.Input[_builtins.str]:
         """
-        The volume's unique name. Changing this forces a new resource.
+        The volume's unique name within its environment. Changing this renames the volume in place.
         """
         return pulumi.get(self, "name")
 
@@ -59,13 +59,25 @@ class VolumeArgs:
     @pulumi.getter
     def environment(self) -> Optional[pulumi.Input[_builtins.str]]:
         """
-        The Modal environment the volume lives in. Changing this forces a new resource.
+        The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
         """
         return pulumi.get(self, "environment")
 
     @environment.setter
     def environment(self, value: Optional[pulumi.Input[_builtins.str]]):
         pulumi.set(self, "environment", value)
+
+    @_builtins.property
+    @pulumi.getter(name="fsVersion")
+    def fs_version(self) -> Optional[pulumi.Input[_builtins.str]]:
+        """
+        Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+        """
+        return pulumi.get(self, "fs_version")
+
+    @fs_version.setter
+    def fs_version(self, value: Optional[pulumi.Input[_builtins.str]]):
+        pulumi.set(self, "fs_version", value)
 
     @_builtins.property
     @pulumi.getter(name="tokenId")
@@ -91,18 +103,6 @@ class VolumeArgs:
     def token_secret(self, value: Optional[pulumi.Input[_builtins.str]]):
         pulumi.set(self, "token_secret", value)
 
-    @_builtins.property
-    @pulumi.getter
-    def version(self) -> Optional[pulumi.Input[_builtins.str]]:
-        """
-        Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-        """
-        return pulumi.get(self, "version")
-
-    @version.setter
-    def version(self, value: Optional[pulumi.Input[_builtins.str]]):
-        pulumi.set(self, "version", value)
-
 
 @pulumi.type_token("modal:index:Volume")
 class Volume(pulumi.CustomResource):
@@ -111,10 +111,10 @@ class Volume(pulumi.CustomResource):
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
                  environment: Optional[pulumi.Input[_builtins.str]] = None,
+                 fs_version: Optional[pulumi.Input[_builtins.str]] = None,
                  name: Optional[pulumi.Input[_builtins.str]] = None,
                  token_id: Optional[pulumi.Input[_builtins.str]] = None,
                  token_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 version: Optional[pulumi.Input[_builtins.str]] = None,
                  __props__=None):
         """
         A Modal Volume — a persistent, distributed filesystem mountable into Modal Functions and Sandboxes for caching model weights, datasets, or other large files across runs. See https://modal.com/docs/guide/volumes.
@@ -122,11 +122,11 @@ class Volume(pulumi.CustomResource):
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[_builtins.str] environment: The Modal environment the volume lives in. Changing this forces a new resource.
-        :param pulumi.Input[_builtins.str] name: The volume's unique name. Changing this forces a new resource.
+        :param pulumi.Input[_builtins.str] environment: The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
+        :param pulumi.Input[_builtins.str] fs_version: Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+        :param pulumi.Input[_builtins.str] name: The volume's unique name within its environment. Changing this renames the volume in place.
         :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Overrides the provider-level tokenId.
         :param pulumi.Input[_builtins.str] token_secret: Modal API token secret. Overrides the provider-level tokenSecret.
-        :param pulumi.Input[_builtins.str] version: Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
         """
         ...
     @overload
@@ -154,10 +154,10 @@ class Volume(pulumi.CustomResource):
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
                  environment: Optional[pulumi.Input[_builtins.str]] = None,
+                 fs_version: Optional[pulumi.Input[_builtins.str]] = None,
                  name: Optional[pulumi.Input[_builtins.str]] = None,
                  token_id: Optional[pulumi.Input[_builtins.str]] = None,
                  token_secret: Optional[pulumi.Input[_builtins.str]] = None,
-                 version: Optional[pulumi.Input[_builtins.str]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -168,12 +168,12 @@ class Volume(pulumi.CustomResource):
             __props__ = VolumeArgs.__new__(VolumeArgs)
 
             __props__.__dict__["environment"] = environment
+            __props__.__dict__["fs_version"] = fs_version
             if name is None and not opts.urn:
                 raise TypeError("Missing required property 'name'")
             __props__.__dict__["name"] = name
             __props__.__dict__["token_id"] = None if token_id is None else pulumi.Output.secret(token_id)
             __props__.__dict__["token_secret"] = None if token_secret is None else pulumi.Output.secret(token_secret)
-            __props__.__dict__["version"] = version
             __props__.__dict__["volume_id"] = None
         secret_opts = pulumi.ResourceOptions(additional_secret_outputs=["tokenId", "tokenSecret"])
         opts = pulumi.ResourceOptions.merge(opts, secret_opts)
@@ -200,10 +200,10 @@ class Volume(pulumi.CustomResource):
         __props__ = VolumeArgs.__new__(VolumeArgs)
 
         __props__.__dict__["environment"] = None
+        __props__.__dict__["fs_version"] = None
         __props__.__dict__["name"] = None
         __props__.__dict__["token_id"] = None
         __props__.__dict__["token_secret"] = None
-        __props__.__dict__["version"] = None
         __props__.__dict__["volume_id"] = None
         return Volume(resource_name, opts=opts, __props__=__props__)
 
@@ -211,15 +211,23 @@ class Volume(pulumi.CustomResource):
     @pulumi.getter
     def environment(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        The Modal environment the volume lives in. Changing this forces a new resource.
+        The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
         """
         return pulumi.get(self, "environment")
+
+    @_builtins.property
+    @pulumi.getter(name="fsVersion")
+    def fs_version(self) -> pulumi.Output[Optional[_builtins.str]]:
+        """
+        Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+        """
+        return pulumi.get(self, "fs_version")
 
     @_builtins.property
     @pulumi.getter
     def name(self) -> pulumi.Output[_builtins.str]:
         """
-        The volume's unique name. Changing this forces a new resource.
+        The volume's unique name within its environment. Changing this renames the volume in place.
         """
         return pulumi.get(self, "name")
 
@@ -238,14 +246,6 @@ class Volume(pulumi.CustomResource):
         Modal API token secret. Overrides the provider-level tokenSecret.
         """
         return pulumi.get(self, "token_secret")
-
-    @_builtins.property
-    @pulumi.getter
-    def version(self) -> pulumi.Output[Optional[_builtins.str]]:
-        """
-        Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-        """
-        return pulumi.get(self, "version")
 
     @_builtins.property
     @pulumi.getter(name="volumeId")

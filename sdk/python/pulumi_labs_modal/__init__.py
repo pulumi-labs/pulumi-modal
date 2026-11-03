@@ -6,6 +6,21 @@ import builtins as _builtins
 from . import _utilities
 import typing
 # Export this package's modules as members:
+from .app import *
+from .dict import *
+from .environment import *
+from .get_app import *
+from .get_cls import *
+from .get_dict import *
+from .get_environment import *
+from .get_function import *
+from .get_image import *
+from .get_proxy import *
+from .get_queue import *
+from .get_secret import *
+from .get_volume import *
+from .get_workspace import *
+from .image import *
 from .provider import *
 from .queue import *
 from .secret import *
@@ -26,6 +41,10 @@ _utilities.register(
   "mod": "index",
   "fqn": "pulumi_labs_modal",
   "classes": {
+   "modal:index:App": "App",
+   "modal:index:Dict": "Dict",
+   "modal:index:Environment": "Environment",
+   "modal:index:Image": "Image",
    "modal:index:Queue": "Queue",
    "modal:index:Secret": "Secret",
    "modal:index:Volume": "Volume"
