@@ -18,14 +18,14 @@ public final class SecretArgs extends com.pulumi.resources.ResourceArgs {
     public static final SecretArgs Empty = new SecretArgs();
 
     /**
-     * The Modal environment the Secret lives in. Changing this forces a new resource.
+     * The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account&#39;s default environment is used.
      * 
      */
     @Import(name="environment")
     private @Nullable Output<String> environment;
 
     /**
-     * @return The Modal environment the Secret lives in. Changing this forces a new resource.
+     * @return The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account&#39;s default environment is used.
      * 
      */
     public Optional<Output<String>> environment() {
@@ -78,14 +78,14 @@ public final class SecretArgs extends com.pulumi.resources.ResourceArgs {
     }
 
     /**
-     * Key/value pairs exposed as environment variables to Functions that mount this Secret.
+     * Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
      * 
      */
     @Import(name="values", required=true)
     private Output<Map<String,String>> values;
 
     /**
-     * @return Key/value pairs exposed as environment variables to Functions that mount this Secret.
+     * @return Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
      * 
      */
     public Output<Map<String,String>> values() {
@@ -121,7 +121,7 @@ public final class SecretArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param environment The Modal environment the Secret lives in. Changing this forces a new resource.
+         * @param environment The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account&#39;s default environment is used.
          * 
          * @return builder
          * 
@@ -132,7 +132,7 @@ public final class SecretArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param environment The Modal environment the Secret lives in. Changing this forces a new resource.
+         * @param environment The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account&#39;s default environment is used.
          * 
          * @return builder
          * 
@@ -205,7 +205,7 @@ public final class SecretArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param values Key/value pairs exposed as environment variables to Functions that mount this Secret.
+         * @param values Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
          * 
          * @return builder
          * 
@@ -216,7 +216,7 @@ public final class SecretArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param values Key/value pairs exposed as environment variables to Functions that mount this Secret.
+         * @param values Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
          * 
          * @return builder
          * 

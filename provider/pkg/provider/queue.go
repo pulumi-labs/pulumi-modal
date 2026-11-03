@@ -21,8 +21,6 @@ import (
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
 	pgp "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // ---------------------------------------------------------------------------
@@ -75,9 +73,12 @@ func (a *QueueArgs) Annotate(ann infer.Annotator) {
 
 var _ infer.CustomResource[QueueArgs, QueueState] = (*Queue)(nil)
 var _ infer.CustomDiff[QueueArgs, QueueState] = (*Queue)(nil)
+var _ infer.CustomRead[QueueArgs, QueueState] = (*Queue)(nil)
+var _ infer.CustomDelete[QueueState] = (*Queue)(nil)
 
 // Diff returns a replace diff for the name and environment fields, which are
-// immutable on the Modal control plane. There is no Update path for Queue.
+// immutable on the Modal control plane (the API has no rename or update call
+// for queues).
 func (r *Queue) Diff(ctx context.Context, req infer.DiffRequest[QueueArgs, QueueState]) (infer.DiffResponse, error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	resp := infer.DiffResponse{DetailedDiff: map[string]pgp.PropertyDiff{}}
@@ -85,7 +86,7 @@ func (r *Queue) Diff(ctx context.Context, req infer.DiffRequest[QueueArgs, Queue
 		resp.DetailedDiff["name"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
-	if resolveStr(req.Inputs.Environment, cfg.Environment) != resolveStr(req.State.Environment, cfg.Environment) {
+	if environmentChanged(req.Inputs.Environment, req.State.Environment, cfg) {
 		resp.DetailedDiff["environment"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
@@ -94,20 +95,24 @@ func (r *Queue) Diff(ctx context.Context, req infer.DiffRequest[QueueArgs, Queue
 
 func (r *Queue) Create(ctx context.Context, req infer.CreateRequest[QueueArgs]) (infer.CreateResponse[QueueState], error) {
 	args := req.Inputs
+	cfg := infer.GetConfig[ProviderConfig](ctx)
 	if req.DryRun {
-		return infer.CreateResponse[QueueState]{ID: args.Name, Output: QueueState{QueueArgs: args}}, nil
+		state := QueueState{QueueArgs: args}
+		if env := resolveStr(args.Environment, cfg.Environment); env != "" {
+			state.Environment = &env
+		}
+		return infer.CreateResponse[QueueState]{ID: args.Name, Output: state}, nil
 	}
 
-	cfg := infer.GetConfig[ProviderConfig](ctx)
 	client, err := clientFor(cfg, args.TokenID, args.TokenSecret)
 	if err != nil {
 		return infer.CreateResponse[QueueState]{}, fmt.Errorf("modal: %w", err)
 	}
 	defer client.Close()
 
-	environment := resolveStr(args.Environment, cfg.Environment)
 	rpcCtx, cancel := callCtx()
 	defer cancel()
+	environment := effectiveEnvironment(rpcCtx, client, args.Environment, cfg)
 	resp, err := client.stub.QueueGetOrCreate(rpcCtx, pb.QueueGetOrCreateRequest_builder{
 		DeploymentName:     args.Name,
 		EnvironmentName:    environment,
@@ -117,50 +122,72 @@ func (r *Queue) Create(ctx context.Context, req infer.CreateRequest[QueueArgs]) 
 		return infer.CreateResponse[QueueState]{}, fmt.Errorf("modal: create queue %q: %w", args.Name, err)
 	}
 
-	return infer.CreateResponse[QueueState]{
-		ID: resp.GetQueueId(),
-		Output: QueueState{
-			QueueArgs: args,
-			QueueId:   resp.GetQueueId(),
-		},
-	}, nil
+	state := QueueState{QueueArgs: args, QueueId: resp.GetQueueId()}
+	if environment != "" {
+		state.Environment = &environment
+	}
+	return infer.CreateResponse[QueueState]{ID: resp.GetQueueId(), Output: state}, nil
 }
 
+// Read refreshes the queue by ID, so it works for refresh and for import from
+// the ID alone.
 func (r *Queue) Read(ctx context.Context, req infer.ReadRequest[QueueArgs, QueueState]) (infer.ReadResponse[QueueArgs, QueueState], error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
+	empty := infer.ReadResponse[QueueArgs, QueueState]{}
 	client, err := clientFor(cfg, req.State.TokenID, req.State.TokenSecret)
 	if err != nil {
-		return infer.ReadResponse[QueueArgs, QueueState]{}, fmt.Errorf("modal: %w", err)
+		return empty, fmt.Errorf("modal: %w", err)
 	}
 	defer client.Close()
 
-	environment := resolveStr(req.State.Environment, cfg.Environment)
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-	resp, err := client.stub.QueueGetOrCreate(rpcCtx, pb.QueueGetOrCreateRequest_builder{
-		DeploymentName:     req.State.Name,
-		EnvironmentName:    environment,
-		ObjectCreationType: pb.ObjectCreationType_OBJECT_CREATION_TYPE_UNSPECIFIED,
-	}.Build())
-	if status.Code(err) == codes.NotFound {
-		// Deleted externally — signal removal.
-		return infer.ReadResponse[QueueArgs, QueueState]{}, nil
+	resp, err := client.stub.QueueGetById(rpcCtx, pb.QueueGetByIdRequest_builder{QueueId: req.ID}.Build())
+	if isNotFound(err) {
+		// Deleted outside Pulumi: signal removal.
+		return empty, nil
 	}
 	if err != nil {
-		return infer.ReadResponse[QueueArgs, QueueState]{}, fmt.Errorf("modal: read queue %q: %w", req.State.Name, err)
+		return empty, fmt.Errorf("modal: read queue %q: %w", req.ID, err)
+	}
+	meta := resp.GetMetadata()
+
+	importing := req.State.Name == "" && req.Inputs.Name == ""
+	state := req.State
+	state.QueueId = req.ID
+	state.Name = meta.GetName()
+
+	// Modal does not report a queue's environment, so keep what is recorded.
+	environment := derefStr(state.Environment)
+	if environment == "" {
+		environment = effectiveEnvironment(rpcCtx, client, nil, cfg)
+	}
+	if importing {
+		lookup, lerr := client.stub.QueueGetOrCreate(rpcCtx, pb.QueueGetOrCreateRequest_builder{
+			DeploymentName:     meta.GetName(),
+			EnvironmentName:    environment,
+			ObjectCreationType: pb.ObjectCreationType_OBJECT_CREATION_TYPE_UNSPECIFIED,
+		}.Build())
+		if lerr != nil || lookup.GetQueueId() != req.ID {
+			return empty, fmt.Errorf("modal: queue %q (%s) was not found in environment %q; "+
+				"set the modal:environment provider config (or MODAL_ENVIRONMENT) to the environment the queue lives in and retry the import",
+				meta.GetName(), req.ID, environment)
+		}
+	}
+	if environment != "" {
+		state.Environment = &environment
 	}
 
-	state := req.State
-	state.QueueId = resp.GetQueueId()
-	return infer.ReadResponse[QueueArgs, QueueState]{
-		ID:     resp.GetQueueId(),
-		Inputs: req.Inputs,
-		State:  state,
-	}, nil
+	inputs := req.Inputs
+	inputs.TokenID, inputs.TokenSecret = state.TokenID, state.TokenSecret
+	inputs.Name = meta.GetName()
+	if importing && environment != "" {
+		inputs.Environment = &environment
+	}
+	return infer.ReadResponse[QueueArgs, QueueState]{ID: req.ID, Inputs: inputs, State: state}, nil
 }
 
-// Delete removes the Modal Queue. All fields are immutable, so there is no
-// Update path — any input change triggers a replace via Diff.
+// Delete removes the Modal Queue.
 func (r *Queue) Delete(ctx context.Context, req infer.DeleteRequest[QueueState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	client, err := clientFor(cfg, req.State.TokenID, req.State.TokenSecret)
@@ -172,7 +199,7 @@ func (r *Queue) Delete(ctx context.Context, req infer.DeleteRequest[QueueState])
 	rpcCtx, cancel := callCtx()
 	defer cancel()
 	_, err = client.stub.QueueDelete(rpcCtx, pb.QueueDeleteRequest_builder{QueueId: req.ID}.Build())
-	if err != nil && status.Code(err) != codes.NotFound {
+	if err != nil && !isNotFound(err) {
 		return infer.DeleteResponse{}, fmt.Errorf("modal: delete queue %q: %w", req.State.Name, err)
 	}
 	return infer.DeleteResponse{}, nil

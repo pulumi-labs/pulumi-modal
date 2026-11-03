@@ -15,9 +15,14 @@
 package provider
 
 import (
+	"context"
+
 	pgp "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ProviderConfig holds provider-level configuration shared across all
@@ -65,6 +70,48 @@ func resolveStr(resourceLevel *string, providerLevel *string) string {
 	return ""
 }
 
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// environmentChanged reports whether the environment the program asks for
+// differs from the environment recorded in state. State holds the effective
+// environment written at create time. An unset desired environment means
+// "whatever the account default is" and never forces a replace, and a state
+// that predates environment tracking (empty) cannot be compared.
+func environmentChanged(input *string, state *string, cfg ProviderConfig) bool {
+	desired := resolveStr(input, cfg.Environment)
+	recorded := derefStr(state)
+	return desired != "" && recorded != "" && desired != recorded
+}
+
+// effectiveEnvironment returns the environment an object will be created in:
+// the resource-level value, else the provider-level value, else the account's
+// default environment as reported by Modal. Looking up the default is best
+// effort; on failure it returns "" and the caller records nothing.
+func effectiveEnvironment(ctx context.Context, client *modalClient, input *string, cfg ProviderConfig) string {
+	if env := resolveStr(input, cfg.Environment); env != "" {
+		return env
+	}
+	resp, err := client.stub.EnvironmentList(ctx, &emptypb.Empty{})
+	if err != nil {
+		return ""
+	}
+	for _, item := range resp.GetItems() {
+		if item.GetDefault() {
+			return item.GetName()
+		}
+	}
+	return ""
+}
+
+func emptyReq() *emptypb.Empty { return &emptypb.Empty{} }
+
+func isNotFound(err error) bool { return status.Code(err) == codes.NotFound }
+
 // clientFor builds a modalClient from the effective provider config and any
 // resource-level token overrides.
 func clientFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string) (*modalClient, error) {
@@ -79,7 +126,7 @@ func New() (pgp.Provider, error) {
 	return infer.NewProviderBuilder().
 		WithDisplayName("Modal").
 		WithDescription(
-			"Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, and Queues — as infrastructure with Pulumi.",
+			"Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps and Images — as infrastructure with Pulumi.",
 		).
 		WithHomepage("https://modal.com").
 		WithRepository("https://github.com/pulumi-labs/pulumi-modal").
@@ -88,7 +135,7 @@ func New() (pgp.Provider, error) {
 			"go": map[string]any{"generateResourceContainerTypes": true, "respectSchemaVersion": true},
 			"nodejs": map[string]any{
 				"packageName":          "@pulumi-labs/modal",
-				"packageDescription":   "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, and Queues — as infrastructure with Pulumi.",
+				"packageDescription":   "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps and Images — as infrastructure with Pulumi.",
 				"respectSchemaVersion": true,
 			},
 			"python": map[string]any{
@@ -111,6 +158,23 @@ func New() (pgp.Provider, error) {
 			infer.Resource[*Secret, SecretArgs, SecretState](&Secret{}),
 			infer.Resource[*Volume, VolumeArgs, VolumeState](&Volume{}),
 			infer.Resource[*Queue, QueueArgs, QueueState](&Queue{}),
+			infer.Resource[*Dict, DictArgs, DictState](&Dict{}),
+			infer.Resource[*Environment, EnvironmentArgs, EnvironmentState](&Environment{}),
+			infer.Resource[*App, AppArgs, AppState](&App{}),
+			infer.Resource[*Image, ImageArgs, ImageState](&Image{}),
+		).
+		WithFunctions(
+			infer.Function[*GetSecret, NamedLookupArgs, GetSecretResult](&GetSecret{}),
+			infer.Function[*GetVolume, NamedLookupArgs, GetVolumeResult](&GetVolume{}),
+			infer.Function[*GetQueue, NamedLookupArgs, GetQueueResult](&GetQueue{}),
+			infer.Function[*GetDict, NamedLookupArgs, GetDictResult](&GetDict{}),
+			infer.Function[*GetEnvironment, GetEnvironmentArgs, GetEnvironmentResult](&GetEnvironment{}),
+			infer.Function[*GetApp, NamedLookupArgs, GetAppResult](&GetApp{}),
+			infer.Function[*GetImage, NamedLookupArgs, GetImageResult](&GetImage{}),
+			infer.Function[*GetFunction, GetFunctionArgs, GetFunctionResult](&GetFunction{}),
+			infer.Function[*GetCls, GetClsArgs, GetClsResult](&GetCls{}),
+			infer.Function[*GetProxy, NamedLookupArgs, GetProxyResult](&GetProxy{}),
+			infer.Function[*GetWorkspace, GetWorkspaceArgs, GetWorkspaceResult](&GetWorkspace{}),
 		).
 		Build()
 }

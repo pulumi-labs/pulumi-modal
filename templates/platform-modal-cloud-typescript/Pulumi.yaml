@@ -1,0 +1,19 @@
+name: ${PROJECT}
+description: ${DESCRIPTION}
+runtime: nodejs
+
+template:
+  description: A TypeScript program to provision a Modal environment, App, Dict and published Image.
+  config:
+    environmentName:
+      description: Name for the Modal environment.
+      default: platform
+    appName:
+      description: Name for the Modal App.
+      default: platform-app
+    dictName:
+      description: Name for the Modal Dict.
+      default: platform-state
+    imageName:
+      description: Name for the published Modal Image.
+      default: platform-base

@@ -35,7 +35,7 @@ const secret = new modal.Secret("secret", {
 // Durable checkpoint storage that persists across training runs.
 const volume = new modal.Volume("volume", {
     name: checkpointVolumeName,
-    version: "v2",
+    fsVersion: "v2",
 });
 
 // Queue a training-job dispatcher enqueues onto; worker Functions pull

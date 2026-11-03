@@ -21,8 +21,6 @@ import (
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
 	pgp "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // ---------------------------------------------------------------------------
@@ -43,8 +41,8 @@ type VolumeArgs struct {
 	// provider-level tokenSecret when not set.
 	TokenSecret *string `pulumi:"tokenSecret,optional" provider:"secret"`
 
-	// Name is the volume's unique name within its environment. Changing this
-	// forces a new resource.
+	// Name is the volume's unique name within its environment. Changing it
+	// renames the volume in place.
 	Name string `pulumi:"name"`
 
 	// Environment is the Modal environment (workspace namespace) the volume
@@ -52,10 +50,15 @@ type VolumeArgs struct {
 	// provider-level environment.
 	Environment *string `pulumi:"environment,optional"`
 
-	// Version selects the volume filesystem version: "v1" (legacy) or "v2"
+	// FsVersion selects the volume filesystem version: "v1" (legacy) or "v2"
 	// (default, recommended for new volumes). Changing this forces a new
 	// resource.
-	Version *string `pulumi:"version,optional"`
+	//
+	// The property is deliberately not called "version": pulumi-go-provider
+	// silently drops any input property named "version" before Diff runs
+	// (https://github.com/pulumi/pulumi-go-provider/issues/704), which made every update look like
+	// a change and replaced the volume on every deployment.
+	FsVersion *string `pulumi:"fsVersion,optional"`
 }
 
 // VolumeState holds the computed outputs for a Modal Volume.
@@ -76,15 +79,56 @@ func (r *Volume) Annotate(a infer.Annotator) {
 func (a *VolumeArgs) Annotate(ann infer.Annotator) {
 	ann.Describe(&a.TokenID, "Modal API token ID. Overrides the provider-level tokenId.")
 	ann.Describe(&a.TokenSecret, "Modal API token secret. Overrides the provider-level tokenSecret.")
-	ann.Describe(&a.Name, "The volume's unique name. Changing this forces a new resource.")
-	ann.Describe(&a.Environment, "The Modal environment the volume lives in. Changing this forces a new resource.")
-	ann.Describe(&a.Version, "Volume filesystem version: \"v1\" or \"v2\" (default). Changing this forces a new resource.")
+	ann.Describe(&a.Name, "The volume's unique name within its environment. Changing this renames the volume in place.")
+	ann.Describe(&a.Environment, "The Modal environment the volume lives in. Changing this forces a new resource, "+
+		"which deletes the volume's data. When unset, the provider-level environment or the account's default "+
+		"environment is used.")
+	ann.Describe(&a.FsVersion, "Volume filesystem version: \"v1\" or \"v2\". Defaults to \"v2\" (Modal's recommended "+
+		"backend; note that Modal's own SDKs default to \"v1\"). The effective version is always reported as an "+
+		"output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted "+
+		"before the new one is created because both share a name.")
 }
 
 var _ infer.CustomResource[VolumeArgs, VolumeState] = (*Volume)(nil)
 var _ infer.CustomDiff[VolumeArgs, VolumeState] = (*Volume)(nil)
+var _ infer.CustomCheck[VolumeArgs] = (*Volume)(nil)
+var _ infer.CustomUpdate[VolumeArgs, VolumeState] = (*Volume)(nil)
+var _ infer.CustomRead[VolumeArgs, VolumeState] = (*Volume)(nil)
+var _ infer.CustomDelete[VolumeState] = (*Volume)(nil)
+var _ infer.CustomStateMigrations[VolumeState] = (*Volume)(nil)
 
-func volumeFsVersion(v *string) (pb.VolumeFsVersion, error) {
+// volumeStateV0 is the state shape written by v0.1.0, where fsVersion was
+// called "version".
+type volumeStateV0 struct {
+	TokenID     *string `pulumi:"tokenId,optional" provider:"secret"`
+	TokenSecret *string `pulumi:"tokenSecret,optional" provider:"secret"`
+	Name        string  `pulumi:"name"`
+	Environment *string `pulumi:"environment,optional"`
+	Version     *string `pulumi:"version,optional"`
+	VolumeId    string  `pulumi:"volumeId"`
+}
+
+// StateMigrations moves v0.1.0 state (property "version") to fsVersion.
+func (r *Volume) StateMigrations(context.Context) []infer.StateMigrationFunc[VolumeState] {
+	return []infer.StateMigrationFunc[VolumeState]{
+		infer.StateMigration(func(_ context.Context, old volumeStateV0) (infer.MigrationResult[VolumeState], error) {
+			return infer.MigrationResult[VolumeState]{Result: &VolumeState{
+				VolumeArgs: VolumeArgs{
+					TokenID:     old.TokenID,
+					TokenSecret: old.TokenSecret,
+					Name:        old.Name,
+					Environment: old.Environment,
+					FsVersion:   old.Version,
+				},
+				VolumeId: old.VolumeId,
+			}}, nil
+		}),
+	}
+}
+
+// parseFsVersion validates an fsVersion input and returns the wire enum. An
+// unset value selects v2.
+func parseFsVersion(v *string) (pb.VolumeFsVersion, error) {
 	if v == nil || *v == "" {
 		return pb.VolumeFsVersion_VOLUME_FS_VERSION_V2, nil
 	}
@@ -95,52 +139,85 @@ func volumeFsVersion(v *string) (pb.VolumeFsVersion, error) {
 		return pb.VolumeFsVersion_VOLUME_FS_VERSION_V2, nil
 	default:
 		return pb.VolumeFsVersion_VOLUME_FS_VERSION_UNSPECIFIED,
-			fmt.Errorf("modal: volume version must be \"v1\" or \"v2\", got %q", *v)
+			fmt.Errorf("modal: volume fsVersion must be \"v1\" or \"v2\", got %q", *v)
 	}
 }
 
-// Diff returns a replace diff for the name, environment, and version fields,
-// all of which are immutable on the Modal control plane. There is no Update
-// path for Volume.
+// fsVersionString maps the wire enum back to "v1"/"v2". Modal reports an
+// unspecified version for legacy volumes, which are v1.
+func fsVersionString(v pb.VolumeFsVersion) string {
+	if v == pb.VolumeFsVersion_VOLUME_FS_VERSION_V2 {
+		return "v2"
+	}
+	return "v1"
+}
+
+// Check validates fsVersion at preview time.
+func (r *Volume) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckResponse[VolumeArgs], error) {
+	args, failures, err := infer.DefaultCheck[VolumeArgs](ctx, req.NewInputs)
+	if err != nil {
+		return infer.CheckResponse[VolumeArgs]{}, err
+	}
+	if _, verr := parseFsVersion(args.FsVersion); verr != nil {
+		failures = append(failures, pgp.CheckFailure{Property: "fsVersion", Reason: verr.Error()})
+	}
+	return infer.CheckResponse[VolumeArgs]{Inputs: args, Failures: failures}, nil
+}
+
+// Diff renames in place when only the name changed, and replaces when the
+// environment or filesystem version changes: both are immutable on Modal.
 func (r *Volume) Diff(ctx context.Context, req infer.DiffRequest[VolumeArgs, VolumeState]) (infer.DiffResponse, error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	resp := infer.DiffResponse{DetailedDiff: map[string]pgp.PropertyDiff{}}
-	if req.Inputs.Name != req.State.Name {
-		resp.DetailedDiff["name"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
+
+	renamed := req.Inputs.Name != req.State.Name
+	if renamed {
+		resp.DetailedDiff["name"] = pgp.PropertyDiff{Kind: pgp.Update}
 		resp.HasChanges = true
 	}
-	if resolveStr(req.Inputs.Environment, cfg.Environment) != resolveStr(req.State.Environment, cfg.Environment) {
+	envChanged := environmentChanged(req.Inputs.Environment, req.State.Environment, cfg)
+	if envChanged {
 		resp.DetailedDiff["environment"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
-	if resolveStr(req.Inputs.Version, nil) != resolveStr(req.State.Version, nil) {
-		resp.DetailedDiff["version"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
+	// An unset input means "default", and a state without a recorded version
+	// predates fsVersion tracking: neither can differ.
+	fsChanged := derefStr(req.Inputs.FsVersion) != "" && derefStr(req.State.FsVersion) != "" &&
+		*req.Inputs.FsVersion != *req.State.FsVersion
+	if fsChanged {
+		resp.DetailedDiff["fsVersion"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
+	// A replacement that keeps the same (name, environment) pair would collide
+	// with the old volume, because creation fails if the name exists.
+	resp.DeleteBeforeReplace = fsChanged && !renamed && !envChanged
 	return resp, nil
 }
 
 func (r *Volume) Create(ctx context.Context, req infer.CreateRequest[VolumeArgs]) (infer.CreateResponse[VolumeState], error) {
 	args := req.Inputs
+	cfg := infer.GetConfig[ProviderConfig](ctx)
 	if req.DryRun {
-		return infer.CreateResponse[VolumeState]{ID: args.Name, Output: VolumeState{VolumeArgs: args}}, nil
+		state := VolumeState{VolumeArgs: args}
+		if env := resolveStr(args.Environment, cfg.Environment); env != "" {
+			state.Environment = &env
+		}
+		return infer.CreateResponse[VolumeState]{ID: args.Name, Output: state}, nil
 	}
 
-	cfg := infer.GetConfig[ProviderConfig](ctx)
+	version, err := parseFsVersion(args.FsVersion)
+	if err != nil {
+		return infer.CreateResponse[VolumeState]{}, err
+	}
 	client, err := clientFor(cfg, args.TokenID, args.TokenSecret)
 	if err != nil {
 		return infer.CreateResponse[VolumeState]{}, fmt.Errorf("modal: %w", err)
 	}
 	defer client.Close()
 
-	environment := resolveStr(args.Environment, cfg.Environment)
-	version, err := volumeFsVersion(args.Version)
-	if err != nil {
-		return infer.CreateResponse[VolumeState]{}, err
-	}
-
 	rpcCtx, cancel := callCtx()
 	defer cancel()
+	environment := effectiveEnvironment(rpcCtx, client, args.Environment, cfg)
 	resp, err := client.stub.VolumeGetOrCreate(rpcCtx, pb.VolumeGetOrCreateRequest_builder{
 		DeploymentName:     args.Name,
 		EnvironmentName:    environment,
@@ -151,59 +228,114 @@ func (r *Volume) Create(ctx context.Context, req infer.CreateRequest[VolumeArgs]
 		return infer.CreateResponse[VolumeState]{}, fmt.Errorf("modal: create volume %q: %w", args.Name, err)
 	}
 
-	return infer.CreateResponse[VolumeState]{
-		ID: resp.GetVolumeId(),
-		Output: VolumeState{
-			VolumeArgs: args,
-			VolumeId:   resp.GetVolumeId(),
-		},
-	}, nil
+	effective := version
+	if resp.GetVersion() != pb.VolumeFsVersion_VOLUME_FS_VERSION_UNSPECIFIED {
+		effective = resp.GetVersion()
+	}
+	state := VolumeState{VolumeArgs: args, VolumeId: resp.GetVolumeId()}
+	fsv := fsVersionString(effective)
+	state.FsVersion = &fsv
+	if environment != "" {
+		state.Environment = &environment
+	}
+	return infer.CreateResponse[VolumeState]{ID: resp.GetVolumeId(), Output: state}, nil
 }
 
+// Read refreshes the volume by ID, so it works for refresh and for import
+// from the ID alone.
 func (r *Volume) Read(ctx context.Context, req infer.ReadRequest[VolumeArgs, VolumeState]) (infer.ReadResponse[VolumeArgs, VolumeState], error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
+	empty := infer.ReadResponse[VolumeArgs, VolumeState]{}
 	client, err := clientFor(cfg, req.State.TokenID, req.State.TokenSecret)
 	if err != nil {
-		return infer.ReadResponse[VolumeArgs, VolumeState]{}, fmt.Errorf("modal: %w", err)
+		return empty, fmt.Errorf("modal: %w", err)
 	}
 	defer client.Close()
 
-	environment := resolveStr(req.State.Environment, cfg.Environment)
-	version, err := volumeFsVersion(req.State.Version)
-	if err != nil {
-		return infer.ReadResponse[VolumeArgs, VolumeState]{}, err
+	rpcCtx, cancel := callCtx()
+	defer cancel()
+	resp, err := client.stub.VolumeGetById(rpcCtx, pb.VolumeGetByIdRequest_builder{VolumeId: req.ID}.Build())
+	if isNotFound(err) {
+		// Deleted outside Pulumi: signal removal.
+		return empty, nil
 	}
+	if err != nil {
+		return empty, fmt.Errorf("modal: read volume %q: %w", req.ID, err)
+	}
+	meta := resp.GetMetadata()
+
+	importing := req.State.Name == "" && req.Inputs.Name == ""
+	state := req.State
+	state.VolumeId = req.ID
+	state.Name = meta.GetName()
+	fsv := fsVersionString(meta.GetVersion())
+	state.FsVersion = &fsv
+
+	// Modal does not report a volume's environment, so keep what is recorded.
+	environment := derefStr(state.Environment)
+	if environment == "" {
+		environment = effectiveEnvironment(rpcCtx, client, nil, cfg)
+	}
+	if importing {
+		// Confirm the ID lives in the environment we are about to record.
+		lookup, lerr := client.stub.VolumeGetOrCreate(rpcCtx, pb.VolumeGetOrCreateRequest_builder{
+			DeploymentName:     meta.GetName(),
+			EnvironmentName:    environment,
+			ObjectCreationType: pb.ObjectCreationType_OBJECT_CREATION_TYPE_UNSPECIFIED,
+		}.Build())
+		if lerr != nil || lookup.GetVolumeId() != req.ID {
+			return empty, fmt.Errorf("modal: volume %q (%s) was not found in environment %q; "+
+				"set the modal:environment provider config (or MODAL_ENVIRONMENT) to the environment the volume lives in and retry the import",
+				meta.GetName(), req.ID, environment)
+		}
+	}
+	if environment != "" {
+		state.Environment = &environment
+	}
+
+	inputs := req.Inputs
+	inputs.TokenID, inputs.TokenSecret = state.TokenID, state.TokenSecret
+	inputs.Name = meta.GetName()
+	if importing || inputs.FsVersion != nil {
+		inputs.FsVersion = &fsv
+	}
+	if importing {
+		inputs.Environment = &environment
+		if environment == "" {
+			inputs.Environment = nil
+		}
+	}
+	return infer.ReadResponse[VolumeArgs, VolumeState]{ID: req.ID, Inputs: inputs, State: state}, nil
+}
+
+// Update renames the volume in place; every other property change is a replace.
+func (r *Volume) Update(ctx context.Context, req infer.UpdateRequest[VolumeArgs, VolumeState]) (infer.UpdateResponse[VolumeState], error) {
+	state := req.State
+	state.Name = req.Inputs.Name
+	state.TokenID, state.TokenSecret = req.Inputs.TokenID, req.Inputs.TokenSecret
+	if req.DryRun || req.Inputs.Name == req.State.Name {
+		return infer.UpdateResponse[VolumeState]{Output: state}, nil
+	}
+
+	cfg := infer.GetConfig[ProviderConfig](ctx)
+	client, err := clientFor(cfg, req.Inputs.TokenID, req.Inputs.TokenSecret)
+	if err != nil {
+		return infer.UpdateResponse[VolumeState]{}, fmt.Errorf("modal: %w", err)
+	}
+	defer client.Close()
 
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-	// Modal's get-or-create RPC is also the lookup primitive: UNSPECIFIED
-	// creation type performs a lookup without mutating state if the volume
-	// already exists.
-	resp, err := client.stub.VolumeGetOrCreate(rpcCtx, pb.VolumeGetOrCreateRequest_builder{
-		DeploymentName:     req.State.Name,
-		EnvironmentName:    environment,
-		ObjectCreationType: pb.ObjectCreationType_OBJECT_CREATION_TYPE_UNSPECIFIED,
-		Version:            version,
-	}.Build())
-	if status.Code(err) == codes.NotFound {
-		// Deleted externally — signal removal.
-		return infer.ReadResponse[VolumeArgs, VolumeState]{}, nil
+	if _, err := client.stub.VolumeRename(rpcCtx, pb.VolumeRenameRequest_builder{
+		VolumeId: req.ID,
+		Name:     req.Inputs.Name,
+	}.Build()); err != nil {
+		return infer.UpdateResponse[VolumeState]{}, fmt.Errorf("modal: rename volume %q to %q: %w", req.State.Name, req.Inputs.Name, err)
 	}
-	if err != nil {
-		return infer.ReadResponse[VolumeArgs, VolumeState]{}, fmt.Errorf("modal: read volume %q: %w", req.State.Name, err)
-	}
-
-	state := req.State
-	state.VolumeId = resp.GetVolumeId()
-	return infer.ReadResponse[VolumeArgs, VolumeState]{
-		ID:     resp.GetVolumeId(),
-		Inputs: req.Inputs,
-		State:  state,
-	}, nil
+	return infer.UpdateResponse[VolumeState]{Output: state}, nil
 }
 
-// Delete removes the Modal Volume. All fields are immutable, so there is no
-// Update path — any input change triggers a replace via Diff.
+// Delete removes the Modal Volume and all of its data.
 func (r *Volume) Delete(ctx context.Context, req infer.DeleteRequest[VolumeState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	client, err := clientFor(cfg, req.State.TokenID, req.State.TokenSecret)
@@ -215,7 +347,7 @@ func (r *Volume) Delete(ctx context.Context, req infer.DeleteRequest[VolumeState
 	rpcCtx, cancel := callCtx()
 	defer cancel()
 	_, err = client.stub.VolumeDelete(rpcCtx, pb.VolumeDeleteRequest_builder{VolumeId: req.ID}.Build())
-	if err != nil && status.Code(err) != codes.NotFound {
+	if err != nil && !isNotFound(err) {
 		return infer.DeleteResponse{}, fmt.Errorf("modal: delete volume %q: %w", req.State.Name, err)
 	}
 	return infer.DeleteResponse{}, nil

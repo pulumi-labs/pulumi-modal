@@ -12,20 +12,23 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. See https://modal.com/docs/guide/secrets.
+// A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes the values from your program. See https://modal.com/docs/guide/secrets.
 type Secret struct {
 	pulumi.CustomResourceState
 
-	// The Modal environment the Secret lives in. Changing this forces a new resource.
+	// The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
 	Environment pulumi.StringPtrOutput `pulumi:"environment"`
+	// Sorted names of the keys currently stored in the Secret, as last read from Modal.
+	Keys pulumi.StringArrayOutput `pulumi:"keys"`
 	// The unique Secret name. Changing this forces a new resource.
-	Name     pulumi.StringOutput `pulumi:"name"`
+	Name pulumi.StringOutput `pulumi:"name"`
+	// The Modal-assigned identifier of the Secret.
 	SecretId pulumi.StringOutput `pulumi:"secretId"`
 	// Modal API token ID. Overrides the provider-level tokenId.
 	TokenId pulumi.StringPtrOutput `pulumi:"tokenId"`
 	// Modal API token secret. Overrides the provider-level tokenSecret.
 	TokenSecret pulumi.StringPtrOutput `pulumi:"tokenSecret"`
-	// Key/value pairs exposed as environment variables to Functions that mount this Secret.
+	// Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
 	Values pulumi.StringMapOutput `pulumi:"values"`
 }
 
@@ -90,7 +93,7 @@ func (SecretState) ElementType() reflect.Type {
 }
 
 type secretArgs struct {
-	// The Modal environment the Secret lives in. Changing this forces a new resource.
+	// The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
 	Environment *string `pulumi:"environment"`
 	// The unique Secret name. Changing this forces a new resource.
 	Name string `pulumi:"name"`
@@ -98,13 +101,13 @@ type secretArgs struct {
 	TokenId *string `pulumi:"tokenId"`
 	// Modal API token secret. Overrides the provider-level tokenSecret.
 	TokenSecret *string `pulumi:"tokenSecret"`
-	// Key/value pairs exposed as environment variables to Functions that mount this Secret.
+	// Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
 	Values map[string]string `pulumi:"values"`
 }
 
 // The set of arguments for constructing a Secret resource.
 type SecretArgs struct {
-	// The Modal environment the Secret lives in. Changing this forces a new resource.
+	// The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
 	Environment pulumi.StringPtrInput
 	// The unique Secret name. Changing this forces a new resource.
 	Name pulumi.StringInput
@@ -112,7 +115,7 @@ type SecretArgs struct {
 	TokenId pulumi.StringPtrInput
 	// Modal API token secret. Overrides the provider-level tokenSecret.
 	TokenSecret pulumi.StringPtrInput
-	// Key/value pairs exposed as environment variables to Functions that mount this Secret.
+	// Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
 	Values pulumi.StringMapInput
 }
 
@@ -203,9 +206,14 @@ func (o SecretOutput) ToSecretOutputWithContext(ctx context.Context) SecretOutpu
 	return o
 }
 
-// The Modal environment the Secret lives in. Changing this forces a new resource.
+// The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account's default environment is used.
 func (o SecretOutput) Environment() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *Secret) pulumi.StringPtrOutput { return v.Environment }).(pulumi.StringPtrOutput)
+}
+
+// Sorted names of the keys currently stored in the Secret, as last read from Modal.
+func (o SecretOutput) Keys() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v *Secret) pulumi.StringArrayOutput { return v.Keys }).(pulumi.StringArrayOutput)
 }
 
 // The unique Secret name. Changing this forces a new resource.
@@ -213,6 +221,7 @@ func (o SecretOutput) Name() pulumi.StringOutput {
 	return o.ApplyT(func(v *Secret) pulumi.StringOutput { return v.Name }).(pulumi.StringOutput)
 }
 
+// The Modal-assigned identifier of the Secret.
 func (o SecretOutput) SecretId() pulumi.StringOutput {
 	return o.ApplyT(func(v *Secret) pulumi.StringOutput { return v.SecretId }).(pulumi.StringOutput)
 }
@@ -227,7 +236,7 @@ func (o SecretOutput) TokenSecret() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *Secret) pulumi.StringPtrOutput { return v.TokenSecret }).(pulumi.StringPtrOutput)
 }
 
-// Key/value pairs exposed as environment variables to Functions that mount this Secret.
+// Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
 func (o SecretOutput) Values() pulumi.StringMapOutput {
 	return o.ApplyT(func(v *Secret) pulumi.StringMapOutput { return v.Values }).(pulumi.StringMapOutput)
 }

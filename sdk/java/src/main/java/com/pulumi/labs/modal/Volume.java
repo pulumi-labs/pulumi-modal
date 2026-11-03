@@ -21,28 +21,42 @@ import javax.annotation.Nullable;
 @ResourceType(type="modal:index:Volume")
 public class Volume extends com.pulumi.resources.CustomResource {
     /**
-     * The Modal environment the volume lives in. Changing this forces a new resource.
+     * The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume&#39;s data. When unset, the provider-level environment or the account&#39;s default environment is used.
      * 
      */
     @Export(name="environment", refs={String.class}, tree="[0]")
     private Output</* @Nullable */ String> environment;
 
     /**
-     * @return The Modal environment the volume lives in. Changing this forces a new resource.
+     * @return The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume&#39;s data. When unset, the provider-level environment or the account&#39;s default environment is used.
      * 
      */
     public Output<Optional<String>> environment() {
         return Codegen.optional(this.environment);
     }
     /**
-     * The volume&#39;s unique name. Changing this forces a new resource.
+     * Volume filesystem version: &#34;v1&#34; or &#34;v2&#34;. Defaults to &#34;v2&#34; (Modal&#39;s recommended backend; note that Modal&#39;s own SDKs default to &#34;v1&#34;). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume&#39;s data: the old volume is deleted before the new one is created because both share a name.
+     * 
+     */
+    @Export(name="fsVersion", refs={String.class}, tree="[0]")
+    private Output</* @Nullable */ String> fsVersion;
+
+    /**
+     * @return Volume filesystem version: &#34;v1&#34; or &#34;v2&#34;. Defaults to &#34;v2&#34; (Modal&#39;s recommended backend; note that Modal&#39;s own SDKs default to &#34;v1&#34;). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume&#39;s data: the old volume is deleted before the new one is created because both share a name.
+     * 
+     */
+    public Output<Optional<String>> fsVersion() {
+        return Codegen.optional(this.fsVersion);
+    }
+    /**
+     * The volume&#39;s unique name within its environment. Changing this renames the volume in place.
      * 
      */
     @Export(name="name", refs={String.class}, tree="[0]")
     private Output<String> name;
 
     /**
-     * @return The volume&#39;s unique name. Changing this forces a new resource.
+     * @return The volume&#39;s unique name within its environment. Changing this renames the volume in place.
      * 
      */
     public Output<String> name() {
@@ -75,20 +89,6 @@ public class Volume extends com.pulumi.resources.CustomResource {
      */
     public Output<Optional<String>> tokenSecret() {
         return Codegen.optional(this.tokenSecret);
-    }
-    /**
-     * Volume filesystem version: &#34;v1&#34; or &#34;v2&#34; (default). Changing this forces a new resource.
-     * 
-     */
-    @Export(name="version", refs={String.class}, tree="[0]")
-    private Output</* @Nullable */ String> version;
-
-    /**
-     * @return Volume filesystem version: &#34;v1&#34; or &#34;v2&#34; (default). Changing this forces a new resource.
-     * 
-     */
-    public Output<Optional<String>> version() {
-        return Codegen.optional(this.version);
     }
     @Export(name="volumeId", refs={String.class}, tree="[0]")
     private Output<String> volumeId;

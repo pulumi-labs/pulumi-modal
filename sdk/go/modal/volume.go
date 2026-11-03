@@ -16,17 +16,17 @@ import (
 type Volume struct {
 	pulumi.CustomResourceState
 
-	// The Modal environment the volume lives in. Changing this forces a new resource.
+	// The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
 	Environment pulumi.StringPtrOutput `pulumi:"environment"`
-	// The volume's unique name. Changing this forces a new resource.
+	// Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+	FsVersion pulumi.StringPtrOutput `pulumi:"fsVersion"`
+	// The volume's unique name within its environment. Changing this renames the volume in place.
 	Name pulumi.StringOutput `pulumi:"name"`
 	// Modal API token ID. Overrides the provider-level tokenId.
 	TokenId pulumi.StringPtrOutput `pulumi:"tokenId"`
 	// Modal API token secret. Overrides the provider-level tokenSecret.
 	TokenSecret pulumi.StringPtrOutput `pulumi:"tokenSecret"`
-	// Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-	Version  pulumi.StringPtrOutput `pulumi:"version"`
-	VolumeId pulumi.StringOutput    `pulumi:"volumeId"`
+	VolumeId    pulumi.StringOutput    `pulumi:"volumeId"`
 }
 
 // NewVolume registers a new resource with the given unique name, arguments, and options.
@@ -83,30 +83,30 @@ func (VolumeState) ElementType() reflect.Type {
 }
 
 type volumeArgs struct {
-	// The Modal environment the volume lives in. Changing this forces a new resource.
+	// The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
 	Environment *string `pulumi:"environment"`
-	// The volume's unique name. Changing this forces a new resource.
+	// Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+	FsVersion *string `pulumi:"fsVersion"`
+	// The volume's unique name within its environment. Changing this renames the volume in place.
 	Name string `pulumi:"name"`
 	// Modal API token ID. Overrides the provider-level tokenId.
 	TokenId *string `pulumi:"tokenId"`
 	// Modal API token secret. Overrides the provider-level tokenSecret.
 	TokenSecret *string `pulumi:"tokenSecret"`
-	// Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-	Version *string `pulumi:"version"`
 }
 
 // The set of arguments for constructing a Volume resource.
 type VolumeArgs struct {
-	// The Modal environment the volume lives in. Changing this forces a new resource.
+	// The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
 	Environment pulumi.StringPtrInput
-	// The volume's unique name. Changing this forces a new resource.
+	// Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+	FsVersion pulumi.StringPtrInput
+	// The volume's unique name within its environment. Changing this renames the volume in place.
 	Name pulumi.StringInput
 	// Modal API token ID. Overrides the provider-level tokenId.
 	TokenId pulumi.StringPtrInput
 	// Modal API token secret. Overrides the provider-level tokenSecret.
 	TokenSecret pulumi.StringPtrInput
-	// Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-	Version pulumi.StringPtrInput
 }
 
 func (VolumeArgs) ElementType() reflect.Type {
@@ -196,12 +196,17 @@ func (o VolumeOutput) ToVolumeOutputWithContext(ctx context.Context) VolumeOutpu
 	return o
 }
 
-// The Modal environment the volume lives in. Changing this forces a new resource.
+// The Modal environment the volume lives in. Changing this forces a new resource, which deletes the volume's data. When unset, the provider-level environment or the account's default environment is used.
 func (o VolumeOutput) Environment() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *Volume) pulumi.StringPtrOutput { return v.Environment }).(pulumi.StringPtrOutput)
 }
 
-// The volume's unique name. Changing this forces a new resource.
+// Volume filesystem version: "v1" or "v2". Defaults to "v2" (Modal's recommended backend; note that Modal's own SDKs default to "v1"). The effective version is always reported as an output. Changing this forces a new resource and deletes the volume's data: the old volume is deleted before the new one is created because both share a name.
+func (o VolumeOutput) FsVersion() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *Volume) pulumi.StringPtrOutput { return v.FsVersion }).(pulumi.StringPtrOutput)
+}
+
+// The volume's unique name within its environment. Changing this renames the volume in place.
 func (o VolumeOutput) Name() pulumi.StringOutput {
 	return o.ApplyT(func(v *Volume) pulumi.StringOutput { return v.Name }).(pulumi.StringOutput)
 }
@@ -214,11 +219,6 @@ func (o VolumeOutput) TokenId() pulumi.StringPtrOutput {
 // Modal API token secret. Overrides the provider-level tokenSecret.
 func (o VolumeOutput) TokenSecret() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *Volume) pulumi.StringPtrOutput { return v.TokenSecret }).(pulumi.StringPtrOutput)
-}
-
-// Volume filesystem version: "v1" or "v2" (default). Changing this forces a new resource.
-func (o VolumeOutput) Version() pulumi.StringPtrOutput {
-	return o.ApplyT(func(v *Volume) pulumi.StringPtrOutput { return v.Version }).(pulumi.StringPtrOutput)
 }
 
 func (o VolumeOutput) VolumeId() pulumi.StringOutput {

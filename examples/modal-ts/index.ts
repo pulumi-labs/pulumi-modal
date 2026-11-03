@@ -17,7 +17,7 @@ const apiKeys = new modal.Secret("api-keys", {
 // across container restarts and between separate Function invocations.
 const modelCache = new modal.Volume("model-cache", {
     name: "model-cache",
-    version: "v2",
+    fsVersion: "v2",
 });
 
 // Queues are durable FIFO/LIFO queues Modal Functions use to pass work to

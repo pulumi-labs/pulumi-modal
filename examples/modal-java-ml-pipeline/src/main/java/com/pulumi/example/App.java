@@ -34,7 +34,7 @@ public class App {
             var checkpoints = new Volume("checkpoint-storage",
                 VolumeArgs.builder()
                     .name("checkpoint-storage")
-                    .version("v2")
+                    .fsVersion("v2")
                     .build());
 
             // Dispatch queue for training job requests, consumed via modal.Queue.from_name("training-jobs").

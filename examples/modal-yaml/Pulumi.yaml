@@ -17,7 +17,7 @@ resources:
     type: modal:index:Volume
     properties:
       name: model-cache
-      version: v2
+      fsVersion: v2
 
   # Queues are durable FIFO/LIFO dispatch queues used to coordinate work between Modal Functions.
   job-queue:

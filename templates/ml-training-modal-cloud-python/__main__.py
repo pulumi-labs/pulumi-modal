@@ -37,7 +37,7 @@ secret = modal.Secret(
 volume = modal.Volume(
     "volume",
     name=checkpoint_volume_name,
-    version="v2",
+    fs_version="v2",
 )
 
 # Queue a training-job dispatcher enqueues onto; worker Functions pull

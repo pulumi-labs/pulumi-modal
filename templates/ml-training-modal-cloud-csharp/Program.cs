@@ -38,7 +38,7 @@ return await Deployment.RunAsync(() =>
     var volume = new Volume("volume", new VolumeArgs
     {
         Name = checkpointVolumeName,
-        Version = "v2",
+        FsVersion = "v2",
     });
 
     // Queue a training-job dispatcher enqueues onto; worker Functions

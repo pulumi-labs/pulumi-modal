@@ -21,8 +21,8 @@ func main() {
 
 		// Volumes are durable network filesystems that Modal Functions mount for shared, persistent state (e.g. model weights).
 		volume, err := modal.NewVolume(ctx, "model-cache", &modal.VolumeArgs{
-			Name:    pulumi.String("model-cache"),
-			Version: pulumi.String("v2"),
+			Name:      pulumi.String("model-cache"),
+			FsVersion: pulumi.String("v2"),
 		})
 		if err != nil {
 			return err

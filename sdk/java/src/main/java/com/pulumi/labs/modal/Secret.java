@@ -16,24 +16,38 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
- * A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. See https://modal.com/docs/guide/secrets.
+ * A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes the values from your program. See https://modal.com/docs/guide/secrets.
  * 
  */
 @ResourceType(type="modal:index:Secret")
 public class Secret extends com.pulumi.resources.CustomResource {
     /**
-     * The Modal environment the Secret lives in. Changing this forces a new resource.
+     * The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account&#39;s default environment is used.
      * 
      */
     @Export(name="environment", refs={String.class}, tree="[0]")
     private Output</* @Nullable */ String> environment;
 
     /**
-     * @return The Modal environment the Secret lives in. Changing this forces a new resource.
+     * @return The Modal environment the Secret lives in. Changing this forces a new resource. When unset, the provider-level environment or the account&#39;s default environment is used.
      * 
      */
     public Output<Optional<String>> environment() {
         return Codegen.optional(this.environment);
+    }
+    /**
+     * Sorted names of the keys currently stored in the Secret, as last read from Modal.
+     * 
+     */
+    @Export(name="keys", refs={List.class,String.class}, tree="[0,1]")
+    private Output</* @Nullable */ List<String>> keys;
+
+    /**
+     * @return Sorted names of the keys currently stored in the Secret, as last read from Modal.
+     * 
+     */
+    public Output<Optional<List<String>>> keys() {
+        return Codegen.optional(this.keys);
     }
     /**
      * The unique Secret name. Changing this forces a new resource.
@@ -49,9 +63,17 @@ public class Secret extends com.pulumi.resources.CustomResource {
     public Output<String> name() {
         return this.name;
     }
+    /**
+     * The Modal-assigned identifier of the Secret.
+     * 
+     */
     @Export(name="secretId", refs={String.class}, tree="[0]")
     private Output<String> secretId;
 
+    /**
+     * @return The Modal-assigned identifier of the Secret.
+     * 
+     */
     public Output<String> secretId() {
         return this.secretId;
     }
@@ -84,14 +106,14 @@ public class Secret extends com.pulumi.resources.CustomResource {
         return Codegen.optional(this.tokenSecret);
     }
     /**
-     * Key/value pairs exposed as environment variables to Functions that mount this Secret.
+     * Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
      * 
      */
     @Export(name="values", refs={Map.class,String.class}, tree="[0,1,1]")
     private Output<Map<String,String>> values;
 
     /**
-     * @return Key/value pairs exposed as environment variables to Functions that mount this Secret.
+     * @return Key/value pairs exposed as environment variables to Functions that mount this Secret. Keys must be valid environment variable names (letters, digits and underscores, not starting with a digit).
      * 
      */
     public Output<Map<String,String>> values() {

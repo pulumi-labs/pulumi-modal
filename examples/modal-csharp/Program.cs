@@ -19,7 +19,7 @@ return await Deployment.RunAsync(() =>
     var volume = new Volume("model-cache", new VolumeArgs
     {
         Name = "model-cache",
-        Version = "v2",
+        FsVersion = "v2",
     });
 
     // Queues are durable FIFO/LIFO dispatch queues used to coordinate work between Modal Functions.

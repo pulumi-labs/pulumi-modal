@@ -41,12 +41,14 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net"
 	"regexp"
 	"time"
 
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -98,10 +100,17 @@ func newModalClient(tokenID, tokenSecret, serverAddr string) (*modalClient, erro
 	}
 
 	creds := credentials.NewTLS(nil)
+	if isLoopbackAddr(serverAddr) {
+		// Plaintext is only ever used for a loopback address (a local mock
+		// server in tests); every other endpoint, including the production
+		// default, is always dialed over TLS.
+		creds = insecure.NewCredentials()
+	}
 	conn, err := grpc.NewClient(
 		serverAddr,
 		grpc.WithTransportCredentials(creds),
 		grpc.WithUnaryInterceptor(authInterceptor(tokenID, tokenSecret)),
+		grpc.WithStreamInterceptor(streamAuthInterceptor(tokenID, tokenSecret)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("modal: dial %s: %w", serverAddr, err)
@@ -111,6 +120,19 @@ func newModalClient(tokenID, tokenSecret, serverAddr string) (*modalClient, erro
 		stub: pb.NewModalClientClient(conn),
 		conn: conn,
 	}, nil
+}
+
+// isLoopbackAddr reports whether addr (host:port) points at the local machine.
+func isLoopbackAddr(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 func (c *modalClient) Close() error {
@@ -136,6 +158,28 @@ func authInterceptor(tokenID, tokenSecret string) grpc.UnaryClientInterceptor {
 			"x-modal-token-secret", tokenSecret,
 		)
 		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
+// streamAuthInterceptor injects the same headers on streaming RPCs, which the
+// image build log stream needs.
+func streamAuthInterceptor(tokenID, tokenSecret string) grpc.StreamClientInterceptor {
+	return func(
+		ctx context.Context,
+		desc *grpc.StreamDesc,
+		cc *grpc.ClientConn,
+		method string,
+		streamer grpc.Streamer,
+		opts ...grpc.CallOption,
+	) (grpc.ClientStream, error) {
+		ctx = metadata.AppendToOutgoingContext(ctx,
+			"x-modal-client-type", fmt.Sprintf("%d", clientTypeLibmodalGo),
+			"x-modal-client-version", providerClientVersion,
+			"x-modal-libmodal-version", "pulumi-modal/"+providerClientVersion,
+			"x-modal-token-id", tokenID,
+			"x-modal-token-secret", tokenSecret,
+		)
+		return streamer(ctx, desc, cc, method, opts...)
 	}
 }
 
