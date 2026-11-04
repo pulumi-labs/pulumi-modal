@@ -26,10 +26,10 @@ class ProviderArgs:
         """
         The set of arguments for constructing a Provider resource.
 
-        :param pulumi.Input[_builtins.str] environment: Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+        :param pulumi.Input[_builtins.str] environment: Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
         :param pulumi.Input[_builtins.str] server_addr: Override for Modal's gRPC control-plane endpoint. Only used for testing.
-        :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
-        :param pulumi.Input[_builtins.str] token_secret: Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+        :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
+        :param pulumi.Input[_builtins.str] token_secret: Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         """
         if environment is None:
             environment = _utilities.get_env('MODAL_ENVIRONMENT')
@@ -52,7 +52,7 @@ class ProviderArgs:
     @pulumi.getter
     def environment(self) -> Optional[pulumi.Input[_builtins.str]]:
         """
-        Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+        Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
         """
         return pulumi.get(self, "environment")
 
@@ -76,7 +76,7 @@ class ProviderArgs:
     @pulumi.getter(name="tokenId")
     def token_id(self) -> Optional[pulumi.Input[_builtins.str]]:
         """
-        Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+        Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         """
         return pulumi.get(self, "token_id")
 
@@ -88,7 +88,7 @@ class ProviderArgs:
     @pulumi.getter(name="tokenSecret")
     def token_secret(self) -> Optional[pulumi.Input[_builtins.str]]:
         """
-        Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+        Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         """
         return pulumi.get(self, "token_secret")
 
@@ -113,10 +113,10 @@ class Provider(pulumi.ProviderResource):
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[_builtins.str] environment: Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+        :param pulumi.Input[_builtins.str] environment: Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
         :param pulumi.Input[_builtins.str] server_addr: Override for Modal's gRPC control-plane endpoint. Only used for testing.
-        :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
-        :param pulumi.Input[_builtins.str] token_secret: Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+        :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
+        :param pulumi.Input[_builtins.str] token_secret: Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         """
         ...
     @overload
@@ -179,7 +179,7 @@ class Provider(pulumi.ProviderResource):
     @pulumi.getter
     def environment(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+        Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
         """
         return pulumi.get(self, "environment")
 
@@ -195,7 +195,7 @@ class Provider(pulumi.ProviderResource):
     @pulumi.getter(name="tokenId")
     def token_id(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+        Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         """
         return pulumi.get(self, "token_id")
 
@@ -203,7 +203,7 @@ class Provider(pulumi.ProviderResource):
     @pulumi.getter(name="tokenSecret")
     def token_secret(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
-        Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+        Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         """
         return pulumi.get(self, "token_secret")
 

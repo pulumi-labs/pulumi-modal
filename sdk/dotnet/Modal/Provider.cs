@@ -14,7 +14,7 @@ namespace Pulumi.Labs.Modal
     public partial class Provider : global::Pulumi.ProviderResource
     {
         /// <summary>
-        /// Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+        /// Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
         /// </summary>
         [Output("environment")]
         public Output<string?> Environment { get; private set; } = null!;
@@ -26,13 +26,13 @@ namespace Pulumi.Labs.Modal
         public Output<string?> ServerAddr { get; private set; } = null!;
 
         /// <summary>
-        /// Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+        /// Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         /// </summary>
         [Output("tokenId")]
         public Output<string?> TokenId { get; private set; } = null!;
 
         /// <summary>
-        /// Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+        /// Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         /// </summary>
         [Output("tokenSecret")]
         public Output<string?> TokenSecret { get; private set; } = null!;
@@ -72,7 +72,7 @@ namespace Pulumi.Labs.Modal
     public sealed class ProviderArgs : global::Pulumi.ResourceArgs
     {
         /// <summary>
-        /// Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+        /// Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
         /// </summary>
         [Input("environment")]
         public Input<string>? Environment { get; set; }
@@ -87,7 +87,7 @@ namespace Pulumi.Labs.Modal
         private Input<string>? _tokenId;
 
         /// <summary>
-        /// Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+        /// Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         /// </summary>
         public Input<string>? TokenId
         {
@@ -103,7 +103,7 @@ namespace Pulumi.Labs.Modal
         private Input<string>? _tokenSecret;
 
         /// <summary>
-        /// Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+        /// Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         /// </summary>
         public Input<string>? TokenSecret
         {

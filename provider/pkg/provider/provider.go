@@ -28,15 +28,19 @@ import (
 // ProviderConfig holds provider-level configuration shared across all
 // resources. Every field can be overridden per-resource.
 type ProviderConfig struct {
-	// TokenID is the Modal API token ID. Falls back to MODAL_TOKEN_ID.
+	// TokenID is the Modal API token ID. Falls back to MODAL_TOKEN_ID, then
+	// to the active profile of ~/.modal.toml.
 	TokenID *string `pulumi:"tokenId,optional" provider:"secret"`
 
-	// TokenSecret is the Modal API token secret. Falls back to MODAL_TOKEN_SECRET.
+	// TokenSecret is the Modal API token secret. Falls back to
+	// MODAL_TOKEN_SECRET, then to the active profile of ~/.modal.toml.
 	TokenSecret *string `pulumi:"tokenSecret,optional" provider:"secret"`
 
 	// Environment is the default Modal environment (workspace sub-namespace)
 	// resources are created in when not overridden per-resource. Falls back
-	// to MODAL_ENVIRONMENT, then to the account's default environment.
+	// to MODAL_ENVIRONMENT, then to the `environment` of the ~/.modal.toml
+	// profile in use (only when that profile supplies the credentials), then
+	// to the account's default environment.
 	Environment *string `pulumi:"environment,optional"`
 
 	// ServerAddr overrides Modal's gRPC control-plane endpoint. Intended for
@@ -52,9 +56,9 @@ func (c *ProviderConfig) Annotate(a infer.Annotator) {
 	a.SetDefault(&c.TokenSecret, nil, "MODAL_TOKEN_SECRET")
 	a.SetDefault(&c.Environment, nil, "MODAL_ENVIRONMENT")
 	a.SetDefault(&c.ServerAddr, nil, "MODAL_SERVER_ADDR")
-	a.Describe(&c.TokenID, "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.")
-	a.Describe(&c.TokenSecret, "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.")
-	a.Describe(&c.Environment, "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.")
+	a.Describe(&c.TokenID, "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.")
+	a.Describe(&c.TokenSecret, "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.")
+	a.Describe(&c.Environment, "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.")
 	a.Describe(&c.ServerAddr, "Override for Modal's gRPC control-plane endpoint. Only used for testing.")
 }
 
@@ -83,7 +87,7 @@ func derefStr(s *string) string {
 // "whatever the account default is" and never forces a replace, and a state
 // that predates environment tracking (empty) cannot be compared.
 func environmentChanged(input *string, state *string, cfg ProviderConfig) bool {
-	desired := resolveStr(input, cfg.Environment)
+	desired := resolveEnv(input, cfg)
 	recorded := derefStr(state)
 	return desired != "" && recorded != "" && desired != recorded
 }
@@ -93,7 +97,7 @@ func environmentChanged(input *string, state *string, cfg ProviderConfig) bool {
 // default environment as reported by Modal. Looking up the default is best
 // effort; on failure it returns "" and the caller records nothing.
 func effectiveEnvironment(ctx context.Context, client *modalClient, input *string, cfg ProviderConfig) string {
-	if env := resolveStr(input, cfg.Environment); env != "" {
+	if env := resolveEnv(input, cfg); env != "" {
 		return env
 	}
 	resp, err := client.stub.EnvironmentList(ctx, &emptypb.Empty{})
@@ -118,6 +122,25 @@ func clientFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string)
 	tokenID := resolveStr(resourceTokenID, cfg.TokenID)
 	tokenSecret := resolveStr(resourceTokenSecret, cfg.TokenSecret)
 	serverAddr := resolveStr(nil, cfg.ServerAddr)
+
+	// Last source: the profile file the Modal CLI writes. Only consulted when
+	// nothing above supplied a token.
+	var prof *modalProfile
+	if tokenID == "" && tokenSecret == "" {
+		var err error
+		if prof, err = loadModalProfile(); err != nil {
+			return nil, err
+		}
+		if prof != nil {
+			tokenID, tokenSecret = prof.TokenID, prof.TokenSecret
+			if serverAddr == "" {
+				serverAddr = prof.serverAddr()
+			}
+		}
+	}
+	if tokenID == "" || tokenSecret == "" {
+		return nil, missingCredentialsError(tokenID, tokenSecret, prof)
+	}
 	return newModalClient(tokenID, tokenSecret, serverAddr)
 }
 

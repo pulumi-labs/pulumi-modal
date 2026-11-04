@@ -8,7 +8,7 @@ declare var exports: any;
 const __config = new pulumi.Config("modal");
 
 /**
- * Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+ * Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
  */
 export declare const environment: string | undefined;
 Object.defineProperty(exports, "environment", {
@@ -30,7 +30,7 @@ Object.defineProperty(exports, "serverAddr", {
 });
 
 /**
- * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+ * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
  */
 export declare const tokenId: string | undefined;
 Object.defineProperty(exports, "tokenId", {
@@ -41,7 +41,7 @@ Object.defineProperty(exports, "tokenId", {
 });
 
 /**
- * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+ * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
  */
 export declare const tokenSecret: string | undefined;
 Object.defineProperty(exports, "tokenSecret", {

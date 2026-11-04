@@ -46,7 +46,7 @@
     "variables": {
       "environment": {
         "type": "string",
-        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.",
+        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.",
         "defaultInfo": {
           "environment": [
             "MODAL_ENVIRONMENT"
@@ -64,7 +64,7 @@
       },
       "tokenId": {
         "type": "string",
-        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.",
+        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.",
         "defaultInfo": {
           "environment": [
             "MODAL_TOKEN_ID"
@@ -74,7 +74,7 @@
       },
       "tokenSecret": {
         "type": "string",
-        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.",
+        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.",
         "defaultInfo": {
           "environment": [
             "MODAL_TOKEN_SECRET"
@@ -88,7 +88,7 @@
     "properties": {
       "environment": {
         "type": "string",
-        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.",
+        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.",
         "defaultInfo": {
           "environment": [
             "MODAL_ENVIRONMENT"
@@ -106,7 +106,7 @@
       },
       "tokenId": {
         "type": "string",
-        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.",
+        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.",
         "defaultInfo": {
           "environment": [
             "MODAL_TOKEN_ID"
@@ -116,7 +116,7 @@
       },
       "tokenSecret": {
         "type": "string",
-        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.",
+        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.",
         "defaultInfo": {
           "environment": [
             "MODAL_TOKEN_SECRET"
@@ -128,7 +128,7 @@
     "inputProperties": {
       "environment": {
         "type": "string",
-        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.",
+        "description": "Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.",
         "defaultInfo": {
           "environment": [
             "MODAL_ENVIRONMENT"
@@ -146,7 +146,7 @@
       },
       "tokenId": {
         "type": "string",
-        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.",
+        "description": "Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.",
         "defaultInfo": {
           "environment": [
             "MODAL_TOKEN_ID"
@@ -156,7 +156,7 @@
       },
       "tokenSecret": {
         "type": "string",
-        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.",
+        "description": "Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.",
         "defaultInfo": {
           "environment": [
             "MODAL_TOKEN_SECRET"

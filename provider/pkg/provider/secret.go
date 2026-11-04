@@ -130,7 +130,7 @@ func (r *Secret) Diff(ctx context.Context, req infer.DiffRequest[SecretArgs, Sec
 		resp.DetailedDiff["name"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
-	if environmentChanged(req.Inputs.Environment, req.State.Environment, cfg) {
+	if environmentChanged(req.Inputs.Environment, req.State.Environment, withResourceTokens(cfg, req.Inputs.TokenID, req.Inputs.TokenSecret)) {
 		resp.DetailedDiff["environment"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
@@ -160,7 +160,7 @@ func (r *Secret) Create(ctx context.Context, req infer.CreateRequest[SecretArgs]
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	if req.DryRun {
 		state := SecretState{SecretArgs: args, Keys: sortedKeys(args.Values)}
-		if env := resolveStr(args.Environment, cfg.Environment); env != "" {
+		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
 		return infer.CreateResponse[SecretState]{ID: args.Name, Output: state}, nil
@@ -179,7 +179,7 @@ func (r *Secret) Create(ctx context.Context, req infer.CreateRequest[SecretArgs]
 
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-	environment := effectiveEnvironment(rpcCtx, client, args.Environment, cfg)
+	environment := effectiveEnvironment(rpcCtx, client, args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret))
 	resp, err := client.stub.SecretGetOrCreate(rpcCtx, pb.SecretGetOrCreateRequest_builder{
 		DeploymentName:     args.Name,
 		EnvironmentName:    environment,

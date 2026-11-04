@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"regexp"
+	"strings"
 	"sync"
 	"testing"
 
@@ -84,6 +86,10 @@ func newFakeModal() *fakeModal {
 	}
 }
 
+// knownLibmodalVersion is the form of x-modal-libmodal-version the live
+// control plane accepts for the Go client type.
+var knownLibmodalVersion = regexp.MustCompile(`^modal-go/[0-9]+[.][0-9]+[.][0-9]+$`)
+
 // startFakeModal serves a fakeModal on a loopback port and returns it with
 // its address.
 func startFakeModal(t *testing.T) (*fakeModal, string) {
@@ -92,7 +98,7 @@ func startFakeModal(t *testing.T) (*fakeModal, string) {
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	srv := grpc.NewServer(grpc.UnaryInterceptor(func(
-		ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
+		ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
 	) (any, error) {
 		md, _ := metadata.FromIncomingContext(ctx)
 		if got := md.Get("x-modal-token-id"); len(got) != 1 || got[0] != "ak-test" {
@@ -100,6 +106,20 @@ func startFakeModal(t *testing.T) (*fakeModal, string) {
 		}
 		if got := md.Get("x-modal-token-secret"); len(got) != 1 || got[0] != "as-test" {
 			return nil, status.Error(codes.Unauthenticated, "bad token secret")
+		}
+		// Like the live control plane, reject clients it cannot place: the
+		// official Go SDK sends client type 9, client version 1.0.0 and
+		// "modal-go/<sdk version>".
+		if info.FullMethod == "/modal.client.ModalClient/AppGetOrCreate" {
+			if got := md.Get("x-modal-client-type"); len(got) != 1 || got[0] != "9" {
+				return nil, status.Error(codes.FailedPrecondition, "Could not determine the SDK version for client type "+strings.Join(got, ","))
+			}
+			if got := md.Get("x-modal-client-version"); len(got) != 1 || got[0] != "1.0.0" {
+				return nil, status.Error(codes.FailedPrecondition, "Unsupported client version")
+			}
+			if got := md.Get("x-modal-libmodal-version"); len(got) != 1 || !knownLibmodalVersion.MatchString(got[0]) {
+				return nil, status.Error(codes.FailedPrecondition, "Could not determine the SDK version for client type CLIENT_TYPE_LIBMODAL_GO")
+			}
 		}
 		return handler(ctx, req)
 	}))

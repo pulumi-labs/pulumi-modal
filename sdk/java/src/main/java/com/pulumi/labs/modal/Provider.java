@@ -17,14 +17,14 @@ import javax.annotation.Nullable;
 @ResourceType(type="pulumi:providers:modal")
 public class Provider extends com.pulumi.resources.ProviderResource {
     /**
-     * Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the account&#39;s default environment.
+     * Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account&#39;s default environment.
      * 
      */
     @Export(name="environment", refs={String.class}, tree="[0]")
     private Output</* @Nullable */ String> environment;
 
     /**
-     * @return Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the account&#39;s default environment.
+     * @return Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account&#39;s default environment.
      * 
      */
     public Output<Optional<String>> environment() {
@@ -45,28 +45,28 @@ public class Provider extends com.pulumi.resources.ProviderResource {
         return Codegen.optional(this.serverAddr);
     }
     /**
-     * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+     * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      * 
      */
     @Export(name="tokenId", refs={String.class}, tree="[0]")
     private Output</* @Nullable */ String> tokenId;
 
     /**
-     * @return Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+     * @return Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      * 
      */
     public Output<Optional<String>> tokenId() {
         return Codegen.optional(this.tokenId);
     }
     /**
-     * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+     * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      * 
      */
     @Export(name="tokenSecret", refs={String.class}, tree="[0]")
     private Output</* @Nullable */ String> tokenSecret;
 
     /**
-     * @return Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+     * @return Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      * 
      */
     public Output<Optional<String>> tokenSecret() {

@@ -176,7 +176,7 @@ func (r *Image) Diff(ctx context.Context, req infer.DiffRequest[ImageArgs, Image
 		resp.DetailedDiff[key] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
-	if environmentChanged(req.Inputs.Environment, req.State.Environment, cfg) {
+	if environmentChanged(req.Inputs.Environment, req.State.Environment, withResourceTokens(cfg, req.Inputs.TokenID, req.Inputs.TokenSecret)) {
 		replace("environment")
 	}
 	imported := req.State.BaseImage == nil
@@ -221,7 +221,7 @@ func (r *Image) Create(ctx context.Context, req infer.CreateRequest[ImageArgs]) 
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	if req.DryRun {
 		state := ImageState{ImageArgs: args}
-		if env := resolveStr(args.Environment, cfg.Environment); env != "" {
+		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
 		return infer.CreateResponse[ImageState]{ID: derefStr(args.BaseImage), Output: state}, nil
@@ -238,7 +238,7 @@ func (r *Image) Create(ctx context.Context, req infer.CreateRequest[ImageArgs]) 
 
 	buildCtx, cancel := context.WithTimeout(ctx, imageBuildTimeout)
 	defer cancel()
-	environment := effectiveEnvironment(buildCtx, client, args.Environment, cfg)
+	environment := effectiveEnvironment(buildCtx, client, args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret))
 
 	app, err := client.stub.AppGetOrCreate(buildCtx, pb.AppGetOrCreateRequest_builder{
 		AppName:            buildAppName,
@@ -323,7 +323,7 @@ func (r *Image) Read(ctx context.Context, req infer.ReadRequest[ImageArgs, Image
 	state.ImageId = req.ID
 	environment := derefStr(state.Environment)
 	if environment == "" {
-		environment = effectiveEnvironment(rpcCtx, client, nil, cfg)
+		environment = effectiveEnvironment(rpcCtx, client, nil, withResourceTokens(cfg, req.State.TokenID, req.State.TokenSecret))
 	}
 
 	// Published names pointing at this image.

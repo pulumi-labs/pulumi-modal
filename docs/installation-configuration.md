@@ -44,4 +44,6 @@ pulumi config set --secret modal:tokenSecret as-xxxxxxxxxxxxxxxx
 pulumi config set modal:environment production
 ```
 
+If you have already authenticated the Modal CLI with `modal token new` or `modal setup`, neither is needed: when no token is set anywhere else, the provider uses the profile in `~/.modal.toml` (or the file named by `MODAL_CONFIG_PATH`), choosing the profile named by `MODAL_PROFILE`, otherwise the one marked `active = true`. The lookup order is the resource's `tokenId` / `tokenSecret`, then `modal:tokenId` / `modal:tokenSecret`, then `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET`, then the profile file. Unlike the Modal Python SDK, which merges them field by field, the provider takes the token pair from one source only, and it applies the profile's `environment` and `server_url` only when the profile supplies the credentials.
+
 Each resource also accepts `tokenId`, `tokenSecret` and `environment` inputs, so a single stack can provision resources under different Modal accounts or workspaces. When no environment is set, Modal uses the account's default environment.

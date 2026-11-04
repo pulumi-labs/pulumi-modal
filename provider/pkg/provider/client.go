@@ -43,6 +43,8 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"runtime/debug"
+	"strings"
 	"time"
 
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
@@ -55,11 +57,46 @@ import (
 // defaultServerAddr is Modal's production gRPC control-plane endpoint.
 const defaultServerAddr = "api.modal.com:443"
 
-// providerClientVersion identifies this provider to Modal's control plane.
-// It is deliberately independent from the Pulumi provider's own semantic
-// version (pkg/version.Version) since it describes wire-protocol
-// compatibility, not provider release cadence.
+// providerClientVersion is the Modal client protocol version, sent as
+// x-modal-client-version. It matches what the official Go SDK sends (it
+// "behaves like" that Python SDK version) and is independent of the Pulumi
+// provider's own version (pkg/version.Version).
 const providerClientVersion = "1.0.0"
+
+// modalSDKModule is the vendored Modal Go SDK, whose version the control plane
+// expects in x-modal-libmodal-version.
+const modalSDKModule = "github.com/modal-labs/modal-client/go"
+
+// fallbackModalSDKVersion is used when build info is unavailable. A unit test
+// keeps it equal to the version in go.mod, so bump both together when
+// upgrading the Modal SDK.
+const fallbackModalSDKVersion = "0.11.1"
+
+// modalSDKVersion returns the vendored Modal Go SDK's version without the
+// leading "v".
+func modalSDKVersion() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, dep := range info.Deps {
+			if dep.Path != modalSDKModule {
+				continue
+			}
+			if dep.Replace != nil && dep.Replace.Version != "" {
+				dep = dep.Replace
+			}
+			if v := strings.TrimPrefix(dep.Version, "v"); v != "" && v != "(devel)" {
+				return v
+			}
+		}
+	}
+	return fallbackModalSDKVersion
+}
+
+// libmodalVersionHeader is the x-modal-libmodal-version value. Modal's control
+// plane validates it against the SDK versions it knows for the Go client type
+// and fails requests like AppGetOrCreate with "Could not determine the SDK
+// version for client type CLIENT_TYPE_LIBMODAL_GO" for anything else, so send
+// what the official Go SDK sends: "modal-go/<sdk version>".
+func libmodalVersionHeader() string { return "modal-go/" + modalSDKVersion() }
 
 // clientTypeLibmodalGo is pb.ClientType_CLIENT_TYPE_LIBMODAL_GO. This provider
 // is a Go program built directly on Modal's published Go protobuf client, so
@@ -93,7 +130,7 @@ type modalClient struct {
 // for tests); pass "" to use the production endpoint.
 func newModalClient(tokenID, tokenSecret, serverAddr string) (*modalClient, error) {
 	if tokenID == "" || tokenSecret == "" {
-		return nil, fmt.Errorf("modal: both tokenId and tokenSecret are required")
+		return nil, fmt.Errorf("both tokenId and tokenSecret are required")
 	}
 	if serverAddr == "" {
 		serverAddr = defaultServerAddr
@@ -113,7 +150,7 @@ func newModalClient(tokenID, tokenSecret, serverAddr string) (*modalClient, erro
 		grpc.WithStreamInterceptor(streamAuthInterceptor(tokenID, tokenSecret)),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("modal: dial %s: %w", serverAddr, err)
+		return nil, fmt.Errorf("dial %s: %w", serverAddr, err)
 	}
 
 	return &modalClient{
@@ -153,7 +190,7 @@ func authInterceptor(tokenID, tokenSecret string) grpc.UnaryClientInterceptor {
 		ctx = metadata.AppendToOutgoingContext(ctx,
 			"x-modal-client-type", fmt.Sprintf("%d", clientTypeLibmodalGo),
 			"x-modal-client-version", providerClientVersion,
-			"x-modal-libmodal-version", "pulumi-modal/"+providerClientVersion,
+			"x-modal-libmodal-version", libmodalVersionHeader(),
 			"x-modal-token-id", tokenID,
 			"x-modal-token-secret", tokenSecret,
 		)
@@ -175,7 +212,7 @@ func streamAuthInterceptor(tokenID, tokenSecret string) grpc.StreamClientInterce
 		ctx = metadata.AppendToOutgoingContext(ctx,
 			"x-modal-client-type", fmt.Sprintf("%d", clientTypeLibmodalGo),
 			"x-modal-client-version", providerClientVersion,
-			"x-modal-libmodal-version", "pulumi-modal/"+providerClientVersion,
+			"x-modal-libmodal-version", libmodalVersionHeader(),
 			"x-modal-token-id", tokenID,
 			"x-modal-token-secret", tokenSecret,
 		)

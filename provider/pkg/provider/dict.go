@@ -90,7 +90,7 @@ func (r *Dict) Diff(ctx context.Context, req infer.DiffRequest[DictArgs, DictSta
 		resp.DetailedDiff["name"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
-	if environmentChanged(req.Inputs.Environment, req.State.Environment, cfg) {
+	if environmentChanged(req.Inputs.Environment, req.State.Environment, withResourceTokens(cfg, req.Inputs.TokenID, req.Inputs.TokenSecret)) {
 		resp.DetailedDiff["environment"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
@@ -102,7 +102,7 @@ func (r *Dict) Create(ctx context.Context, req infer.CreateRequest[DictArgs]) (i
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	if req.DryRun {
 		state := DictState{DictArgs: args}
-		if env := resolveStr(args.Environment, cfg.Environment); env != "" {
+		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
 		return infer.CreateResponse[DictState]{ID: args.Name, Output: state}, nil
@@ -116,7 +116,7 @@ func (r *Dict) Create(ctx context.Context, req infer.CreateRequest[DictArgs]) (i
 
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-	environment := effectiveEnvironment(rpcCtx, client, args.Environment, cfg)
+	environment := effectiveEnvironment(rpcCtx, client, args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret))
 	resp, err := client.stub.DictGetOrCreate(rpcCtx, pb.DictGetOrCreateRequest_builder{
 		DeploymentName:     args.Name,
 		EnvironmentName:    environment,
@@ -162,7 +162,7 @@ func (r *Dict) Read(ctx context.Context, req infer.ReadRequest[DictArgs, DictSta
 
 	environment := derefStr(state.Environment)
 	if environment == "" {
-		environment = effectiveEnvironment(rpcCtx, client, nil, cfg)
+		environment = effectiveEnvironment(rpcCtx, client, nil, withResourceTokens(cfg, req.State.TokenID, req.State.TokenSecret))
 	}
 	if importing {
 		lookup, lerr := client.stub.DictGetOrCreate(rpcCtx, pb.DictGetOrCreateRequest_builder{

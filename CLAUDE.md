@@ -9,7 +9,7 @@
 | Type token prefix | `modal:index:` |
 | Resources | `Secret`, `Volume`, `Queue` |
 | Upstream API | Modal gRPC control-plane (`github.com/modal-labs/modal-client/go/proto/modal_proto`) |
-| Auth | `x-modal-token-id` / `x-modal-token-secret` gRPC metadata, injected per-RPC |
+| Auth | `x-modal-token-id` / `x-modal-token-secret` gRPC metadata, injected per-RPC. Token lookup: resource inputs, `modal:tokenId`/`modal:tokenSecret`, `MODAL_TOKEN_ID`/`MODAL_TOKEN_SECRET`, then the `~/.modal.toml` profile (`MODAL_CONFIG_PATH`, `MODAL_PROFILE`, else `active = true`); the profile's `environment`/`server_url` apply only when it supplies the credentials |
 | pulumi-go-provider | `infer` package (native provider) |
 | Resource count | 3 |
 
@@ -186,6 +186,9 @@ Tests in `pkg/provider/provider_test.go`:
 - `TestResolveStr_NeitherSetReturnsEmpty` — both unset returns ""
 - `TestClientFor_UsesResourceOverrideTokens` — `clientFor` prefers resource-level tokenId/tokenSecret
 - `TestClientFor_FallsBackToProviderTokens` — `clientFor` falls back to provider-level tokens
+- `TestLoadModalProfile_*`, `TestModalProfileServerAddr` — `~/.modal.toml` profile selection (`MODAL_PROFILE`, `active = true`, `default`), missing/malformed file, `server_url` to host:port
+- `TestClientFor_CredentialPrecedence`, `TestClientFor_MissingCredentialsMessage` — config and env beat the profile file; half a token pair is an error; the error names every source and has no doubled `modal:` prefix
+- `TestResolveEnv_Precedence`, `TestProfileFile_EndToEnd` — profile `environment` below `modal:environment`/`MODAL_ENVIRONMENT`, and a default provider working from the profile file alone
 - `TestSecretArgs_RequiredFields` — `SecretArgs.Name`/`Values` required-field shape
 - `TestVolumeArgs_RequiredFields` — `VolumeArgs.Name` required-field shape
 - `TestQueueArgs_RequiredFields` — `QueueArgs.Name` required-field shape
