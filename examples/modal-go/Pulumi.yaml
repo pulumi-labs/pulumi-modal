@@ -1,3 +1,0 @@
-name: modal-go
-runtime: go
-description: Provision Modal secrets, volumes, and queues for serverless GPU workloads with Pulumi (Go)
