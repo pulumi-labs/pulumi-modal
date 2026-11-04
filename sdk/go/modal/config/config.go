@@ -11,7 +11,7 @@ import (
 
 var _ = internal.GetEnvOrDefault
 
-// Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+// Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
 func GetEnvironment(ctx *pulumi.Context) string {
 	v, err := config.Try(ctx, "modal:environment")
 	if err == nil {
@@ -37,7 +37,7 @@ func GetServerAddr(ctx *pulumi.Context) string {
 	return value
 }
 
-// Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+// Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
 func GetTokenId(ctx *pulumi.Context) string {
 	v, err := config.Try(ctx, "modal:tokenId")
 	if err == nil {
@@ -50,7 +50,7 @@ func GetTokenId(ctx *pulumi.Context) string {
 	return value
 }
 
-// Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+// Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
 func GetTokenSecret(ctx *pulumi.Context) string {
 	v, err := config.Try(ctx, "modal:tokenSecret")
 	if err == nil {

@@ -139,7 +139,8 @@ func (f *fakeModal) EnvironmentUpdate(_ context.Context, req *pb.EnvironmentUpda
 		v := req.GetMaxConcurrentGpus()
 		e.maxGpus = &v
 	}
-	return f.envItem(e), nil
+	// Like the live API, the update response is sparse: no name, no ID.
+	return pb.EnvironmentListItem_builder{WebhookSuffix: e.suffix}.Build(), nil
 }
 
 func (f *fakeModal) EnvironmentDelete(_ context.Context, req *pb.EnvironmentDeleteRequest) (*emptypb.Empty, error) {
@@ -181,11 +182,12 @@ func (f *fakeModal) AppGetOrCreate(_ context.Context, req *pb.AppGetOrCreateRequ
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	env := f.resolveEnv(req.GetEnvironmentName())
+	// Like the live API, Apps do not support CREATE_FAIL_IF_EXISTS.
+	if req.GetObjectCreationType() == pb.ObjectCreationType_OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS {
+		return nil, status.Error(codes.InvalidArgument, "Invalid object creation type")
+	}
 	for _, a := range f.apps {
 		if a.name == req.GetAppName() && a.env == env && !a.stopped {
-			if req.GetObjectCreationType() == pb.ObjectCreationType_OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS {
-				return nil, status.Error(codes.AlreadyExists, "app exists")
-			}
 			return pb.AppGetOrCreateResponse_builder{AppId: a.id}.Build(), nil
 		}
 	}
@@ -273,7 +275,8 @@ func (f *fakeModal) AppGetByDeploymentName(_ context.Context, req *pb.AppGetByDe
 			return pb.AppGetByDeploymentNameResponse_builder{AppId: a.id, EnvironmentName: a.env}.Build(), nil
 		}
 	}
-	return nil, status.Error(codes.NotFound, "app not found")
+	// Like the live API: a missing App is a success with an empty ID.
+	return pb.AppGetByDeploymentNameResponse_builder{}.Build(), nil
 }
 
 // --- Image ---------------------------------------------------------------------

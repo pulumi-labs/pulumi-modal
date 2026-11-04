@@ -11,7 +11,7 @@ public final class Config {
 
     private static final com.pulumi.Config config = com.pulumi.Config.of("modal");
 /**
- * Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the account&#39;s default environment.
+ * Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account&#39;s default environment.
  * 
  */
     public Optional<String> environment() {
@@ -25,14 +25,14 @@ public final class Config {
         return Codegen.stringProp("serverAddr").config(config).env("MODAL_SERVER_ADDR").get();
     }
 /**
- * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+ * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
  * 
  */
     public Optional<String> tokenId() {
         return Codegen.stringProp("tokenId").config(config).env("MODAL_TOKEN_ID").get();
     }
 /**
- * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+ * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
  * 
  */
     public Optional<String> tokenSecret() {

@@ -265,8 +265,18 @@ func (r *Environment) Update(ctx context.Context, req infer.UpdateRequest[Enviro
 	}
 	defer client.Close()
 
-	update := pb.EnvironmentUpdateRequest_builder{CurrentName: req.State.Name}
-	if args.Name != req.State.Name {
+	rpcCtx, cancel := callCtx()
+	defer cancel()
+	// Resolve the current name by ID: the state's name may be stale (renamed
+	// outside Pulumi) or, after an earlier buggy update, empty.
+	currentName := req.State.Name
+	if item, ferr := findEnvironment(rpcCtx, client, req.ID, ""); ferr != nil {
+		return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: look up environment %q: %w", req.ID, ferr)
+	} else if item != nil {
+		currentName = item.GetName()
+	}
+	update := pb.EnvironmentUpdateRequest_builder{CurrentName: currentName}
+	if args.Name != currentName {
 		update.Name = wrapperspb.String(args.Name)
 	}
 	if args.WebSuffix != nil && !ptrEqual(args.WebSuffix, req.State.WebSuffix) {
@@ -279,11 +289,14 @@ func (r *Environment) Update(ctx context.Context, req infer.UpdateRequest[Enviro
 		update.MaxConcurrentGpus = int32Ptr(args.MaxConcurrentGpus)
 	}
 
-	rpcCtx, cancel := callCtx()
-	defer cancel()
-	item, err := client.stub.EnvironmentUpdate(rpcCtx, update.Build())
-	if err != nil {
-		return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: update environment %q: %w", req.State.Name, err)
+	if _, err := client.stub.EnvironmentUpdate(rpcCtx, update.Build()); err != nil {
+		return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: update environment %q: %w", currentName, err)
+	}
+	// EnvironmentUpdate answers with a sparse item (live: only the web suffix),
+	// so read the environment back by ID rather than trusting that response.
+	item, err := findEnvironment(rpcCtx, client, req.ID, "")
+	if err != nil || item == nil {
+		return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: environment %q was updated but could not be read back: %v", req.ID, err)
 	}
 	fillEnvironmentState(&state, item, true)
 	state.EnvironmentArgs.TokenID, state.EnvironmentArgs.TokenSecret = args.TokenID, args.TokenSecret

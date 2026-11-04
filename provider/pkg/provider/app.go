@@ -96,7 +96,7 @@ func (r *App) Diff(ctx context.Context, req infer.DiffRequest[AppArgs, AppState]
 		resp.DetailedDiff["name"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
-	if environmentChanged(req.Inputs.Environment, req.State.Environment, cfg) {
+	if environmentChanged(req.Inputs.Environment, req.State.Environment, withResourceTokens(cfg, req.Inputs.TokenID, req.Inputs.TokenSecret)) {
 		resp.DetailedDiff["environment"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
@@ -112,7 +112,7 @@ func (r *App) Create(ctx context.Context, req infer.CreateRequest[AppArgs]) (inf
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	if req.DryRun {
 		state := AppState{AppArgs: args}
-		if env := resolveStr(args.Environment, cfg.Environment); env != "" {
+		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
 		return infer.CreateResponse[AppState]{ID: args.Name, Output: state}, nil
@@ -125,11 +125,20 @@ func (r *App) Create(ctx context.Context, req infer.CreateRequest[AppArgs]) (inf
 
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-	environment := effectiveEnvironment(rpcCtx, client, args.Environment, cfg)
+	environment := effectiveEnvironment(rpcCtx, client, args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret))
+	// Modal Apps have no fail-if-exists creation type: the live API rejects
+	// CREATE_FAIL_IF_EXISTS for Apps with "Invalid object creation type". Look
+	// the name up first so a duplicate still fails, then create-if-missing like
+	// the official SDK does.
+	if existing, found, err := lookupAppID(rpcCtx, client, args.Name, environment); err != nil {
+		return infer.CreateResponse[AppState]{}, fmt.Errorf("modal: create app %q: %w", args.Name, err)
+	} else if found {
+		return infer.CreateResponse[AppState]{}, fmt.Errorf("modal: create app %q: an app with this name already exists in %s (%s); import it instead", args.Name, environmentLabel(environment), existing)
+	}
 	resp, err := client.stub.AppGetOrCreate(rpcCtx, pb.AppGetOrCreateRequest_builder{
 		AppName:            args.Name,
 		EnvironmentName:    environment,
-		ObjectCreationType: pb.ObjectCreationType_OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
+		ObjectCreationType: pb.ObjectCreationType_OBJECT_CREATION_TYPE_CREATE_IF_MISSING,
 	}.Build())
 	if err != nil {
 		return infer.CreateResponse[AppState]{}, fmt.Errorf("modal: create app %q: %w", args.Name, err)
@@ -153,6 +162,41 @@ func (r *App) Create(ctx context.Context, req infer.CreateRequest[AppArgs]) (inf
 		state.Environment = &environment
 	}
 	return infer.CreateResponse[AppState]{ID: id, Output: state}, nil
+}
+
+// lookupApp resolves an App by name. The live API answers a lookup of a
+// missing App with success and an empty ID rather than NotFound, so both are
+// reported as (nil, nil).
+func lookupApp(ctx context.Context, client *modalClient, name, environment string) (*pb.AppGetByDeploymentNameResponse, error) {
+	got, err := client.stub.AppGetByDeploymentName(ctx, pb.AppGetByDeploymentNameRequest_builder{
+		Name: name, EnvironmentName: environment,
+	}.Build())
+	if isNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if got.GetAppId() == "" {
+		return nil, nil
+	}
+	return got, nil
+}
+
+// lookupAppID is lookupApp reduced to the App's ID.
+func lookupAppID(ctx context.Context, client *modalClient, name, environment string) (string, bool, error) {
+	got, err := lookupApp(ctx, client, name, environment)
+	if err != nil || got == nil {
+		return "", false, err
+	}
+	return got.GetAppId(), true, nil
+}
+
+func environmentLabel(environment string) string {
+	if environment == "" {
+		return "the default environment"
+	}
+	return fmt.Sprintf("environment %q", environment)
 }
 
 func appStopped(info *pb.AppHandleMetadata) bool {

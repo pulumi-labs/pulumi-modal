@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-04
+
+### Added
+
+- The provider reads `~/.modal.toml` (or the file named by `MODAL_CONFIG_PATH`) as its last credential source, so a user who ran `modal token new` or `modal setup` needs no environment variables (pulumi-labs/pulumi-modal#6). Lookup order: resource `tokenId`/`tokenSecret`, `modal:tokenId`/`modal:tokenSecret`, `MODAL_TOKEN_ID`/`MODAL_TOKEN_SECRET`, then the profile named by `MODAL_PROFILE`, otherwise the one marked `active = true` (or called `default`). When the profile supplies the credentials, its `environment` applies below `modal:environment`/`MODAL_ENVIRONMENT` and its `server_url` below `modal:serverAddr`.
+
+### Changed
+
+- The missing-credentials error lists every credential source and no longer repeats its prefix (`modal: modal: both tokenId and tokenSecret are required` is now `modal: no Modal credentials found: ...`).
+- The README no longer says authentication "mirrors the Modal Python SDK exactly", and documents the lookup order and where it differs: the token pair comes from one source only, and the profile's `environment` and `server_url` apply only when the profile supplies the credentials.
+- `github.com/pelletier/go-toml/v2` is now a direct dependency (it was indirect through the Modal SDK).
+
+### Fixed
+
+- Fix `getApp` for an App that does not exist: the live API answers the lookup with success and an empty ID, which surfaced as `'' is not a valid App ID`. It now fails with `modal: app "<name>" was not found in ...` like the other lookups (pulumi-labs/pulumi-modal#13).
+- Fix every `App` and `Image` create failing against the live Modal API with "Could not determine the SDK version for client type CLIENT_TYPE_LIBMODAL_GO": the provider sent `x-modal-libmodal-version: pulumi-modal/1.0.0`, which the control plane does not recognise. It now sends `modal-go/<vendored SDK version>` like the official Go SDK, read from the build info (a test keeps the fallback equal to go.mod) (pulumi-labs/pulumi-modal#12).
+
+- Fix `Environment` update on the live Modal API, whose update response is sparse: the resource wrote an empty `environmentId` and `name` into state, so the next preview showed a spurious rename and later updates failed. Update now resolves the current name by ID and reads the environment back by ID; refresh repairs already-broken state (pulumi-labs/pulumi-modal#11).
+- Fix `App` create failing against the live Modal API with "Invalid object creation type": Apps have no fail-if-exists creation type, so create now looks the name up first (a duplicate still fails) and then creates with create-if-missing (pulumi-labs/pulumi-modal#10).
+
 ## [0.2.0] - 2026-11-03
 
 ### Changed

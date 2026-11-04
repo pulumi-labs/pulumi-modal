@@ -34,7 +34,7 @@ namespace Pulumi.Labs.Modal
 
         private static readonly __Value<string?> _environment = new __Value<string?>(() => __config.Get("environment") ?? Utilities.GetEnv("MODAL_ENVIRONMENT"));
         /// <summary>
-        /// Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+        /// Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
         /// </summary>
         public static string? Environment
         {
@@ -54,7 +54,7 @@ namespace Pulumi.Labs.Modal
 
         private static readonly __Value<string?> _tokenId = new __Value<string?>(() => __config.Get("tokenId") ?? Utilities.GetEnv("MODAL_TOKEN_ID"));
         /// <summary>
-        /// Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+        /// Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         /// </summary>
         public static string? TokenId
         {
@@ -64,7 +64,7 @@ namespace Pulumi.Labs.Modal
 
         private static readonly __Value<string?> _tokenSecret = new __Value<string?>(() => __config.Get("tokenSecret") ?? Utilities.GetEnv("MODAL_TOKEN_SECRET"));
         /// <summary>
-        /// Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+        /// Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         /// </summary>
         public static string? TokenSecret
         {

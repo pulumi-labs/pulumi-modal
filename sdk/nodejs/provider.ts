@@ -20,7 +20,7 @@ export class Provider extends pulumi.ProviderResource {
     }
 
     /**
-     * Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+     * Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
      */
     declare public readonly environment: pulumi.Output<string | undefined>;
     /**
@@ -28,11 +28,11 @@ export class Provider extends pulumi.ProviderResource {
      */
     declare public readonly serverAddr: pulumi.Output<string | undefined>;
     /**
-     * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+     * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      */
     declare public readonly tokenId: pulumi.Output<string | undefined>;
     /**
-     * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+     * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      */
     declare public readonly tokenSecret: pulumi.Output<string | undefined>;
 
@@ -64,7 +64,7 @@ export class Provider extends pulumi.ProviderResource {
  */
 export interface ProviderArgs {
     /**
-     * Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+     * Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
      */
     environment?: pulumi.Input<string | undefined>;
     /**
@@ -72,11 +72,11 @@ export interface ProviderArgs {
      */
     serverAddr?: pulumi.Input<string | undefined>;
     /**
-     * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+     * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      */
     tokenId?: pulumi.Input<string | undefined>;
     /**
-     * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+     * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      */
     tokenSecret?: pulumi.Input<string | undefined>;
 }

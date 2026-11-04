@@ -23,7 +23,7 @@ class _ExportableConfig(types.ModuleType):
     @_builtins.property
     def environment(self) -> Optional[str]:
         """
-        Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the account's default environment.
+        Default Modal environment (workspace namespace) for resources that don't set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account's default environment.
         """
         return __config__.get('environment') or _utilities.get_env('MODAL_ENVIRONMENT')
 
@@ -37,14 +37,14 @@ class _ExportableConfig(types.ModuleType):
     @_builtins.property
     def token_id(self) -> Optional[str]:
         """
-        Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+        Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         """
         return __config__.get('tokenId') or _utilities.get_env('MODAL_TOKEN_ID')
 
     @_builtins.property
     def token_secret(self) -> Optional[str]:
         """
-        Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+        Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
         """
         return __config__.get('tokenSecret') or _utilities.get_env('MODAL_TOKEN_SECRET')
 

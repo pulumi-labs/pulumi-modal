@@ -17,14 +17,14 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
     public static final ProviderArgs Empty = new ProviderArgs();
 
     /**
-     * Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the account&#39;s default environment.
+     * Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account&#39;s default environment.
      * 
      */
     @Import(name="environment")
     private @Nullable Output<String> environment;
 
     /**
-     * @return Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the account&#39;s default environment.
+     * @return Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account&#39;s default environment.
      * 
      */
     public Optional<Output<String>> environment() {
@@ -47,14 +47,14 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
     }
 
     /**
-     * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+     * Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      * 
      */
     @Import(name="tokenId")
     private @Nullable Output<String> tokenId;
 
     /**
-     * @return Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+     * @return Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      * 
      */
     public Optional<Output<String>> tokenId() {
@@ -62,14 +62,14 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
     }
 
     /**
-     * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+     * Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      * 
      */
     @Import(name="tokenSecret")
     private @Nullable Output<String> tokenSecret;
 
     /**
-     * @return Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+     * @return Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
      * 
      */
     public Optional<Output<String>> tokenSecret() {
@@ -104,7 +104,7 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param environment Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the account&#39;s default environment.
+         * @param environment Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account&#39;s default environment.
          * 
          * @return builder
          * 
@@ -115,7 +115,7 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param environment Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the account&#39;s default environment.
+         * @param environment Default Modal environment (workspace namespace) for resources that don&#39;t set their own. Falls back to MODAL_ENVIRONMENT, then the environment of the ~/.modal.toml profile that supplies the credentials, then the account&#39;s default environment.
          * 
          * @return builder
          * 
@@ -146,7 +146,7 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param tokenId Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+         * @param tokenId Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
          * 
          * @return builder
          * 
@@ -157,7 +157,7 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param tokenId Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable.
+         * @param tokenId Modal API token ID. Falls back to the MODAL_TOKEN_ID environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
          * 
          * @return builder
          * 
@@ -167,7 +167,7 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param tokenSecret Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+         * @param tokenSecret Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
          * 
          * @return builder
          * 
@@ -178,7 +178,7 @@ public final class ProviderArgs extends com.pulumi.resources.ResourceArgs {
         }
 
         /**
-         * @param tokenSecret Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable.
+         * @param tokenSecret Modal API token secret. Falls back to the MODAL_TOKEN_SECRET environment variable, then to the active profile of ~/.modal.toml (MODAL_CONFIG_PATH, MODAL_PROFILE) written by `modal token new`.
          * 
          * @return builder
          * 

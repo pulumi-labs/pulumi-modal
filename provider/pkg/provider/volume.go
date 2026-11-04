@@ -175,7 +175,7 @@ func (r *Volume) Diff(ctx context.Context, req infer.DiffRequest[VolumeArgs, Vol
 		resp.DetailedDiff["name"] = pgp.PropertyDiff{Kind: pgp.Update}
 		resp.HasChanges = true
 	}
-	envChanged := environmentChanged(req.Inputs.Environment, req.State.Environment, cfg)
+	envChanged := environmentChanged(req.Inputs.Environment, req.State.Environment, withResourceTokens(cfg, req.Inputs.TokenID, req.Inputs.TokenSecret))
 	if envChanged {
 		resp.DetailedDiff["environment"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
@@ -199,7 +199,7 @@ func (r *Volume) Create(ctx context.Context, req infer.CreateRequest[VolumeArgs]
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	if req.DryRun {
 		state := VolumeState{VolumeArgs: args}
-		if env := resolveStr(args.Environment, cfg.Environment); env != "" {
+		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
 		return infer.CreateResponse[VolumeState]{ID: args.Name, Output: state}, nil
@@ -217,7 +217,7 @@ func (r *Volume) Create(ctx context.Context, req infer.CreateRequest[VolumeArgs]
 
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-	environment := effectiveEnvironment(rpcCtx, client, args.Environment, cfg)
+	environment := effectiveEnvironment(rpcCtx, client, args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret))
 	resp, err := client.stub.VolumeGetOrCreate(rpcCtx, pb.VolumeGetOrCreateRequest_builder{
 		DeploymentName:     args.Name,
 		EnvironmentName:    environment,
@@ -274,7 +274,7 @@ func (r *Volume) Read(ctx context.Context, req infer.ReadRequest[VolumeArgs, Vol
 	// Modal does not report a volume's environment, so keep what is recorded.
 	environment := derefStr(state.Environment)
 	if environment == "" {
-		environment = effectiveEnvironment(rpcCtx, client, nil, cfg)
+		environment = effectiveEnvironment(rpcCtx, client, nil, withResourceTokens(cfg, req.State.TokenID, req.State.TokenSecret))
 	}
 	if importing {
 		// Confirm the ID lives in the environment we are about to record.

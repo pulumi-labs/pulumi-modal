@@ -22,6 +22,8 @@ import (
 
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
 	"github.com/pulumi/pulumi-go-provider/infer"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // ---------------------------------------------------------------------------
@@ -39,7 +41,7 @@ func lookupSession(ctx context.Context, environment *string) (*modalClient, stri
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("modal: %w", err)
 	}
-	return client, resolveStr(environment, cfg.Environment), func() { _ = client.Close() }, nil
+	return client, resolveEnv(environment, cfg), func() { _ = client.Close() }, nil
 }
 
 func lookupErr(kind, name, environment string, err error) error {
@@ -367,11 +369,14 @@ func (f *GetApp) Invoke(ctx context.Context, req infer.FunctionRequest[NamedLook
 	defer closeFn()
 	rpcCtx, cancel := callCtx()
 	defer cancel()
-	got, err := client.stub.AppGetByDeploymentName(rpcCtx, pb.AppGetByDeploymentNameRequest_builder{
-		Name: req.Input.Name, EnvironmentName: env,
-	}.Build())
+	// The live API answers a lookup of a missing App with success and an empty
+	// ID, so lookupAppID reports that as not found too.
+	got, err := lookupApp(rpcCtx, client, req.Input.Name, env)
 	if err != nil {
 		return out, lookupErr("app", req.Input.Name, env, err)
+	}
+	if got == nil {
+		return out, lookupErr("app", req.Input.Name, env, status.Error(codes.NotFound, "app not found"))
 	}
 	tags, err := client.stub.AppGetTags(rpcCtx, pb.AppGetTagsRequest_builder{AppId: got.GetAppId()}.Build())
 	if err != nil {

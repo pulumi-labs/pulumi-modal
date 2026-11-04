@@ -9,10 +9,12 @@ Pulumi.
 Modal does not publish a Terraform provider, so this provider talks directly to Modal's
 public gRPC control-plane API using the same generated protobuf client
 ([`github.com/modal-labs/modal-client/go/proto/modal_proto`](https://pkg.go.dev/github.com/modal-labs/modal-client/go/proto/modal_proto))
-that Modal's own official Go SDK (`libmodal`) is built on. Authentication mirrors the
-Modal Python SDK exactly: every RPC carries the static `x-modal-token-id` /
-`x-modal-token-secret` headers that the Python SDK, the CLI, and the server itself accept
-as sufficient on their own.
+that Modal's own official Go SDK (`libmodal`) is built on. Every RPC carries the static
+`x-modal-token-id` / `x-modal-token-secret` headers that the Python SDK, the CLI, and the
+server itself accept as sufficient on their own. Credentials are found the way the Modal
+clients find them (environment variables, then the `~/.modal.toml` profile written by
+`modal token new`); see [Authentication](#authentication) for the exact order, including
+the one place this provider differs from the Python SDK.
 
 This is the only IaC provider for Modal, built natively on `pulumi-go-provider/infer`.
 
@@ -109,6 +111,27 @@ pulumi config set --secret modal:tokenSecret as-xxxxxxxxxxxxxxxx
 Per-resource override is also supported via the `tokenId` / `tokenSecret` inputs on each
 resource, so a single stack can provision resources under different Modal accounts or
 workspaces.
+
+If you have already run `modal token new` or `modal setup`, you need none of the above:
+the provider falls back to the profile in `~/.modal.toml`.
+
+### Credential lookup order
+
+The first source that supplies a token wins:
+
+1. The resource's `tokenId` / `tokenSecret` inputs.
+2. The provider config `modal:tokenId` / `modal:tokenSecret`.
+3. `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET`.
+4. The profile in `~/.modal.toml` (or the file named by `MODAL_CONFIG_PATH`): the profile
+   named by `MODAL_PROFILE`, otherwise the one marked `active = true`, otherwise a profile
+   called `default`.
+
+Differences from the Modal Python SDK, which merges environment variables and the profile
+field by field: the provider takes the token pair from one source only (a token ID from
+the environment never combines with a token secret from the file; it is an error), and it
+applies the profile's `environment` and `server_url` only when the profile supplies the
+credentials. Use `modal:environment` / `MODAL_ENVIRONMENT` and `modal:serverAddr` to
+override either.
 
 ### Environments
 
@@ -224,10 +247,11 @@ Java, YAML).
 
 | Key | Environment Variable | Description |
 |---|---|---|
-| `modal:tokenId` | `MODAL_TOKEN_ID` | Modal API token ID. Required unless set per resource. Falls back to the environment variable. |
-| `modal:tokenSecret` (secret) | `MODAL_TOKEN_SECRET` | Modal API token secret. Required unless set per resource. Falls back to the environment variable. |
-| `modal:environment` | `MODAL_ENVIRONMENT` | Default Modal environment for resources that don't set their own. |
-| `modal:serverAddr` | `MODAL_SERVER_ADDR` | Override for Modal's gRPC endpoint. Testing only. |
+| `modal:tokenId` | `MODAL_TOKEN_ID` | Modal API token ID. Required unless set per resource or available from `~/.modal.toml`. Falls back to the environment variable, then the profile file. |
+| `modal:tokenSecret` (secret) | `MODAL_TOKEN_SECRET` | Modal API token secret. Required unless set per resource or available from `~/.modal.toml`. Falls back to the environment variable, then the profile file. |
+| `modal:environment` | `MODAL_ENVIRONMENT` | Default Modal environment for resources that don't set their own. Falls back to the `environment` of the `~/.modal.toml` profile that supplies the credentials. |
+| `modal:serverAddr` | `MODAL_SERVER_ADDR` | Override for Modal's gRPC endpoint. Falls back to the profile's `server_url`. Testing only. |
+| (none) | `MODAL_CONFIG_PATH`, `MODAL_PROFILE` | Location of the profile file (default `~/.modal.toml`) and the profile to use (default: the one marked `active = true`). Read directly, not provider config. |
 
 ## Notes on the Modal API Surface
 
