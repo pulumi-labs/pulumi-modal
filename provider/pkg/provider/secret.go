@@ -23,6 +23,7 @@ import (
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
 	pgp "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 )
 
 // ---------------------------------------------------------------------------
@@ -72,8 +73,8 @@ type SecretState struct {
 
 func (r *Secret) Annotate(a infer.Annotator) {
 	a.Describe(&r, "A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. "+
-		"Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes "+
-		"the values from your program. See https://modal.com/docs/guide/secrets.")
+		"Modal never returns secret values, so refresh and import can only see key names: an imported Secret compares key names until "+
+		"the program's values are recorded, so the first preview after an import is clean. See https://modal.com/docs/guide/secrets.")
 }
 
 func (a *SecretArgs) Annotate(ann infer.Annotator) {
@@ -121,6 +122,36 @@ func (r *Secret) Check(ctx context.Context, req infer.CheckRequest) (infer.Check
 	return infer.CheckResponse[SecretArgs]{Inputs: args, Failures: failures}, nil
 }
 
+type oldInputsKey struct{}
+
+// withOldInputs makes the engine-supplied old inputs available to Diff.
+// pulumi-go-provider v1.3.1 drops DiffRequest.OldInputs before calling
+// CustomDiff, which is the only place the values last written by the program
+// survive for an imported Secret (see
+// https://github.com/pulumi/pulumi-go-provider/issues/710).
+func withOldInputs(ctx context.Context, old property.Map) context.Context {
+	return context.WithValue(ctx, oldInputsKey{}, old)
+}
+
+// oldInputValues returns the "values" of the old inputs, or nil.
+func oldInputValues(ctx context.Context) map[string]string {
+	old, ok := ctx.Value(oldInputsKey{}).(property.Map)
+	if !ok {
+		return nil
+	}
+	v, ok := old.GetOk("values")
+	if !ok || !v.IsMap() {
+		return nil
+	}
+	out := map[string]string{}
+	for k, e := range v.AsMap().All {
+		if e.IsString() {
+			out[k] = e.AsString()
+		}
+	}
+	return out
+}
+
 // Diff forces replacement when the name or environment changes; value changes
 // are handled in place via Update.
 func (r *Secret) Diff(ctx context.Context, req infer.DiffRequest[SecretArgs, SecretState]) (infer.DiffResponse, error) {
@@ -134,19 +165,32 @@ func (r *Secret) Diff(ctx context.Context, req infer.DiffRequest[SecretArgs, Sec
 		resp.DetailedDiff["environment"] = pgp.PropertyDiff{Kind: pgp.UpdateReplace}
 		resp.HasChanges = true
 	}
-	valuesChanged := len(req.Inputs.Values) != len(req.State.Values)
-	if !valuesChanged {
-		for k, v := range req.Inputs.Values {
-			if old, ok := req.State.Values[k]; !ok || old != v {
-				valuesChanged = true
-				break
+	recorded := req.State.Values
+	if len(recorded) == 0 {
+		// An imported Secret has no recorded values (Modal never returns them);
+		// fall back to the values from the last program run, if any.
+		recorded = oldInputValues(ctx)
+	}
+	var valuesChanged bool
+	if len(recorded) == 0 && len(req.State.Keys) > 0 {
+		// Values are unknown (imported, never written by Pulumi): compare key
+		// names only, so the first preview after an import is clean.
+		valuesChanged = !slices.Equal(slices.Clone(req.State.Keys), sortedKeys(req.Inputs.Values))
+	} else {
+		valuesChanged = len(req.Inputs.Values) != len(recorded)
+		if !valuesChanged {
+			for k, v := range req.Inputs.Values {
+				if old, ok := recorded[k]; !ok || old != v {
+					valuesChanged = true
+					break
+				}
 			}
 		}
-	}
-	// Drift: keys added or removed outside Pulumi show up in the refreshed keys.
-	if !valuesChanged && req.State.Keys != nil &&
-		!slices.Equal(slices.Clone(req.State.Keys), sortedKeys(req.Inputs.Values)) {
-		valuesChanged = true
+		// Drift: keys added or removed outside Pulumi show up in the refreshed keys.
+		if !valuesChanged && req.State.Keys != nil &&
+			!slices.Equal(slices.Clone(req.State.Keys), sortedKeys(req.Inputs.Values)) {
+			valuesChanged = true
+		}
 	}
 	if valuesChanged {
 		resp.DetailedDiff["values"] = pgp.PropertyDiff{Kind: pgp.Update}
@@ -240,7 +284,8 @@ func (r *Secret) Read(ctx context.Context, req infer.ReadRequest[SecretArgs, Sec
 	inputs.Name = meta.GetName()
 	if importing {
 		// Values are required properties but Modal never returns them: import
-		// them as empty so the next update writes the program's values.
+		// them as empty. Diff then compares key names only until the program's
+		// values are recorded as inputs.
 		inputs.Values = map[string]string{}
 		state.Values = map[string]string{}
 		if environment != "" {

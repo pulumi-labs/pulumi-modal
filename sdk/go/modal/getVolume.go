@@ -30,7 +30,7 @@ type LookupVolumeArgs struct {
 }
 
 type LookupVolumeResult struct {
-	// The environment that was searched (Modal does not report it; empty means the account default).
+	// The environment the object was found in: the one that was searched, else the account default environment.
 	Environment string `pulumi:"environment"`
 	// The Volume's filesystem version, "v1" or "v2".
 	FsVersion string `pulumi:"fsVersion"`
@@ -74,7 +74,7 @@ func (o LookupVolumeResultOutput) ToLookupVolumeResultOutputWithContext(ctx cont
 	return o
 }
 
-// The environment that was searched (Modal does not report it; empty means the account default).
+// The environment the object was found in: the one that was searched, else the account default environment.
 func (o LookupVolumeResultOutput) Environment() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupVolumeResult) string { return v.Environment }).(pulumi.StringOutput)
 }

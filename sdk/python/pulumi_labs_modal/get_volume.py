@@ -41,7 +41,7 @@ class GetVolumeResult:
     @pulumi.getter
     def environment(self) -> _builtins.str:
         """
-        The environment that was searched (Modal does not report it; empty means the account default).
+        The environment the object was found in: the one that was searched, else the account default environment.
         """
         return pulumi.get(self, "environment")
 

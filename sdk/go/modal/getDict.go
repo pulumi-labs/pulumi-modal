@@ -32,7 +32,7 @@ type LookupDictArgs struct {
 type LookupDictResult struct {
 	// The Modal-assigned identifier of the Dict.
 	DictId string `pulumi:"dictId"`
-	// The environment that was searched (Modal does not report it; empty means the account default).
+	// The environment the object was found in: the one that was searched, else the account default environment.
 	Environment string `pulumi:"environment"`
 	// The Dict's name.
 	Name string `pulumi:"name"`
@@ -77,7 +77,7 @@ func (o LookupDictResultOutput) DictId() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupDictResult) string { return v.DictId }).(pulumi.StringOutput)
 }
 
-// The environment that was searched (Modal does not report it; empty means the account default).
+// The environment the object was found in: the one that was searched, else the account default environment.
 func (o LookupDictResultOutput) Environment() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupDictResult) string { return v.Environment }).(pulumi.StringOutput)
 }

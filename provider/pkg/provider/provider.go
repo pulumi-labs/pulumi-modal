@@ -146,7 +146,7 @@ func clientFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string)
 
 // New returns the configured Modal Pulumi provider.
 func New() (pgp.Provider, error) {
-	return infer.NewProviderBuilder().
+	prov, err := infer.NewProviderBuilder().
 		WithDisplayName("Modal").
 		WithDescription(
 			"Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps and Images — as infrastructure with Pulumi.",
@@ -200,4 +200,14 @@ func New() (pgp.Provider, error) {
 			infer.Function[*GetWorkspace, GetWorkspaceArgs, GetWorkspaceResult](&GetWorkspace{}),
 		).
 		Build()
+	if err != nil {
+		return pgp.Provider{}, err
+	}
+	// TODO(pulumi/pulumi-go-provider#710): drop this wrapper once infer.DiffRequest exposes OldInputs.
+	// Surface the engine's old inputs to Secret.Diff; see withOldInputs.
+	diff := prov.Diff
+	prov.Diff = func(ctx context.Context, req pgp.DiffRequest) (pgp.DiffResponse, error) {
+		return diff(withOldInputs(ctx, req.OldInputs), req)
+	}
+	return prov, nil
 }

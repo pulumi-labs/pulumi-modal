@@ -412,14 +412,17 @@ func TestFunctions_LookUpExistingObjects(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "vo-1", getStr(t, out, "volumeId"))
 	require.Equal(t, "v2", getStr(t, out, "fsVersion"))
+	require.Equal(t, "main", getStr(t, out, "environment"))
 
 	out, err = invoke(t, s, "getQueue", map[string]property.Value{"name": str("jobs")})
 	require.NoError(t, err)
 	require.Equal(t, "qu-1", getStr(t, out, "queueId"))
+	require.Equal(t, "main", getStr(t, out, "environment"))
 
 	out, err = invoke(t, s, "getDict", map[string]property.Value{"name": str("state")})
 	require.NoError(t, err)
 	require.Equal(t, "di-1", getStr(t, out, "dictId"))
+	require.Equal(t, "main", getStr(t, out, "environment"))
 
 	out, err = invoke(t, s, "getEnvironment", map[string]property.Value{"name": str("main")})
 	require.NoError(t, err)

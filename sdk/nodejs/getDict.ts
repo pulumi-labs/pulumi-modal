@@ -32,7 +32,7 @@ export interface GetDictResult {
      */
     readonly dictId: string;
     /**
-     * The environment that was searched (Modal does not report it; empty means the account default).
+     * The environment the object was found in: the one that was searched, else the account default environment.
      */
     readonly environment: string;
     /**
