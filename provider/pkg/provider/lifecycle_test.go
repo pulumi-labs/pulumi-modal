@@ -377,11 +377,31 @@ func TestSecret_ImportFromIDAlone(t *testing.T) {
 	require.Equal(t, "A", keys.Get(0).AsString())
 	require.Equal(t, "B", keys.Get(1).AsString())
 
-	// The program's values are written on the next update.
+	// Values are unknown after import, so a program with the same keys diffs clean (#1515).
 	prog := pm(map[string]property.Value{"name": str("imported"), "values": strs(map[string]string{"A": "1", "B": "2"})})
 	d, err := s.Diff(pgp.DiffRequest{ID: "st-ext", Urn: urn, State: read.Properties, Inputs: prog, OldInputs: read.Inputs})
 	require.NoError(t, err)
+	requireNoChanges(t, d)
+
+	// A key added or removed relative to Modal is still an update.
+	extra := pm(map[string]property.Value{"name": str("imported"), "values": strs(map[string]string{"A": "1", "B": "2", "C": "3"})})
+	d, err = s.Diff(pgp.DiffRequest{ID: "st-ext", Urn: urn, State: read.Properties, Inputs: extra, OldInputs: read.Inputs})
+	require.NoError(t, err)
 	require.Equal(t, pgp.Update, d.DetailedDiff["values"].Kind)
+	missing := pm(map[string]property.Value{"name": str("imported"), "values": strs(map[string]string{"A": "1"})})
+	d, err = s.Diff(pgp.DiffRequest{ID: "st-ext", Urn: urn, State: read.Properties, Inputs: missing, OldInputs: read.Inputs})
+	require.NoError(t, err)
+	require.Equal(t, pgp.Update, d.DetailedDiff["values"].Kind)
+
+	// After the first up the engine records the program's inputs; a later value
+	// change is detected through the old inputs even though state values stay empty.
+	changed := pm(map[string]property.Value{"name": str("imported"), "values": strs(map[string]string{"A": "1", "B": "changed"})})
+	d, err = s.Diff(pgp.DiffRequest{ID: "st-ext", Urn: urn, State: read.Properties, Inputs: changed, OldInputs: prog})
+	require.NoError(t, err)
+	require.Equal(t, pgp.Update, d.DetailedDiff["values"].Kind)
+	d, err = s.Diff(pgp.DiffRequest{ID: "st-ext", Urn: urn, State: read.Properties, Inputs: prog, OldInputs: prog})
+	require.NoError(t, err)
+	requireNoChanges(t, d)
 }
 
 // ---------------------------------------------------------------------------

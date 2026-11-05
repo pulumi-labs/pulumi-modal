@@ -11,7 +11,7 @@ import java.util.Objects;
 @CustomType
 public final class GetQueueResult {
     /**
-     * @return The environment that was searched (Modal does not report it; empty means the account default).
+     * @return The environment the object was found in: the one that was searched, else the account default environment.
      * 
      */
     private String environment;
@@ -28,7 +28,7 @@ public final class GetQueueResult {
 
     private GetQueueResult() {}
     /**
-     * @return The environment that was searched (Modal does not report it; empty means the account default).
+     * @return The environment the object was found in: the one that was searched, else the account default environment.
      * 
      */
     public String environment() {

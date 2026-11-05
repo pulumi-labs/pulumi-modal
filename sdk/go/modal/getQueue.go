@@ -30,7 +30,7 @@ type LookupQueueArgs struct {
 }
 
 type LookupQueueResult struct {
-	// The environment that was searched (Modal does not report it; empty means the account default).
+	// The environment the object was found in: the one that was searched, else the account default environment.
 	Environment string `pulumi:"environment"`
 	// The Queue's name.
 	Name string `pulumi:"name"`
@@ -72,7 +72,7 @@ func (o LookupQueueResultOutput) ToLookupQueueResultOutputWithContext(ctx contex
 	return o
 }
 
-// The environment that was searched (Modal does not report it; empty means the account default).
+// The environment the object was found in: the one that was searched, else the account default environment.
 func (o LookupQueueResultOutput) Environment() pulumi.StringOutput {
 	return o.ApplyT(func(v LookupQueueResult) string { return v.Environment }).(pulumi.StringOutput)
 }

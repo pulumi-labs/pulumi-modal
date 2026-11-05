@@ -44,6 +44,16 @@ func lookupSession(ctx context.Context, environment *string) (*modalClient, stri
 	return client, resolveEnv(environment, cfg), func() { _ = client.Close() }, nil
 }
 
+// lookupEnvironment is the environment to report for a looked-up object: the one
+// that was searched, else the account default (the lookup request itself leaves
+// an unset environment to the server).
+func lookupEnvironment(ctx context.Context, client *modalClient, env string) string {
+	if env != "" {
+		return env
+	}
+	return effectiveEnvironment(ctx, client, nil, ProviderConfig{})
+}
+
 func lookupErr(kind, name, environment string, err error) error {
 	where := "the default environment"
 	if environment != "" {
@@ -153,7 +163,7 @@ type GetVolumeResult struct {
 func (r *GetVolumeResult) Annotate(ann infer.Annotator) {
 	ann.Describe(&r.VolumeId, "The Modal-assigned identifier of the Volume.")
 	ann.Describe(&r.Name, "The Volume's name.")
-	ann.Describe(&r.Environment, "The environment that was searched (Modal does not report it; empty means the account default).")
+	ann.Describe(&r.Environment, "The environment the object was found in: the one that was searched, else the account default environment.")
 	ann.Describe(&r.FsVersion, "The Volume's filesystem version, \"v1\" or \"v2\".")
 }
 
@@ -183,7 +193,7 @@ func (f *GetVolume) Invoke(ctx context.Context, req infer.FunctionRequest[NamedL
 		return out, lookupErr("volume", req.Input.Name, env, err)
 	}
 	out.Output = GetVolumeResult{
-		VolumeId: got.GetVolumeId(), Name: req.Input.Name, Environment: env,
+		VolumeId: got.GetVolumeId(), Name: req.Input.Name, Environment: lookupEnvironment(rpcCtx, client, env),
 		FsVersion: fsVersionString(byID.GetMetadata().GetVersion()),
 	}
 	return out, nil
@@ -204,7 +214,7 @@ type GetQueueResult struct {
 func (r *GetQueueResult) Annotate(ann infer.Annotator) {
 	ann.Describe(&r.QueueId, "The Modal-assigned identifier of the Queue.")
 	ann.Describe(&r.Name, "The Queue's name.")
-	ann.Describe(&r.Environment, "The environment that was searched (Modal does not report it; empty means the account default).")
+	ann.Describe(&r.Environment, "The environment the object was found in: the one that was searched, else the account default environment.")
 }
 
 func (f *GetQueue) Annotate(a infer.Annotator) {
@@ -228,7 +238,7 @@ func (f *GetQueue) Invoke(ctx context.Context, req infer.FunctionRequest[NamedLo
 	if err != nil {
 		return out, lookupErr("queue", req.Input.Name, env, err)
 	}
-	out.Output = GetQueueResult{QueueId: got.GetQueueId(), Name: req.Input.Name, Environment: env}
+	out.Output = GetQueueResult{QueueId: got.GetQueueId(), Name: req.Input.Name, Environment: lookupEnvironment(rpcCtx, client, env)}
 	return out, nil
 }
 
@@ -247,7 +257,7 @@ type GetDictResult struct {
 func (r *GetDictResult) Annotate(ann infer.Annotator) {
 	ann.Describe(&r.DictId, "The Modal-assigned identifier of the Dict.")
 	ann.Describe(&r.Name, "The Dict's name.")
-	ann.Describe(&r.Environment, "The environment that was searched (Modal does not report it; empty means the account default).")
+	ann.Describe(&r.Environment, "The environment the object was found in: the one that was searched, else the account default environment.")
 }
 
 func (f *GetDict) Annotate(a infer.Annotator) {
@@ -271,7 +281,7 @@ func (f *GetDict) Invoke(ctx context.Context, req infer.FunctionRequest[NamedLoo
 	if err != nil {
 		return out, lookupErr("dict", req.Input.Name, env, err)
 	}
-	out.Output = GetDictResult{DictId: got.GetDictId(), Name: req.Input.Name, Environment: env}
+	out.Output = GetDictResult{DictId: got.GetDictId(), Name: req.Input.Name, Environment: lookupEnvironment(rpcCtx, client, env)}
 	return out, nil
 }
 

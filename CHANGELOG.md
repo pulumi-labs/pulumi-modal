@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-05
+
+### Added
+
+- Add `qa.yaml`, the runtime test manifest QA reads: credentials, every resource and function with its test plan and cost, and the regressions to re-check. It is copied to the mirror root and changes no provider behavior.
+
+### Fixed
+
+- Fix an imported `Secret` showing an update to `values` on every preview straight after `pulumi import` (and refusing the `import:` resource option): Diff now compares key names while the values are unknown and picks up value changes from the program's last recorded inputs (pulumi-labs/pulumi-modal#15; upstream pulumi/pulumi-go-provider#710).
+- Fix `getQueue`, `getVolume` and `getDict` returning `environment: ""` when no environment is configured: they now report the environment searched, else the account default, like `getSecret` and `getApp` (pulumi-labs/pulumi-modal#16).
+
 ## [0.3.0] - 2026-11-04
 
 ### Added

@@ -5,7 +5,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
 /**
- * A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes the values from your program. See https://modal.com/docs/guide/secrets.
+ * A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: an imported Secret compares key names until the program's values are recorded, so the first preview after an import is clean. See https://modal.com/docs/guide/secrets.
  */
 export class Secret extends pulumi.CustomResource {
     /**

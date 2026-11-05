@@ -520,7 +520,7 @@
       ]
     },
     "modal:index:Secret": {
-      "description": "A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: after an import, the next update writes the values from your program. See https://modal.com/docs/guide/secrets.",
+      "description": "A durable, named Modal Secret — a collection of key/value pairs Modal Functions mount as environment variables. Modal never returns secret values, so refresh and import can only see key names: an imported Secret compares key names until the program's values are recorded, so the first preview after an import is clean. See https://modal.com/docs/guide/secrets.",
       "properties": {
         "environment": {
           "type": "string",
@@ -779,7 +779,7 @@
             "type": "string"
           },
           "environment": {
-            "description": "The environment that was searched (Modal does not report it; empty means the account default).",
+            "description": "The environment the object was found in: the one that was searched, else the account default environment.",
             "type": "string"
           },
           "name": {
@@ -992,7 +992,7 @@
       "outputs": {
         "properties": {
           "environment": {
-            "description": "The environment that was searched (Modal does not report it; empty means the account default).",
+            "description": "The environment the object was found in: the one that was searched, else the account default environment.",
             "type": "string"
           },
           "name": {
@@ -1082,7 +1082,7 @@
       "outputs": {
         "properties": {
           "environment": {
-            "description": "The environment that was searched (Modal does not report it; empty means the account default).",
+            "description": "The environment the object was found in: the one that was searched, else the account default environment.",
             "type": "string"
           },
           "fsVersion": {
