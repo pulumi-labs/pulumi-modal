@@ -57,6 +57,10 @@ type EnvironmentArgs struct {
 	// MaxConcurrentGpus caps the number of GPUs in use at once in this
 	// environment. Unlimited when unset.
 	MaxConcurrentGpus *int `pulumi:"maxConcurrentGpus,optional"`
+
+	// CycleBudgetDollars is the environment's spend limit per billing cycle,
+	// in US dollars. Left as is when unset.
+	CycleBudgetDollars *float64 `pulumi:"cycleBudgetDollars,optional"`
 }
 
 // EnvironmentState holds the computed outputs for a Modal environment.
@@ -83,6 +87,8 @@ func (a *EnvironmentArgs) Annotate(ann infer.Annotator) {
 	ann.Describe(&a.WebSuffix, "Suffix of web endpoint URLs created in this environment. Modal assigns one when unset.")
 	ann.Describe(&a.MaxConcurrentTasks, "Maximum number of tasks running at once in this environment. Unlimited when unset.")
 	ann.Describe(&a.MaxConcurrentGpus, "Maximum number of GPUs in use at once in this environment. Unlimited when unset.")
+	ann.Describe(&a.CycleBudgetDollars, "Spend limit of this environment per billing cycle, in US dollars (0 or more). "+
+		"Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.")
 }
 
 func (s *EnvironmentState) Annotate(ann infer.Annotator) {
@@ -91,6 +97,7 @@ func (s *EnvironmentState) Annotate(ann infer.Annotator) {
 }
 
 var _ infer.CustomResource[EnvironmentArgs, EnvironmentState] = (*Environment)(nil)
+var _ infer.CustomCheck[EnvironmentArgs] = (*Environment)(nil)
 var _ infer.CustomDiff[EnvironmentArgs, EnvironmentState] = (*Environment)(nil)
 var _ infer.CustomUpdate[EnvironmentArgs, EnvironmentState] = (*Environment)(nil)
 var _ infer.CustomRead[EnvironmentArgs, EnvironmentState] = (*Environment)(nil)
@@ -140,7 +147,45 @@ func (r *Environment) Diff(_ context.Context, req infer.DiffRequest[EnvironmentA
 	if !ptrEqual(req.Inputs.MaxConcurrentGpus, req.State.MaxConcurrentGpus) {
 		mark("maxConcurrentGpus")
 	}
+	if !ptrEqual(req.Inputs.CycleBudgetDollars, req.State.CycleBudgetDollars) {
+		mark("cycleBudgetDollars")
+	}
 	return resp, nil
+}
+
+// Check rejects a negative budget at preview.
+func (r *Environment) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckResponse[EnvironmentArgs], error) {
+	args, failures, err := infer.DefaultCheck[EnvironmentArgs](ctx, req.NewInputs)
+	if err != nil || len(failures) > 0 {
+		return infer.CheckResponse[EnvironmentArgs]{Inputs: args, Failures: failures}, err
+	}
+	if v, ok := req.NewInputs.GetOk("cycleBudgetDollars"); ok && !v.HasComputed() && args.CycleBudgetDollars != nil && *args.CycleBudgetDollars < 0 {
+		failures = append(failures, pgp.CheckFailure{Property: "cycleBudgetDollars", Reason: "cycleBudgetDollars must not be negative"})
+	}
+	return infer.CheckResponse[EnvironmentArgs]{Inputs: args, Failures: failures}, nil
+}
+
+// setBudget applies the budget input; Modal has no way to read it from the
+// environment list, so it is read separately with readBudget.
+func setBudget(ctx context.Context, client *modalClient, envID string, dollars float64) error {
+	_, err := client.stub.EnvironmentSetBudget(ctx, pb.EnvironmentSetBudgetRequest_builder{
+		EnvironmentId:      envID,
+		CycleBudgetDollars: &dollars,
+	}.Build())
+	return err
+}
+
+// readBudget returns the environment's cycle budget, nil when none is set.
+func readBudget(ctx context.Context, client *modalClient, envID string) (*float64, error) {
+	resp, err := client.stub.EnvironmentGetBudget(ctx, pb.EnvironmentGetBudgetRequest_builder{EnvironmentId: envID}.Build())
+	if err != nil {
+		return nil, err
+	}
+	if !resp.HasCycleBudgetDollars() {
+		return nil, nil
+	}
+	v := resp.GetCycleBudgetDollars()
+	return &v, nil
 }
 
 // findEnvironment looks an environment up by name or, when name is empty, ID.
@@ -172,7 +217,7 @@ func fillEnvironmentState(state *EnvironmentState, item *pb.EnvironmentListItem,
 func (r *Environment) Create(ctx context.Context, req infer.CreateRequest[EnvironmentArgs]) (infer.CreateResponse[EnvironmentState], error) {
 	args := req.Inputs
 	if req.DryRun {
-		return infer.CreateResponse[EnvironmentState]{ID: args.Name, Output: EnvironmentState{EnvironmentArgs: args}}, nil
+		return infer.CreateResponse[EnvironmentState]{ID: "", Output: EnvironmentState{EnvironmentArgs: args}}, nil
 	}
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	client, err := clientFor(cfg, args.TokenID, args.TokenSecret)
@@ -199,6 +244,14 @@ func (r *Environment) Create(ctx context.Context, req infer.CreateRequest[Enviro
 	}
 	state := EnvironmentState{EnvironmentArgs: args}
 	fillEnvironmentState(&state, item, true)
+	if args.CycleBudgetDollars != nil {
+		if err := setBudget(rpcCtx, client, item.GetEnvironmentId(), *args.CycleBudgetDollars); err != nil {
+			// The environment exists, so record it with the budget unset.
+			state.CycleBudgetDollars = nil
+			return infer.CreateResponse[EnvironmentState]{ID: item.GetEnvironmentId(), Output: state},
+				infer.ResourceInitFailedError{Reasons: []string{fmt.Sprintf("set budget: %v", err)}}
+		}
+	}
 	return infer.CreateResponse[EnvironmentState]{ID: item.GetEnvironmentId(), Output: state}, nil
 }
 
@@ -225,6 +278,11 @@ func (r *Environment) Read(ctx context.Context, req infer.ReadRequest[Environmen
 	importing := req.State.Name == "" && req.Inputs.Name == ""
 	state := req.State
 	fillEnvironmentState(&state, item, false)
+	// The budget is a side read: a workspace or plan that cannot answer it must
+	// not break refresh of the environment itself, so keep the recorded value.
+	if budget, berr := readBudget(rpcCtx, client, item.GetEnvironmentId()); berr == nil {
+		state.CycleBudgetDollars = budget
+	}
 
 	inputs := req.Inputs
 	inputs.TokenID, inputs.TokenSecret = state.TokenID, state.TokenSecret
@@ -233,6 +291,7 @@ func (r *Environment) Read(ctx context.Context, req infer.ReadRequest[Environmen
 		inputs.WebSuffix = state.WebSuffix
 		inputs.MaxConcurrentTasks = state.MaxConcurrentTasks
 		inputs.MaxConcurrentGpus = state.MaxConcurrentGpus
+		inputs.CycleBudgetDollars = state.CycleBudgetDollars
 	} else {
 		// Keep an unset input unset, but track drift in what the program sets.
 		if inputs.WebSuffix != nil {
@@ -244,6 +303,9 @@ func (r *Environment) Read(ctx context.Context, req infer.ReadRequest[Environmen
 		if inputs.MaxConcurrentGpus != nil {
 			inputs.MaxConcurrentGpus = state.MaxConcurrentGpus
 		}
+		if inputs.CycleBudgetDollars != nil {
+			inputs.CycleBudgetDollars = state.CycleBudgetDollars
+		}
 	}
 	return infer.ReadResponse[EnvironmentArgs, EnvironmentState]{ID: item.GetEnvironmentId(), Inputs: inputs, State: state}, nil
 }
@@ -254,6 +316,9 @@ func (r *Environment) Update(ctx context.Context, req infer.UpdateRequest[Enviro
 	state.EnvironmentArgs = args
 	if args.WebSuffix == nil {
 		state.WebSuffix = req.State.WebSuffix
+	}
+	if args.CycleBudgetDollars == nil {
+		state.CycleBudgetDollars = req.State.CycleBudgetDollars
 	}
 	if req.DryRun {
 		return infer.UpdateResponse[EnvironmentState]{Output: state}, nil
@@ -292,6 +357,11 @@ func (r *Environment) Update(ctx context.Context, req infer.UpdateRequest[Enviro
 	if _, err := client.stub.EnvironmentUpdate(rpcCtx, update.Build()); err != nil {
 		return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: update environment %q: %w", currentName, err)
 	}
+	if args.CycleBudgetDollars != nil && !ptrEqual(args.CycleBudgetDollars, req.State.CycleBudgetDollars) {
+		if err := setBudget(rpcCtx, client, req.ID, *args.CycleBudgetDollars); err != nil {
+			return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: set budget of environment %q: %w", currentName, err)
+		}
+	}
 	// EnvironmentUpdate answers with a sparse item (live: only the web suffix),
 	// so read the environment back by ID rather than trusting that response.
 	item, err := findEnvironment(rpcCtx, client, req.ID, "")
@@ -299,6 +369,9 @@ func (r *Environment) Update(ctx context.Context, req infer.UpdateRequest[Enviro
 		return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: environment %q was updated but could not be read back: %v", req.ID, err)
 	}
 	fillEnvironmentState(&state, item, true)
+	if args.CycleBudgetDollars != nil {
+		state.CycleBudgetDollars = args.CycleBudgetDollars
+	}
 	state.EnvironmentArgs.TokenID, state.EnvironmentArgs.TokenSecret = args.TokenID, args.TokenSecret
 	return infer.UpdateResponse[EnvironmentState]{Output: state}, nil
 }

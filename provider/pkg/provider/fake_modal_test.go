@@ -64,9 +64,16 @@ type fakeModal struct {
 	images map[string]*fakeImage
 	tags   map[string]string // image tag (env/name:tag) -> image id
 
+	proxies       map[string]*fakeProxy
+	serviceUsers  map[string]*fakeServiceUser
+	webhookTokens map[string]*fakeWebhookToken
+
 	// Failure injection.
 	failPublish bool
 	failSetTags bool
+	// failAppLookup and failLayout break the read-back after a deploy.
+	failAppLookup bool
+	failLayout    bool
 }
 
 func newFakeModal() *fakeModal {
@@ -83,6 +90,10 @@ func newFakeModal() *fakeModal {
 		apps:   map[string]*fakeApp{},
 		images: map[string]*fakeImage{},
 		tags:   map[string]string{},
+
+		proxies:       map[string]*fakeProxy{},
+		serviceUsers:  map[string]*fakeServiceUser{},
+		webhookTokens: map[string]*fakeWebhookToken{},
 	}
 }
 

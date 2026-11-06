@@ -20,6 +20,7 @@ __all__ = ['EnvironmentArgs', 'Environment']
 class EnvironmentArgs:
     def __init__(__self__, *,
                  name: pulumi.Input[_builtins.str],
+                 cycle_budget_dollars: Optional[pulumi.Input[_builtins.float]] = None,
                  max_concurrent_gpus: Optional[pulumi.Input[_builtins.int]] = None,
                  max_concurrent_tasks: Optional[pulumi.Input[_builtins.int]] = None,
                  token_id: Optional[pulumi.Input[_builtins.str]] = None,
@@ -29,6 +30,7 @@ class EnvironmentArgs:
         The set of arguments for constructing a Environment resource.
 
         :param pulumi.Input[_builtins.str] name: The environment's name, unique in the workspace. Changing this renames the environment in place.
+        :param pulumi.Input[_builtins.float] cycle_budget_dollars: Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
         :param pulumi.Input[_builtins.int] max_concurrent_gpus: Maximum number of GPUs in use at once in this environment. Unlimited when unset.
         :param pulumi.Input[_builtins.int] max_concurrent_tasks: Maximum number of tasks running at once in this environment. Unlimited when unset.
         :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Overrides the provider-level tokenId.
@@ -36,6 +38,8 @@ class EnvironmentArgs:
         :param pulumi.Input[_builtins.str] web_suffix: Suffix of web endpoint URLs created in this environment. Modal assigns one when unset.
         """
         pulumi.set(__self__, "name", name)
+        if cycle_budget_dollars is not None:
+            pulumi.set(__self__, "cycle_budget_dollars", cycle_budget_dollars)
         if max_concurrent_gpus is not None:
             pulumi.set(__self__, "max_concurrent_gpus", max_concurrent_gpus)
         if max_concurrent_tasks is not None:
@@ -58,6 +62,18 @@ class EnvironmentArgs:
     @name.setter
     def name(self, value: pulumi.Input[_builtins.str]):
         pulumi.set(self, "name", value)
+
+    @_builtins.property
+    @pulumi.getter(name="cycleBudgetDollars")
+    def cycle_budget_dollars(self) -> Optional[pulumi.Input[_builtins.float]]:
+        """
+        Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+        """
+        return pulumi.get(self, "cycle_budget_dollars")
+
+    @cycle_budget_dollars.setter
+    def cycle_budget_dollars(self, value: Optional[pulumi.Input[_builtins.float]]):
+        pulumi.set(self, "cycle_budget_dollars", value)
 
     @_builtins.property
     @pulumi.getter(name="maxConcurrentGpus")
@@ -126,6 +142,7 @@ class Environment(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
+                 cycle_budget_dollars: Optional[pulumi.Input[_builtins.float]] = None,
                  max_concurrent_gpus: Optional[pulumi.Input[_builtins.int]] = None,
                  max_concurrent_tasks: Optional[pulumi.Input[_builtins.int]] = None,
                  name: Optional[pulumi.Input[_builtins.str]] = None,
@@ -139,6 +156,7 @@ class Environment(pulumi.CustomResource):
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
+        :param pulumi.Input[_builtins.float] cycle_budget_dollars: Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
         :param pulumi.Input[_builtins.int] max_concurrent_gpus: Maximum number of GPUs in use at once in this environment. Unlimited when unset.
         :param pulumi.Input[_builtins.int] max_concurrent_tasks: Maximum number of tasks running at once in this environment. Unlimited when unset.
         :param pulumi.Input[_builtins.str] name: The environment's name, unique in the workspace. Changing this renames the environment in place.
@@ -171,6 +189,7 @@ class Environment(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
+                 cycle_budget_dollars: Optional[pulumi.Input[_builtins.float]] = None,
                  max_concurrent_gpus: Optional[pulumi.Input[_builtins.int]] = None,
                  max_concurrent_tasks: Optional[pulumi.Input[_builtins.int]] = None,
                  name: Optional[pulumi.Input[_builtins.str]] = None,
@@ -186,6 +205,7 @@ class Environment(pulumi.CustomResource):
                 raise TypeError('__props__ is only valid when passed in combination with a valid opts.id to get an existing resource')
             __props__ = EnvironmentArgs.__new__(EnvironmentArgs)
 
+            __props__.__dict__["cycle_budget_dollars"] = cycle_budget_dollars
             __props__.__dict__["max_concurrent_gpus"] = max_concurrent_gpus
             __props__.__dict__["max_concurrent_tasks"] = max_concurrent_tasks
             if name is None and not opts.urn:
@@ -220,6 +240,7 @@ class Environment(pulumi.CustomResource):
 
         __props__ = EnvironmentArgs.__new__(EnvironmentArgs)
 
+        __props__.__dict__["cycle_budget_dollars"] = None
         __props__.__dict__["environment_id"] = None
         __props__.__dict__["is_default"] = None
         __props__.__dict__["max_concurrent_gpus"] = None
@@ -229,6 +250,14 @@ class Environment(pulumi.CustomResource):
         __props__.__dict__["token_secret"] = None
         __props__.__dict__["web_suffix"] = None
         return Environment(resource_name, opts=opts, __props__=__props__)
+
+    @_builtins.property
+    @pulumi.getter(name="cycleBudgetDollars")
+    def cycle_budget_dollars(self) -> pulumi.Output[Optional[_builtins.float]]:
+        """
+        Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+        """
+        return pulumi.get(self, "cycle_budget_dollars")
 
     @_builtins.property
     @pulumi.getter(name="environmentId")

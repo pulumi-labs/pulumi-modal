@@ -212,3 +212,26 @@ Tests in `pkg/provider/provider_test.go`:
 - **Lookups** (`functions.go`) use the lookup-only creation type, so they never create. Do not add a lookup that
   needs `GetOrCreate` semantics.
 - **Never name an input `version`** (see the Force-Replace Rules note).
+
+
+## WebhookToken (#1536)
+
+- **WebhookToken** has no get-by-ID RPC either: Read scans `WebhookTokenList`. Outputs are `webhookTokenId` and the write-once
+  secret `webhookTokenSecret` (create only; Read and Update keep the stored one; an import has none). `name` updates through
+  `WebhookTokenUpdate`; `scoped` replaces. `WebhookTokenEnvironment{Add,List,Remove}` (attaching a scoped token to environments by
+  environment ID) is not modelled yet. `getWebhookToken` looks up by name and fails when the name is not unique.
+
+## Proxy, ServiceUser, AppDeployment (#1445)
+
+- **Proxy** and **ServiceUser** have no get-by-ID RPC: Read scans `ProxyList`/`ServiceUserList` for the ID. Proxy
+  `ipCount` is the only in-place input (`ProxyAddIp`, `ProxyRemoveIp` takes the IP, not the proxy ID); a failed resize
+  returns the proxy in state with `ResourceInitFailedError` so a retry resizes it rather than leaking addresses.
+- **ServiceUser** outputs are named `serviceTokenId`/`serviceTokenSecret` because `tokenId`/`tokenSecret` are the
+  resource-level API credentials. The secret exists only in the create response; Read keeps the stored one.
+- **AppDeployment** runs the Modal CLI. Credentials, environment and endpoint reach it through the process environment
+  (`credentialsFor` in `provider.go` resolves them like `clientFor`), never argv. Failure output is redacted of the token
+  pair and the `env` values. Tests use a fake `modal` shell script (`fakeCLI`) plus the fake control plane; the script
+  cannot create the App, so tests seed it in the fake before Create.
+- The fingerprint (`sourceFingerprint`) is computed in Diff as well as Create, so editing source shows as an update at
+  preview time. A missing source directory fingerprints to "" and does not diff.
+

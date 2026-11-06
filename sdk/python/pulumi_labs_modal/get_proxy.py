@@ -86,7 +86,7 @@ def get_proxy(environment: Optional[_builtins.str] = None,
               name: Optional[_builtins.str] = None,
               opts: Optional[pulumi.InvokeOptions] = None) -> AwaitableGetProxyResult:
     """
-    Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+    Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
 
 
     :param _builtins.str environment: The Modal environment to look in. Falls back to the provider-level environment, then the account's default environment.
@@ -107,7 +107,7 @@ def get_proxy_output(environment: Optional[pulumi.Input[Optional[_builtins.str]]
                      name: Optional[pulumi.Input[_builtins.str]] = None,
                      opts: Optional[Union[pulumi.InvokeOptions, pulumi.InvokeOutputOptions]] = None) -> pulumi.Output[GetProxyResult]:
     """
-    Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+    Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
 
 
     :param _builtins.str environment: The Modal environment to look in. Falls back to the provider-level environment, then the account's default environment.

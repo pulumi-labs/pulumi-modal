@@ -207,7 +207,7 @@ func (r *Secret) Create(ctx context.Context, req infer.CreateRequest[SecretArgs]
 		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
-		return infer.CreateResponse[SecretState]{ID: args.Name, Output: state}, nil
+		return infer.CreateResponse[SecretState]{ID: "", Output: state}, nil
 	}
 	for k := range args.Values {
 		if err := validateEnvVarName(k); err != nil {

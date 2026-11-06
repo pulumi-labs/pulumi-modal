@@ -33,6 +33,8 @@ type fakeEnv struct {
 	suffix    string
 	maxTasks  *int32
 	maxGpus   *int32
+	budget    *float64
+	budgetErr bool
 }
 
 type fakeApp struct {
@@ -41,6 +43,8 @@ type fakeApp struct {
 	env     string
 	tags    map[string]string
 	stopped bool
+	// functions maps a Function name to its web URL ("" for none).
+	functions map[string]string
 }
 
 type fakeImage struct {
@@ -141,6 +145,37 @@ func (f *fakeModal) EnvironmentUpdate(_ context.Context, req *pb.EnvironmentUpda
 	}
 	// Like the live API, the update response is sparse: no name, no ID.
 	return pb.EnvironmentListItem_builder{WebhookSuffix: e.suffix}.Build(), nil
+}
+
+func (f *fakeModal) EnvironmentSetBudget(_ context.Context, req *pb.EnvironmentSetBudgetRequest) (*emptypb.Empty, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, e := range f.envs {
+		if e.id == req.GetEnvironmentId() {
+			if req.GetClearBudget() {
+				e.budget = nil
+			} else if req.HasCycleBudgetDollars() {
+				v := req.GetCycleBudgetDollars()
+				e.budget = &v
+			}
+			return &emptypb.Empty{}, nil
+		}
+	}
+	return nil, status.Error(codes.NotFound, "environment not found")
+}
+
+func (f *fakeModal) EnvironmentGetBudget(_ context.Context, req *pb.EnvironmentGetBudgetRequest) (*pb.EnvironmentGetBudgetResponse, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, e := range f.envs {
+		if e.id == req.GetEnvironmentId() {
+			if e.budgetErr {
+				return nil, status.Error(codes.PermissionDenied, "budgets are not available on this plan")
+			}
+			return pb.EnvironmentGetBudgetResponse_builder{CycleBudgetDollars: e.budget, CurrentCycleUsage: 1.5}.Build(), nil
+		}
+	}
+	return nil, status.Error(codes.NotFound, "environment not found")
 }
 
 func (f *fakeModal) EnvironmentDelete(_ context.Context, req *pb.EnvironmentDeleteRequest) (*emptypb.Empty, error) {
@@ -269,6 +304,9 @@ func (f *fakeModal) AppStop(_ context.Context, req *pb.AppStopRequest) (*emptypb
 func (f *fakeModal) AppGetByDeploymentName(_ context.Context, req *pb.AppGetByDeploymentNameRequest) (*pb.AppGetByDeploymentNameResponse, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.failAppLookup {
+		return nil, status.Error(codes.Unavailable, "lookup unavailable")
+	}
 	env := f.resolveEnv(req.GetEnvironmentName())
 	for _, a := range f.apps {
 		if a.name == req.GetName() && a.env == env && !a.stopped {
@@ -374,6 +412,17 @@ func (f *fakeModal) ImageDelete(_ context.Context, req *pb.ImageDeleteRequest) (
 // --- Lookups -------------------------------------------------------------------
 
 func (f *fakeModal) FunctionGet(_ context.Context, req *pb.FunctionGetRequest) (*pb.FunctionGetResponse, error) {
+	f.mu.Lock()
+	env := f.resolveEnv(req.GetEnvironmentName())
+	for _, a := range f.apps {
+		if a.name == req.GetAppName() && a.env == env && !a.stopped {
+			if u, ok := a.functions[req.GetObjectTag()]; ok {
+				f.mu.Unlock()
+				return pb.FunctionGetResponse_builder{FunctionId: "fu-" + req.GetObjectTag(), HandleMetadata: pb.FunctionHandleMetadata_builder{WebUrl: u}.Build()}.Build(), nil
+			}
+		}
+	}
+	f.mu.Unlock()
 	if req.GetAppName() != "deployed-app" || req.GetObjectTag() != "predict" {
 		return nil, status.Error(codes.NotFound, "function not found")
 	}
@@ -390,6 +439,16 @@ func (f *fakeModal) ClassGet(_ context.Context, req *pb.ClassGetRequest) (*pb.Cl
 }
 
 func (f *fakeModal) ProxyGet(_ context.Context, req *pb.ProxyGetRequest) (*pb.ProxyGetResponse, error) {
+	f.mu.Lock()
+	env := f.resolveEnv(req.GetEnvironmentName())
+	for _, p := range f.proxies {
+		if p.name == req.GetName() && p.env == env {
+			resp := pb.ProxyGetResponse_builder{Proxy: p.proto()}.Build()
+			f.mu.Unlock()
+			return resp, nil
+		}
+	}
+	f.mu.Unlock()
 	if req.GetName() != "egress" {
 		return nil, status.Error(codes.NotFound, "proxy not found")
 	}

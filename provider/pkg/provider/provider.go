@@ -119,17 +119,27 @@ func isNotFound(err error) bool { return status.Code(err) == codes.NotFound }
 // clientFor builds a modalClient from the effective provider config and any
 // resource-level token overrides.
 func clientFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string) (*modalClient, error) {
-	tokenID := resolveStr(resourceTokenID, cfg.TokenID)
-	tokenSecret := resolveStr(resourceTokenSecret, cfg.TokenSecret)
-	serverAddr := resolveStr(nil, cfg.ServerAddr)
+	tokenID, tokenSecret, serverAddr, err := credentialsFor(cfg, resourceTokenID, resourceTokenSecret)
+	if err != nil {
+		return nil, err
+	}
+	return newModalClient(tokenID, tokenSecret, serverAddr)
+}
+
+// credentialsFor resolves the effective API token pair and endpoint override
+// from the resource-level tokens, the provider config and the Modal profile
+// file, in that order.
+func credentialsFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string) (tokenID, tokenSecret, serverAddr string, err error) {
+	tokenID = resolveStr(resourceTokenID, cfg.TokenID)
+	tokenSecret = resolveStr(resourceTokenSecret, cfg.TokenSecret)
+	serverAddr = resolveStr(nil, cfg.ServerAddr)
 
 	// Last source: the profile file the Modal CLI writes. Only consulted when
 	// nothing above supplied a token.
 	var prof *modalProfile
 	if tokenID == "" && tokenSecret == "" {
-		var err error
 		if prof, err = loadModalProfile(); err != nil {
-			return nil, err
+			return "", "", "", err
 		}
 		if prof != nil {
 			tokenID, tokenSecret = prof.TokenID, prof.TokenSecret
@@ -139,17 +149,17 @@ func clientFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string)
 		}
 	}
 	if tokenID == "" || tokenSecret == "" {
-		return nil, missingCredentialsError(tokenID, tokenSecret, prof)
+		return "", "", "", missingCredentialsError(tokenID, tokenSecret, prof)
 	}
-	return newModalClient(tokenID, tokenSecret, serverAddr)
+	return tokenID, tokenSecret, serverAddr, nil
 }
 
 // New returns the configured Modal Pulumi provider.
-func New() (pgp.Provider, error) {
+func newProvider() (pgp.Provider, error) {
 	prov, err := infer.NewProviderBuilder().
 		WithDisplayName("Modal").
 		WithDescription(
-			"Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps and Images — as infrastructure with Pulumi.",
+			"Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments — as infrastructure with Pulumi.",
 		).
 		WithHomepage("https://modal.com").
 		WithRepository("https://github.com/pulumi-labs/pulumi-modal").
@@ -158,7 +168,7 @@ func New() (pgp.Provider, error) {
 			"go": map[string]any{"generateResourceContainerTypes": true, "respectSchemaVersion": true},
 			"nodejs": map[string]any{
 				"packageName":          "@pulumi-labs/modal",
-				"packageDescription":   "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps and Images — as infrastructure with Pulumi.",
+				"packageDescription":   "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments — as infrastructure with Pulumi.",
 				"respectSchemaVersion": true,
 			},
 			"python": map[string]any{
@@ -185,6 +195,10 @@ func New() (pgp.Provider, error) {
 			infer.Resource[*Environment, EnvironmentArgs, EnvironmentState](&Environment{}),
 			infer.Resource[*App, AppArgs, AppState](&App{}),
 			infer.Resource[*Image, ImageArgs, ImageState](&Image{}),
+			infer.Resource[*Proxy, ProxyArgs, ProxyState](&Proxy{}),
+			infer.Resource[*AppDeployment, AppDeploymentArgs, AppDeploymentState](&AppDeployment{}),
+			infer.Resource[*ServiceUser, ServiceUserArgs, ServiceUserState](&ServiceUser{}),
+			infer.Resource[*WebhookToken, WebhookTokenArgs, WebhookTokenState](&WebhookToken{}),
 		).
 		WithFunctions(
 			infer.Function[*GetSecret, NamedLookupArgs, GetSecretResult](&GetSecret{}),
@@ -197,6 +211,9 @@ func New() (pgp.Provider, error) {
 			infer.Function[*GetFunction, GetFunctionArgs, GetFunctionResult](&GetFunction{}),
 			infer.Function[*GetCls, GetClsArgs, GetClsResult](&GetCls{}),
 			infer.Function[*GetProxy, NamedLookupArgs, GetProxyResult](&GetProxy{}),
+			infer.Function[*GetAppDeployment, NamedLookupArgs, GetAppDeploymentResult](&GetAppDeployment{}),
+			infer.Function[*GetServiceUser, GetServiceUserArgs, GetServiceUserResult](&GetServiceUser{}),
+			infer.Function[*GetWebhookToken, GetWebhookTokenArgs, GetWebhookTokenResult](&GetWebhookToken{}),
 			infer.Function[*GetWorkspace, GetWorkspaceArgs, GetWorkspaceResult](&GetWorkspace{}),
 		).
 		Build()

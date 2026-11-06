@@ -35,6 +35,10 @@ export class Environment extends pulumi.CustomResource {
     }
 
     /**
+     * Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+     */
+    declare public readonly cycleBudgetDollars: pulumi.Output<number | undefined>;
+    /**
      * The Modal-assigned identifier of the environment.
      */
     declare public /*out*/ readonly environmentId: pulumi.Output<string>;
@@ -81,6 +85,7 @@ export class Environment extends pulumi.CustomResource {
             if (args?.name === undefined && !opts.urn) {
                 throw new Error("Missing required property 'name'");
             }
+            resourceInputs["cycleBudgetDollars"] = args?.cycleBudgetDollars;
             resourceInputs["maxConcurrentGpus"] = args?.maxConcurrentGpus;
             resourceInputs["maxConcurrentTasks"] = args?.maxConcurrentTasks;
             resourceInputs["name"] = args?.name;
@@ -90,6 +95,7 @@ export class Environment extends pulumi.CustomResource {
             resourceInputs["environmentId"] = undefined /*out*/;
             resourceInputs["isDefault"] = undefined /*out*/;
         } else {
+            resourceInputs["cycleBudgetDollars"] = undefined /*out*/;
             resourceInputs["environmentId"] = undefined /*out*/;
             resourceInputs["isDefault"] = undefined /*out*/;
             resourceInputs["maxConcurrentGpus"] = undefined /*out*/;
@@ -110,6 +116,10 @@ export class Environment extends pulumi.CustomResource {
  * The set of arguments for constructing a Environment resource.
  */
 export interface EnvironmentArgs {
+    /**
+     * Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+     */
+    cycleBudgetDollars?: pulumi.Input<number | undefined>;
     /**
      * Maximum number of GPUs in use at once in this environment. Unlimited when unset.
      */

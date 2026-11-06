@@ -7,9 +7,11 @@ from . import _utilities
 import typing
 # Export this package's modules as members:
 from .app import *
+from .app_deployment import *
 from .dict import *
 from .environment import *
 from .get_app import *
+from .get_app_deployment import *
 from .get_cls import *
 from .get_dict import *
 from .get_environment import *
@@ -18,13 +20,18 @@ from .get_image import *
 from .get_proxy import *
 from .get_queue import *
 from .get_secret import *
+from .get_service_user import *
 from .get_volume import *
+from .get_webhook_token import *
 from .get_workspace import *
 from .image import *
 from .provider import *
+from .proxy import *
 from .queue import *
 from .secret import *
+from .service_user import *
 from .volume import *
+from .webhook_token import *
 
 # Make subpackages available:
 if typing.TYPE_CHECKING:
@@ -42,12 +49,16 @@ _utilities.register(
   "fqn": "pulumi_labs_modal",
   "classes": {
    "modal:index:App": "App",
+   "modal:index:AppDeployment": "AppDeployment",
    "modal:index:Dict": "Dict",
    "modal:index:Environment": "Environment",
    "modal:index:Image": "Image",
+   "modal:index:Proxy": "Proxy",
    "modal:index:Queue": "Queue",
    "modal:index:Secret": "Secret",
-   "modal:index:Volume": "Volume"
+   "modal:index:ServiceUser": "ServiceUser",
+   "modal:index:Volume": "Volume",
+   "modal:index:WebhookToken": "WebhookToken"
   }
  }
 ]

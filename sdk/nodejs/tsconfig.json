@@ -20,11 +20,13 @@
     },
     "files": [
         "app.ts",
+        "appDeployment.ts",
         "config/index.ts",
         "config/vars.ts",
         "dict.ts",
         "environment.ts",
         "getApp.ts",
+        "getAppDeployment.ts",
         "getCls.ts",
         "getDict.ts",
         "getEnvironment.ts",
@@ -33,14 +35,19 @@
         "getProxy.ts",
         "getQueue.ts",
         "getSecret.ts",
+        "getServiceUser.ts",
         "getVolume.ts",
+        "getWebhookToken.ts",
         "getWorkspace.ts",
         "image.ts",
         "index.ts",
         "provider.ts",
+        "proxy.ts",
         "queue.ts",
         "secret.ts",
+        "serviceUser.ts",
         "utilities.ts",
-        "volume.ts"
+        "volume.ts",
+        "webhookToken.ts"
     ]
 }

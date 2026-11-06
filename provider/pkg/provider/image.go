@@ -224,7 +224,7 @@ func (r *Image) Create(ctx context.Context, req infer.CreateRequest[ImageArgs]) 
 		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
-		return infer.CreateResponse[ImageState]{ID: derefStr(args.BaseImage), Output: state}, nil
+		return infer.CreateResponse[ImageState]{ID: "", Output: state}, nil
 	}
 	if derefStr(args.BaseImage) == "" {
 		return infer.CreateResponse[ImageState]{}, fmt.Errorf("modal: baseImage is required to build an Image")

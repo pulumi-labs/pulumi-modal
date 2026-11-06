@@ -10,6 +10,11 @@ export type App = import("./app").App;
 export const App: typeof import("./app").App = null as any;
 utilities.lazyLoad(exports, ["App"], () => require("./app"));
 
+export { AppDeploymentArgs } from "./appDeployment";
+export type AppDeployment = import("./appDeployment").AppDeployment;
+export const AppDeployment: typeof import("./appDeployment").AppDeployment = null as any;
+utilities.lazyLoad(exports, ["AppDeployment"], () => require("./appDeployment"));
+
 export { DictArgs } from "./dict";
 export type Dict = import("./dict").Dict;
 export const Dict: typeof import("./dict").Dict = null as any;
@@ -24,6 +29,11 @@ export { GetAppArgs, GetAppResult, GetAppOutputArgs } from "./getApp";
 export const getApp: typeof import("./getApp").getApp = null as any;
 export const getAppOutput: typeof import("./getApp").getAppOutput = null as any;
 utilities.lazyLoad(exports, ["getApp","getAppOutput"], () => require("./getApp"));
+
+export { GetAppDeploymentArgs, GetAppDeploymentResult, GetAppDeploymentOutputArgs } from "./getAppDeployment";
+export const getAppDeployment: typeof import("./getAppDeployment").getAppDeployment = null as any;
+export const getAppDeploymentOutput: typeof import("./getAppDeployment").getAppDeploymentOutput = null as any;
+utilities.lazyLoad(exports, ["getAppDeployment","getAppDeploymentOutput"], () => require("./getAppDeployment"));
 
 export { GetClsArgs, GetClsResult, GetClsOutputArgs } from "./getCls";
 export const getCls: typeof import("./getCls").getCls = null as any;
@@ -65,10 +75,20 @@ export const getSecret: typeof import("./getSecret").getSecret = null as any;
 export const getSecretOutput: typeof import("./getSecret").getSecretOutput = null as any;
 utilities.lazyLoad(exports, ["getSecret","getSecretOutput"], () => require("./getSecret"));
 
+export { GetServiceUserArgs, GetServiceUserResult, GetServiceUserOutputArgs } from "./getServiceUser";
+export const getServiceUser: typeof import("./getServiceUser").getServiceUser = null as any;
+export const getServiceUserOutput: typeof import("./getServiceUser").getServiceUserOutput = null as any;
+utilities.lazyLoad(exports, ["getServiceUser","getServiceUserOutput"], () => require("./getServiceUser"));
+
 export { GetVolumeArgs, GetVolumeResult, GetVolumeOutputArgs } from "./getVolume";
 export const getVolume: typeof import("./getVolume").getVolume = null as any;
 export const getVolumeOutput: typeof import("./getVolume").getVolumeOutput = null as any;
 utilities.lazyLoad(exports, ["getVolume","getVolumeOutput"], () => require("./getVolume"));
+
+export { GetWebhookTokenArgs, GetWebhookTokenResult, GetWebhookTokenOutputArgs } from "./getWebhookToken";
+export const getWebhookToken: typeof import("./getWebhookToken").getWebhookToken = null as any;
+export const getWebhookTokenOutput: typeof import("./getWebhookToken").getWebhookTokenOutput = null as any;
+utilities.lazyLoad(exports, ["getWebhookToken","getWebhookTokenOutput"], () => require("./getWebhookToken"));
 
 export { GetWorkspaceArgs, GetWorkspaceResult } from "./getWorkspace";
 export const getWorkspace: typeof import("./getWorkspace").getWorkspace = null as any;
@@ -85,6 +105,11 @@ export type Provider = import("./provider").Provider;
 export const Provider: typeof import("./provider").Provider = null as any;
 utilities.lazyLoad(exports, ["Provider"], () => require("./provider"));
 
+export { ProxyArgs } from "./proxy";
+export type Proxy = import("./proxy").Proxy;
+export const Proxy: typeof import("./proxy").Proxy = null as any;
+utilities.lazyLoad(exports, ["Proxy"], () => require("./proxy"));
+
 export { QueueArgs } from "./queue";
 export type Queue = import("./queue").Queue;
 export const Queue: typeof import("./queue").Queue = null as any;
@@ -95,10 +120,20 @@ export type Secret = import("./secret").Secret;
 export const Secret: typeof import("./secret").Secret = null as any;
 utilities.lazyLoad(exports, ["Secret"], () => require("./secret"));
 
+export { ServiceUserArgs } from "./serviceUser";
+export type ServiceUser = import("./serviceUser").ServiceUser;
+export const ServiceUser: typeof import("./serviceUser").ServiceUser = null as any;
+utilities.lazyLoad(exports, ["ServiceUser"], () => require("./serviceUser"));
+
 export { VolumeArgs } from "./volume";
 export type Volume = import("./volume").Volume;
 export const Volume: typeof import("./volume").Volume = null as any;
 utilities.lazyLoad(exports, ["Volume"], () => require("./volume"));
+
+export { WebhookTokenArgs } from "./webhookToken";
+export type WebhookToken = import("./webhookToken").WebhookToken;
+export const WebhookToken: typeof import("./webhookToken").WebhookToken = null as any;
+utilities.lazyLoad(exports, ["WebhookToken"], () => require("./webhookToken"));
 
 
 // Export sub-modules:
@@ -114,18 +149,26 @@ const _module = {
         switch (type) {
             case "modal:index:App":
                 return new App(name, <any>undefined, { urn })
+            case "modal:index:AppDeployment":
+                return new AppDeployment(name, <any>undefined, { urn })
             case "modal:index:Dict":
                 return new Dict(name, <any>undefined, { urn })
             case "modal:index:Environment":
                 return new Environment(name, <any>undefined, { urn })
             case "modal:index:Image":
                 return new Image(name, <any>undefined, { urn })
+            case "modal:index:Proxy":
+                return new Proxy(name, <any>undefined, { urn })
             case "modal:index:Queue":
                 return new Queue(name, <any>undefined, { urn })
             case "modal:index:Secret":
                 return new Secret(name, <any>undefined, { urn })
+            case "modal:index:ServiceUser":
+                return new ServiceUser(name, <any>undefined, { urn })
             case "modal:index:Volume":
                 return new Volume(name, <any>undefined, { urn })
+            case "modal:index:WebhookToken":
+                return new WebhookToken(name, <any>undefined, { urn })
             default:
                 throw new Error(`unknown resource type ${type}`);
         }

@@ -1,0 +1,30 @@
+name: modal-appdeployment-yaml
+runtime: yaml
+description: Deploy a Modal App from a Python file and mint a CI service user with Pulumi (YAML)
+
+# Needs the Modal CLI on this machine (`pip install modal`) because `modal deploy`
+# does the packaging. Credentials: set modal:tokenId and modal:tokenSecret, or the
+# MODAL_TOKEN_ID and MODAL_TOKEN_SECRET environment variables.
+resources:
+  # Runs `modal deploy` for app.py and manages the deployed App. Editing app.py
+  # (or anything beside it) redeploys in place on the next `pulumi up`.
+  api:
+    type: modal:index:AppDeployment
+    properties:
+      name: deployment-example
+      appFile: app.py
+
+  # A non-human identity for CI/CD. Modal returns its token secret only once;
+  # Pulumi keeps it as a secret output.
+  ci:
+    type: modal:index:ServiceUser
+    properties:
+      name: deployment-example-ci
+      scoped: true
+
+outputs:
+  appId: ${api.appId}
+  functions: ${api.functions}
+  webUrls: ${api.webUrls}
+  ciTokenId: ${ci.serviceTokenId}
+  ciTokenSecret: ${ci.serviceTokenSecret}

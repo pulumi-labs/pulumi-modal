@@ -1,0 +1,3 @@
+name: modal-appdeployment-python
+runtime: python
+description: Deploy a Modal App from a Python file and mint a CI service user with Pulumi (Python)

@@ -1,10 +1,10 @@
 ---
 title: Modal Provider
-meta_desc: Manage Modal serverless compute resources (Secrets, Volumes, Queues, Dicts, Environments, Apps and Images) with Pulumi.
+meta_desc: Manage Modal serverless compute resources (Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments) with Pulumi.
 layout: package
 ---
 
-An experimental Pulumi provider for [Modal](https://modal.com), the serverless GPU and CPU compute platform. It manages Modal `Secret`, `Volume` and `Queue` resources as infrastructure.
+An experimental Pulumi provider for [Modal](https://modal.com), the serverless GPU and CPU compute platform. It manages Modal Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies and Service Users as infrastructure, and deploys code with `modal deploy` through the `AppDeployment` resource.
 
 ## Installation
 

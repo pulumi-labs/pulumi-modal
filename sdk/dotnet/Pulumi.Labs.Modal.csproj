@@ -4,7 +4,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Pulumi Labs</Authors>
     <Company>Pulumi Labs</Company>
-    <Description>Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps and Images — as infrastructure with Pulumi.</Description>
+    <Description>Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments — as infrastructure with Pulumi.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://modal.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/pulumi-labs/pulumi-modal</RepositoryUrl>

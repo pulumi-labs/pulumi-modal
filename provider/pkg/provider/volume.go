@@ -202,7 +202,7 @@ func (r *Volume) Create(ctx context.Context, req infer.CreateRequest[VolumeArgs]
 		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
-		return infer.CreateResponse[VolumeState]{ID: args.Name, Output: state}, nil
+		return infer.CreateResponse[VolumeState]{ID: "", Output: state}, nil
 	}
 
 	version, err := parseFsVersion(args.FsVersion)

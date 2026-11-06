@@ -23,18 +23,26 @@ func (m *module) Construct(ctx *pulumi.Context, name, typ, urn string) (r pulumi
 	switch typ {
 	case "modal:index:App":
 		r = &App{}
+	case "modal:index:AppDeployment":
+		r = &AppDeployment{}
 	case "modal:index:Dict":
 		r = &Dict{}
 	case "modal:index:Environment":
 		r = &Environment{}
 	case "modal:index:Image":
 		r = &Image{}
+	case "modal:index:Proxy":
+		r = &Proxy{}
 	case "modal:index:Queue":
 		r = &Queue{}
 	case "modal:index:Secret":
 		r = &Secret{}
+	case "modal:index:ServiceUser":
+		r = &ServiceUser{}
 	case "modal:index:Volume":
 		r = &Volume{}
+	case "modal:index:WebhookToken":
+		r = &WebhookToken{}
 	default:
 		return nil, fmt.Errorf("unknown resource type: %s", typ)
 	}

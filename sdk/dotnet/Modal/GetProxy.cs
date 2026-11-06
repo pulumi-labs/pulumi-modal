@@ -13,19 +13,19 @@ namespace Pulumi.Labs.Modal
     public static class GetProxy
     {
         /// <summary>
-        /// Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+        /// Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
         /// </summary>
         public static Task<GetProxyResult> InvokeAsync(GetProxyArgs args, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.InvokeAsync<GetProxyResult>("modal:index:getProxy", args ?? new GetProxyArgs(), options.WithDefaults());
 
         /// <summary>
-        /// Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+        /// Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
         /// </summary>
         public static Output<GetProxyResult> Invoke(GetProxyInvokeArgs args, InvokeOptions? options = null)
             => global::Pulumi.Deployment.Instance.Invoke<GetProxyResult>("modal:index:getProxy", args ?? new GetProxyInvokeArgs(), options.WithDefaults());
 
         /// <summary>
-        /// Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+        /// Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
         /// </summary>
         public static Output<GetProxyResult> Invoke(GetProxyInvokeArgs args, InvokeOutputOptions options)
             => global::Pulumi.Deployment.Instance.Invoke<GetProxyResult>("modal:index:getProxy", args ?? new GetProxyInvokeArgs(), options.WithDefaults());

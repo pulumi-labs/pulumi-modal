@@ -577,7 +577,7 @@ func (r *GetProxyResult) Annotate(ann infer.Annotator) {
 }
 
 func (f *GetProxy) Annotate(a infer.Annotator) {
-	a.Describe(&f, "Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.")
+	a.Describe(&f, "Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.")
 }
 
 func (f *GetProxy) Invoke(ctx context.Context, req infer.FunctionRequest[NamedLookupArgs]) (infer.FunctionResponse[GetProxyResult], error) {

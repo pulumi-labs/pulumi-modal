@@ -10,6 +10,7 @@ import com.pulumi.core.internal.Codegen;
 import com.pulumi.labs.modal.EnvironmentArgs;
 import com.pulumi.labs.modal.Utilities;
 import java.lang.Boolean;
+import java.lang.Double;
 import java.lang.Integer;
 import java.lang.String;
 import java.util.List;
@@ -22,6 +23,20 @@ import javax.annotation.Nullable;
  */
 @ResourceType(type="modal:index:Environment")
 public class Environment extends com.pulumi.resources.CustomResource {
+    /**
+     * Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+     * 
+     */
+    @Export(name="cycleBudgetDollars", refs={Double.class}, tree="[0]")
+    private Output</* @Nullable */ Double> cycleBudgetDollars;
+
+    /**
+     * @return Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+     * 
+     */
+    public Output<Optional<Double>> cycleBudgetDollars() {
+        return Codegen.optional(this.cycleBudgetDollars);
+    }
     /**
      * The Modal-assigned identifier of the environment.
      * 
