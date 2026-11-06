@@ -26,7 +26,7 @@ This is the only IaC provider for Modal, built natively on `pulumi-go-provider/i
 | `modal:index:Volume` | A durable, named distributed filesystem volume Modal Functions can mount for persistent storage. Name changes rename in place; environment and `fsVersion` changes force-replace (and delete the volume's data). |
 | `modal:index:Queue` | A durable, named FIFO/LIFO queue for passing data between Modal Functions and external callers. Name and environment changes force-replace. |
 | `modal:index:Dict` | A durable, named distributed key/value store shared between Modal Functions. Name and environment changes force-replace. |
-| `modal:index:Environment` | A workspace-level Modal environment (sub-namespace). Name, web suffix, concurrency limits and the cycle budget (`cycleBudgetDollars`) update in place. |
+| `modal:index:Environment` | A workspace-level Modal environment (sub-namespace). Name, web suffix, concurrency limits, the cycle budget (`cycleBudgetDollars`) and the default member role (`defaultMemberRole`: `viewer`, `contributor`, `no_access`) update in place. |
 | `modal:index:App` | A named, empty Modal App (to ship code, use `AppDeployment`). Tags update in place; name and environment changes force-replace. |
 | `modal:index:Image` | A Modal Image built from a registry base image plus Dockerfile commands, optionally published under a stable name. Build input changes replace it; the published name updates in place. |
 | `modal:index:Proxy` | A Modal Proxy: static outbound IP addresses for Functions that call allow-listed services (a paid Modal plan feature). `ipCount` adds or releases addresses in place; name, environment and region force-replace. |
@@ -189,7 +189,7 @@ the workspace. `AppDeployment` runs the Modal CLI (`modal deploy`), because Moda
 accepts source code; the CLI and the app's Python dependencies must be installed where Pulumi runs, and an imported AppDeployment
 redeploys on its first update because Modal does not store the app file. There is no Sandbox resource (Sandboxes expire after at most 24 hours, so they would
 drift, and the persistent variant is not in the public SDK). [`research/coverage/modal.md`](../../../research/coverage/modal.md) classifies every Modal SDK service and
-RPC group, with the reason for each decision; Environment budgets and roles, proxy auth tokens, custom domains and workspace settings are planned.
+RPC group, with the reason for each decision; Environment role bindings and the managed flag, proxy auth tokens, custom domains and workspace settings are planned.
 
 ## Example
 

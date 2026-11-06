@@ -28,7 +28,8 @@ import (
 // the invariant for every resource that has a unique name: whenever a Diff
 // asks for a replace and neither the name nor the effective environment
 // changes, DeleteBeforeReplace must be set. Image is the deliberate
-// exception, see TestImage_ReplaceKeepingTheNameIsCreateBeforeDelete.
+// exception only in the other direction: Modal image IDs are content-addressed, so it
+// deletes first too (TestImage_ReplaceDeletesFirst, #1613).
 
 func isReplaceKind(k pgp.DiffKind) bool {
 	return k == pgp.AddReplace || k == pgp.UpdateReplace || k == pgp.DeleteReplace
@@ -140,13 +141,13 @@ func TestReplaceWithSameNameAndEnvironmentDeletesFirst(t *testing.T) {
 	}
 }
 
-// Image replaces on any build input change and keeps its published name. That
-// is safe with the engine's default create-before-delete order: publishing a
-// name only repoints the tag at the new image, and deleting the old image
-// removes the name only while it still points at the old image. So no
-// DeleteBeforeReplace (which would take the name down during the rebuild).
-func TestImage_ReplaceKeepingTheNameIsCreateBeforeDelete(t *testing.T) {
-	fake, addr := startFakeModal(t)
+// Image replaces on any build input change. Modal image IDs are content
+// addressed: while the old image exists, building the same definition again
+// returns the same ID, and the engine's delete-replaced step would then delete
+// the image the replacement just created (#1613). So every replace deletes
+// first, which also guarantees a fresh ID.
+func TestImage_ReplaceDeletesFirst(t *testing.T) {
+	_, addr := startFakeModal(t)
 	s := serverFor(t, addr, "")
 	urn := modalUrn("Image", "img")
 
@@ -154,25 +155,70 @@ func TestImage_ReplaceKeepingTheNameIsCreateBeforeDelete(t *testing.T) {
 	oldImg, err := s.Create(pgp.CreateRequest{Urn: urn, Properties: oldIn})
 	require.NoError(t, err)
 
-	newIn := pm(map[string]property.Value{"baseImage": str("python:3.13-slim"), "name": str("torch-base")})
-	d, err := s.Diff(pgp.DiffRequest{ID: oldImg.ID, Urn: urn, State: oldImg.Properties, Inputs: newIn, OldInputs: oldIn})
-	require.NoError(t, err)
-	require.Equal(t, pgp.UpdateReplace, d.DetailedDiff["baseImage"].Kind)
-	require.False(t, d.DeleteBeforeReplace)
+	for label, newIn := range map[string]property.Map{
+		"baseImage": pm(map[string]property.Value{"baseImage": str("python:3.13-slim"), "name": str("torch-base")}),
+		"environment": pm(map[string]property.Value{"baseImage": str("python:3.12-slim"), "name": str("torch-base"),
+			"environment": str("other")}),
+	} {
+		d, err := s.Diff(pgp.DiffRequest{ID: oldImg.ID, Urn: urn, State: oldImg.Properties, Inputs: newIn, OldInputs: oldIn})
+		require.NoError(t, err, label)
+		require.Equal(t, pgp.UpdateReplace, d.DetailedDiff[label].Kind, label)
+		require.True(t, d.DeleteBeforeReplace, label)
+	}
 
-	// The engine creates the replacement first: the same name is published
-	// again without an AlreadyExists error, then the old image is deleted.
-	newImg, err := s.Create(pgp.CreateRequest{Urn: urn, Properties: newIn})
+	// A rename alone is an in-place update, not a replace.
+	renamed := pm(map[string]property.Value{"baseImage": str("python:3.12-slim"), "name": str("other-name")})
+	d, err := s.Diff(pgp.DiffRequest{ID: oldImg.ID, Urn: urn, State: oldImg.Properties, Inputs: renamed, OldInputs: oldIn})
+	require.NoError(t, err)
+	require.False(t, d.DeleteBeforeReplace)
+}
+
+// The same definition rebuilt after the replaced image was deleted gets a new
+// ID, so the replacement survives the engine's replace sequence.
+func TestImage_ReplaceOfAnIdenticalDefinitionLeavesTheNewImageAlive(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	urn := modalUrn("Image", "img")
+
+	in := pm(map[string]property.Value{"baseImage": str("python:3.12-slim"), "name": str("torch-base")})
+	oldImg, err := s.Create(pgp.CreateRequest{Urn: urn, Properties: in})
+	require.NoError(t, err)
+
+	// Without delete-first the same ID comes back (the fake mirrors Modal here).
+	same, err := s.Create(pgp.CreateRequest{Urn: urn, Properties: in})
+	require.NoError(t, err)
+	require.Equal(t, oldImg.ID, same.ID)
+
+	// Delete-before-replace: delete, then create.
+	require.NoError(t, s.Delete(pgp.DeleteRequest{ID: oldImg.ID, Urn: urn, Properties: oldImg.Properties}))
+	newImg, err := s.Create(pgp.CreateRequest{Urn: urn, Properties: in})
 	require.NoError(t, err)
 	require.NotEqual(t, oldImg.ID, newImg.ID)
 	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	require.Contains(t, fake.images, newImg.ID)
 	require.Equal(t, newImg.ID, fake.tags["main/torch-base:latest"])
+}
+
+// Deleting a named image in a non-default environment removes that
+// environment's name only, never the same name in the default environment.
+func TestImage_DeleteNameInNonDefaultEnvironmentLeavesTheDefaultEnvironmentName(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	urn := modalUrn("Image", "img")
+
+	in := pm(map[string]property.Value{"baseImage": str("python:3.12-slim"), "name": str("shared"), "environment": str("other")})
+	img, err := s.Create(pgp.CreateRequest{Urn: urn, Properties: in})
+	require.NoError(t, err)
+	fake.mu.Lock()
+	fake.images["im-main"] = &fakeImage{id: "im-main", env: "main"}
+	fake.tags["main/shared:latest"] = "im-main"
+	require.Equal(t, img.ID, fake.tags["other/shared:latest"])
 	fake.mu.Unlock()
 
-	require.NoError(t, s.Delete(pgp.DeleteRequest{ID: oldImg.ID, Urn: urn, Properties: oldImg.Properties}))
+	require.NoError(t, s.Delete(pgp.DeleteRequest{ID: img.ID, Urn: urn, Properties: img.Properties}))
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	require.Equal(t, newImg.ID, fake.tags["main/torch-base:latest"], "deleting the old image must not take the name over")
-	require.Contains(t, fake.images, newImg.ID)
-	require.NotContains(t, fake.images, oldImg.ID)
+	require.NotContains(t, fake.tags, "other/shared:latest")
+	require.Equal(t, "im-main", fake.tags["main/shared:latest"], "the default environment's name must survive")
 }

@@ -18,6 +18,8 @@ type Environment struct {
 
 	// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
 	CycleBudgetDollars pulumi.Float64PtrOutput `pulumi:"cycleBudgetDollars"`
+	// Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+	DefaultMemberRole pulumi.StringPtrOutput `pulumi:"defaultMemberRole"`
 	// The Modal-assigned identifier of the environment.
 	EnvironmentId pulumi.StringOutput `pulumi:"environmentId"`
 	// Whether this is the workspace's default environment.
@@ -92,6 +94,8 @@ func (EnvironmentState) ElementType() reflect.Type {
 type environmentArgs struct {
 	// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
 	CycleBudgetDollars *float64 `pulumi:"cycleBudgetDollars"`
+	// Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+	DefaultMemberRole *string `pulumi:"defaultMemberRole"`
 	// Maximum number of GPUs in use at once in this environment. Unlimited when unset.
 	MaxConcurrentGpus *int `pulumi:"maxConcurrentGpus"`
 	// Maximum number of tasks running at once in this environment. Unlimited when unset.
@@ -110,6 +114,8 @@ type environmentArgs struct {
 type EnvironmentArgs struct {
 	// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
 	CycleBudgetDollars pulumi.Float64PtrInput
+	// Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+	DefaultMemberRole pulumi.StringPtrInput
 	// Maximum number of GPUs in use at once in this environment. Unlimited when unset.
 	MaxConcurrentGpus pulumi.IntPtrInput
 	// Maximum number of tasks running at once in this environment. Unlimited when unset.
@@ -214,6 +220,11 @@ func (o EnvironmentOutput) ToEnvironmentOutputWithContext(ctx context.Context) E
 // Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
 func (o EnvironmentOutput) CycleBudgetDollars() pulumi.Float64PtrOutput {
 	return o.ApplyT(func(v *Environment) pulumi.Float64PtrOutput { return v.CycleBudgetDollars }).(pulumi.Float64PtrOutput)
+}
+
+// Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+func (o EnvironmentOutput) DefaultMemberRole() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *Environment) pulumi.StringPtrOutput { return v.DefaultMemberRole }).(pulumi.StringPtrOutput)
 }
 
 // The Modal-assigned identifier of the environment.

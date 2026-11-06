@@ -38,6 +38,20 @@ public class Environment extends com.pulumi.resources.CustomResource {
         return Codegen.optional(this.cycleBudgetDollars);
     }
     /**
+     * Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+     * 
+     */
+    @Export(name="defaultMemberRole", refs={String.class}, tree="[0]")
+    private Output</* @Nullable */ String> defaultMemberRole;
+
+    /**
+     * @return Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+     * 
+     */
+    public Output<Optional<String>> defaultMemberRole() {
+        return Codegen.optional(this.defaultMemberRole);
+    }
+    /**
      * The Modal-assigned identifier of the environment.
      * 
      */

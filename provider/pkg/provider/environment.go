@@ -61,6 +61,11 @@ type EnvironmentArgs struct {
 	// CycleBudgetDollars is the environment's spend limit per billing cycle,
 	// in US dollars. Left as is when unset.
 	CycleBudgetDollars *float64 `pulumi:"cycleBudgetDollars,optional"`
+
+	// DefaultMemberRole is the role every workspace member gets in this
+	// environment unless a role was set for them individually. Left as is
+	// when unset.
+	DefaultMemberRole *string `pulumi:"defaultMemberRole,optional"`
 }
 
 // EnvironmentState holds the computed outputs for a Modal environment.
@@ -89,6 +94,9 @@ func (a *EnvironmentArgs) Annotate(ann infer.Annotator) {
 	ann.Describe(&a.MaxConcurrentGpus, "Maximum number of GPUs in use at once in this environment. Unlimited when unset.")
 	ann.Describe(&a.CycleBudgetDollars, "Spend limit of this environment per billing cycle, in US dollars (0 or more). "+
 		"Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.")
+	ann.Describe(&a.DefaultMemberRole, "Role every workspace member has in this environment unless set individually: "+
+		"`viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not "+
+		"reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.")
 }
 
 func (s *EnvironmentState) Annotate(ann infer.Annotator) {
@@ -150,6 +158,9 @@ func (r *Environment) Diff(_ context.Context, req infer.DiffRequest[EnvironmentA
 	if !ptrEqual(req.Inputs.CycleBudgetDollars, req.State.CycleBudgetDollars) {
 		mark("cycleBudgetDollars")
 	}
+	if !ptrEqual(req.Inputs.DefaultMemberRole, req.State.DefaultMemberRole) {
+		mark("defaultMemberRole")
+	}
 	return resp, nil
 }
 
@@ -162,7 +173,47 @@ func (r *Environment) Check(ctx context.Context, req infer.CheckRequest) (infer.
 	if v, ok := req.NewInputs.GetOk("cycleBudgetDollars"); ok && !v.HasComputed() && args.CycleBudgetDollars != nil && *args.CycleBudgetDollars < 0 {
 		failures = append(failures, pgp.CheckFailure{Property: "cycleBudgetDollars", Reason: "cycleBudgetDollars must not be negative"})
 	}
+	if v, ok := req.NewInputs.GetOk("defaultMemberRole"); ok && !v.HasComputed() && args.DefaultMemberRole != nil {
+		if _, valid := defaultMemberRoles[*args.DefaultMemberRole]; !valid {
+			failures = append(failures, pgp.CheckFailure{Property: "defaultMemberRole",
+				Reason: fmt.Sprintf("defaultMemberRole must be one of viewer, contributor or no_access, got %q", *args.DefaultMemberRole)})
+		}
+	}
 	return infer.CheckResponse[EnvironmentArgs]{Inputs: args, Failures: failures}, nil
+}
+
+// defaultMemberRoles maps the accepted input values to the API's
+// EnvironmentRole. MODAL_ADMINISTERED_OBSERVER is set by Modal, not users.
+var defaultMemberRoles = map[string]pb.EnvironmentRole{
+	"viewer":      pb.EnvironmentRole_ENVIRONMENT_ROLE_VIEWER,
+	"contributor": pb.EnvironmentRole_ENVIRONMENT_ROLE_CONTRIBUTOR,
+	"no_access":   pb.EnvironmentRole_ENVIRONMENT_ROLE_NO_ACCESS,
+}
+
+func setDefaultMemberRole(ctx context.Context, client *modalClient, envID, role string) error {
+	_, err := client.stub.EnvironmentSetDefaultMemberRole(ctx, pb.EnvironmentSetDefaultMemberRoleRequest_builder{
+		EnvironmentId:     envID,
+		DefaultMemberRole: defaultMemberRoles[role],
+	}.Build())
+	return err
+}
+
+// readDefaultMemberRole returns the environment's default member role, nil
+// when Modal reports none or one this provider does not model.
+func readDefaultMemberRole(ctx context.Context, client *modalClient, envID string) (*string, error) {
+	resp, err := client.stub.EnvironmentGetRoles(ctx, pb.EnvironmentGetRolesRequest_builder{EnvironmentId: envID}.Build())
+	if err != nil {
+		return nil, err
+	}
+	if !resp.HasDefaultMemberRole() {
+		return nil, nil
+	}
+	for name, role := range defaultMemberRoles {
+		if role == resp.GetDefaultMemberRole() {
+			return &name, nil
+		}
+	}
+	return nil, nil
 }
 
 // setBudget applies the budget input; Modal has no way to read it from the
@@ -252,6 +303,13 @@ func (r *Environment) Create(ctx context.Context, req infer.CreateRequest[Enviro
 				infer.ResourceInitFailedError{Reasons: []string{fmt.Sprintf("set budget: %v", err)}}
 		}
 	}
+	if args.DefaultMemberRole != nil {
+		if err := setDefaultMemberRole(rpcCtx, client, item.GetEnvironmentId(), *args.DefaultMemberRole); err != nil {
+			state.DefaultMemberRole = nil
+			return infer.CreateResponse[EnvironmentState]{ID: item.GetEnvironmentId(), Output: state},
+				infer.ResourceInitFailedError{Reasons: []string{fmt.Sprintf("set default member role: %v", err)}}
+		}
+	}
 	return infer.CreateResponse[EnvironmentState]{ID: item.GetEnvironmentId(), Output: state}, nil
 }
 
@@ -283,6 +341,10 @@ func (r *Environment) Read(ctx context.Context, req infer.ReadRequest[Environmen
 	if budget, berr := readBudget(rpcCtx, client, item.GetEnvironmentId()); berr == nil {
 		state.CycleBudgetDollars = budget
 	}
+	// Same for the default member role.
+	if role, rerr := readDefaultMemberRole(rpcCtx, client, item.GetEnvironmentId()); rerr == nil {
+		state.DefaultMemberRole = role
+	}
 
 	inputs := req.Inputs
 	inputs.TokenID, inputs.TokenSecret = state.TokenID, state.TokenSecret
@@ -292,6 +354,7 @@ func (r *Environment) Read(ctx context.Context, req infer.ReadRequest[Environmen
 		inputs.MaxConcurrentTasks = state.MaxConcurrentTasks
 		inputs.MaxConcurrentGpus = state.MaxConcurrentGpus
 		inputs.CycleBudgetDollars = state.CycleBudgetDollars
+		inputs.DefaultMemberRole = state.DefaultMemberRole
 	} else {
 		// Keep an unset input unset, but track drift in what the program sets.
 		if inputs.WebSuffix != nil {
@@ -306,6 +369,9 @@ func (r *Environment) Read(ctx context.Context, req infer.ReadRequest[Environmen
 		if inputs.CycleBudgetDollars != nil {
 			inputs.CycleBudgetDollars = state.CycleBudgetDollars
 		}
+		if inputs.DefaultMemberRole != nil {
+			inputs.DefaultMemberRole = state.DefaultMemberRole
+		}
 	}
 	return infer.ReadResponse[EnvironmentArgs, EnvironmentState]{ID: item.GetEnvironmentId(), Inputs: inputs, State: state}, nil
 }
@@ -319,6 +385,9 @@ func (r *Environment) Update(ctx context.Context, req infer.UpdateRequest[Enviro
 	}
 	if args.CycleBudgetDollars == nil {
 		state.CycleBudgetDollars = req.State.CycleBudgetDollars
+	}
+	if args.DefaultMemberRole == nil {
+		state.DefaultMemberRole = req.State.DefaultMemberRole
 	}
 	if req.DryRun {
 		return infer.UpdateResponse[EnvironmentState]{Output: state}, nil
@@ -362,6 +431,11 @@ func (r *Environment) Update(ctx context.Context, req infer.UpdateRequest[Enviro
 			return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: set budget of environment %q: %w", currentName, err)
 		}
 	}
+	if args.DefaultMemberRole != nil && !ptrEqual(args.DefaultMemberRole, req.State.DefaultMemberRole) {
+		if err := setDefaultMemberRole(rpcCtx, client, req.ID, *args.DefaultMemberRole); err != nil {
+			return infer.UpdateResponse[EnvironmentState]{}, fmt.Errorf("modal: set default member role of environment %q: %w", currentName, err)
+		}
+	}
 	// EnvironmentUpdate answers with a sparse item (live: only the web suffix),
 	// so read the environment back by ID rather than trusting that response.
 	item, err := findEnvironment(rpcCtx, client, req.ID, "")
@@ -371,6 +445,9 @@ func (r *Environment) Update(ctx context.Context, req infer.UpdateRequest[Enviro
 	fillEnvironmentState(&state, item, true)
 	if args.CycleBudgetDollars != nil {
 		state.CycleBudgetDollars = args.CycleBudgetDollars
+	}
+	if args.DefaultMemberRole != nil {
+		state.DefaultMemberRole = args.DefaultMemberRole
 	}
 	state.EnvironmentArgs.TokenID, state.EnvironmentArgs.TokenSecret = args.TokenID, args.TokenSecret
 	return infer.UpdateResponse[EnvironmentState]{Output: state}, nil

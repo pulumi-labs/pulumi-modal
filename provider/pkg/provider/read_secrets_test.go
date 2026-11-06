@@ -138,13 +138,13 @@ func TestReadMissingResourcePassesThrough(t *testing.T) {
 }
 
 func TestMarkSecrets(t *testing.T) {
-	secret := map[string]bool{"a": true, "b": false}
+	secret := map[string]propSpec{"a": {Secret: true}, "b": {}}
 	m := property.NewMap(map[string]property.Value{"a": property.New("x"), "b": property.New("y"), "c": property.New("z")})
-	got := markSecrets(m, secret)
+	got := markSecrets(m, secret, nil)
 	require.True(t, got.Get("a").Secret())
 	require.False(t, got.Get("b").Secret())
 	require.False(t, got.Get("c").Secret())
 	// Null values are left alone.
-	n := markSecrets(property.NewMap(map[string]property.Value{"a": property.New(property.Null)}), secret)
+	n := markSecrets(property.NewMap(map[string]property.Value{"a": property.New(property.Null)}), secret, nil)
 	require.False(t, n.Get("a").Secret())
 }
