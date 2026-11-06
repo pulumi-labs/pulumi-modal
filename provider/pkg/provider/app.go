@@ -115,7 +115,7 @@ func (r *App) Create(ctx context.Context, req infer.CreateRequest[AppArgs]) (inf
 		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
-		return infer.CreateResponse[AppState]{ID: args.Name, Output: state}, nil
+		return infer.CreateResponse[AppState]{ID: "", Output: state}, nil
 	}
 	client, err := clientFor(cfg, args.TokenID, args.TokenSecret)
 	if err != nil {

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-05
+
+### Fixed
+
+- Security: `pulumi import` and `pulumi refresh` now store the properties this provider marks secret (`Secret.values`, `AppDeployment.env`, `ServiceUser.serviceTokenSecret`, `WebhookToken.webhookTokenSecret` and every per-resource `tokenId` / `tokenSecret`) as secrets. A `Read` response only kept the secretness of the state it was given, and an import has no state, so a value the provider recovered from the API was written to the state as plaintext. The secret properties are read from the provider's own schema, so every resource is covered. State imported before this fix stays plaintext until its next `pulumi refresh`, which re-encrypts it (#1577).
+- A preview no longer invents resource IDs. `Create` during `pulumi preview` returned the resource's logical name (or the placeholder `preview`) as its ID, so `id` was a known, wrong value and a program passing it to a lookup or to another resource ran against a name that does not exist and failed the preview (for example `getWebhook(webhook.id)`). A preview has no real ID now, so `id` stays unknown until the apply. Mirror issue https://github.com/pulumi-labs/pulumi-huggingface/issues/7 (#1590).
+- Changing the provider configuration (a rotated token, API key or secret, a new endpoint or region) is an in-place update of the default provider. By default pulumi-go-provider replaced the provider on any config change, and replacing a provider replaces every resource that uses it, so rotating a credential would have deleted and recreated every resource. Each resource's own diff still decides whether it changes. Mirror issue https://github.com/pulumi-labs/pulumi-huggingface/issues/8 (#1591).
+
+### Added
+
+- `Environment`: new optional `cycleBudgetDollars` input, the environment's spend limit per billing cycle (`EnvironmentSetBudget`/`EnvironmentGetBudget`). It updates in place, is read back on refresh (drift shows as an update) and adopted on import. Unset leaves the budget as is, so removing the property does not clear a budget that was set. Negative values are rejected at preview. Additive, not breaking.
+- Add the `WebhookToken` resource and `getWebhookToken` lookup: a Modal proxy auth token (`Modal-Key`/`Modal-Secret`). The secret is a write-once secret output kept across refreshes (an import has none); `name` updates in place, `scoped` replaces. Attaching a scoped token to environments is not modelled yet (#1536).
+- Add the `Proxy` resource: a Modal Proxy with static outbound IP addresses. `ipCount` adds or releases addresses in place; name, environment and region replace. Imports by ID (#1445).
+- Add the `ServiceUser` resource and `getServiceUser`: a non-human workspace identity with its own API token. The token secret is a write-once secret output (`serviceTokenSecret`); an imported service user has none. Modal has no update call, so every input change replaces it (#1445).
+- Add the `AppDeployment` resource and `getAppDeployment`: deploys a Modal App from a Python app file by running `modal deploy`, redeploys in place when the contents of the source directory (or a trigger) change, reports the App's `functions` and `webUrls`, and stops the App on delete. It needs the Modal CLI on the machine that runs Pulumi (#1445).
+
 ## [0.3.1] - 2026-11-05
 
 ### Added

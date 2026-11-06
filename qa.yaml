@@ -43,6 +43,24 @@ resources:
     test: true
     update: name
     cost: "compute: one image build per run, billed as Modal build time"
+  - type: modal:index:ServiceUser
+    test: true
+    update: null
+    cost: none
+  - type: modal:index:WebhookToken
+    test: true
+    update: name
+    cost: none
+  - type: modal:index:Proxy
+    test: false
+    reason: static IP addresses are a paid Modal plan feature and the QA workspace may not have it; the create, ipCount update and delete flows are covered by the fake control plane tests
+    update: ipCount
+    cost: "paid plan: static IPs are billed monthly per address"
+  - type: modal:index:AppDeployment
+    test: false
+    reason: runs `modal deploy`, which needs the Modal CLI and its Python package on the QA runner and deploys a real app; the argument, environment, redeploy, redaction and read-back behavior is covered by tests that use a fake CLI and a fake control plane
+    update: tag
+    cost: "compute: a deployed app is billed only while it runs"
 functions:
   - name: getSecret
     test: true
@@ -60,16 +78,24 @@ functions:
     test: true
   - name: getWorkspace
     test: true
+  - name: getServiceUser
+    test: true
+  - name: getWebhookToken
+    test: true
+  - name: getAppDeployment
+    test: false
+    reason: needs a deployed Modal App, and QA does not run AppDeployment (it needs the Modal CLI), so there is nothing to look up
   - name: getFunction
     test: false
-    reason: needs an already deployed Modal Function; the provider cannot deploy code (modal deploy is out of scope), so QA has nothing to look up
+    reason: needs an already deployed Modal Function; the AppDeployment resource needs the Modal CLI and QA does not run it, so QA has nothing to look up
   - name: getCls
     test: false
-    reason: needs an already deployed Modal Cls; the provider cannot deploy code (modal deploy is out of scope), so QA has nothing to look up
+    reason: needs an already deployed Modal Cls; the AppDeployment resource needs the Modal CLI and QA does not run it, so QA has nothing to look up
   - name: getProxy
     test: false
-    reason: proxies are created in the Modal dashboard on a paid plan and the provider cannot create one, so QA has nothing to look up
+    reason: static IPs need a paid plan and QA does not run the Proxy resource, so QA has nothing to look up
 regressions:
+  - "#1577 import then inspect the stack state (pulumi stack export --show-secrets off): every property the schema marks secret on an imported resource is a secret, never plaintext; a refresh of a resource created by the program keeps them secret"
   - "#1418/#1440 a Volume with fsVersion set is not replaced on a second up"
   - "#1464 App create succeeds (no 'Invalid object creation type') and a duplicate name still fails"
   - "#1465 Environment update keeps environmentId and name (no spurious rename)"

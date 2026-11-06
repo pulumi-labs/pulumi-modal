@@ -10,6 +10,8 @@ import com.pulumi.deployment.InvokeOptions;
 import com.pulumi.deployment.InvokeOutputOptions;
 import com.pulumi.labs.modal.Utilities;
 import com.pulumi.labs.modal.inputs.GetAppArgs;
+import com.pulumi.labs.modal.inputs.GetAppDeploymentArgs;
+import com.pulumi.labs.modal.inputs.GetAppDeploymentPlainArgs;
 import com.pulumi.labs.modal.inputs.GetAppPlainArgs;
 import com.pulumi.labs.modal.inputs.GetClsArgs;
 import com.pulumi.labs.modal.inputs.GetClsPlainArgs;
@@ -27,10 +29,15 @@ import com.pulumi.labs.modal.inputs.GetQueueArgs;
 import com.pulumi.labs.modal.inputs.GetQueuePlainArgs;
 import com.pulumi.labs.modal.inputs.GetSecretArgs;
 import com.pulumi.labs.modal.inputs.GetSecretPlainArgs;
+import com.pulumi.labs.modal.inputs.GetServiceUserArgs;
+import com.pulumi.labs.modal.inputs.GetServiceUserPlainArgs;
 import com.pulumi.labs.modal.inputs.GetVolumeArgs;
 import com.pulumi.labs.modal.inputs.GetVolumePlainArgs;
+import com.pulumi.labs.modal.inputs.GetWebhookTokenArgs;
+import com.pulumi.labs.modal.inputs.GetWebhookTokenPlainArgs;
 import com.pulumi.labs.modal.inputs.GetWorkspaceArgs;
 import com.pulumi.labs.modal.inputs.GetWorkspacePlainArgs;
+import com.pulumi.labs.modal.outputs.GetAppDeploymentResult;
 import com.pulumi.labs.modal.outputs.GetAppResult;
 import com.pulumi.labs.modal.outputs.GetClsResult;
 import com.pulumi.labs.modal.outputs.GetDictResult;
@@ -40,7 +47,9 @@ import com.pulumi.labs.modal.outputs.GetImageResult;
 import com.pulumi.labs.modal.outputs.GetProxyResult;
 import com.pulumi.labs.modal.outputs.GetQueueResult;
 import com.pulumi.labs.modal.outputs.GetSecretResult;
+import com.pulumi.labs.modal.outputs.GetServiceUserResult;
 import com.pulumi.labs.modal.outputs.GetVolumeResult;
+import com.pulumi.labs.modal.outputs.GetWebhookTokenResult;
 import com.pulumi.labs.modal.outputs.GetWorkspaceResult;
 import java.util.concurrent.CompletableFuture;
 
@@ -79,6 +88,41 @@ public final class ModalFunctions {
      */
     public static CompletableFuture<GetAppResult> getAppPlain(GetAppPlainArgs args, InvokeOptions options) {
         return Deployment.getInstance().invokeAsync("modal:index:getApp", TypeShape.of(GetAppResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a deployed Modal App by name, with its Functions and their web endpoint URLs.
+     * 
+     */
+    public static Output<GetAppDeploymentResult> getAppDeployment(GetAppDeploymentArgs args) {
+        return getAppDeployment(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up a deployed Modal App by name, with its Functions and their web endpoint URLs.
+     * 
+     */
+    public static CompletableFuture<GetAppDeploymentResult> getAppDeploymentPlain(GetAppDeploymentPlainArgs args) {
+        return getAppDeploymentPlain(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up a deployed Modal App by name, with its Functions and their web endpoint URLs.
+     * 
+     */
+    public static Output<GetAppDeploymentResult> getAppDeployment(GetAppDeploymentArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getAppDeployment", TypeShape.of(GetAppDeploymentResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a deployed Modal App by name, with its Functions and their web endpoint URLs.
+     * 
+     */
+    public static Output<GetAppDeploymentResult> getAppDeployment(GetAppDeploymentArgs args, InvokeOutputOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getAppDeployment", TypeShape.of(GetAppDeploymentResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a deployed Modal App by name, with its Functions and their web endpoint URLs.
+     * 
+     */
+    public static CompletableFuture<GetAppDeploymentResult> getAppDeploymentPlain(GetAppDeploymentPlainArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invokeAsync("modal:index:getAppDeployment", TypeShape.of(GetAppDeploymentResult.class), args, Utilities.withVersion(options));
     }
     /**
      * Look up a deployed Modal Cls (class). Deploying code is out of scope for this provider.
@@ -256,35 +300,35 @@ public final class ModalFunctions {
         return Deployment.getInstance().invokeAsync("modal:index:getImage", TypeShape.of(GetImageResult.class), args, Utilities.withVersion(options));
     }
     /**
-     * Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+     * Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
      * 
      */
     public static Output<GetProxyResult> getProxy(GetProxyArgs args) {
         return getProxy(args, InvokeOptions.Empty);
     }
     /**
-     * Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+     * Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
      * 
      */
     public static CompletableFuture<GetProxyResult> getProxyPlain(GetProxyPlainArgs args) {
         return getProxyPlain(args, InvokeOptions.Empty);
     }
     /**
-     * Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+     * Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
      * 
      */
     public static Output<GetProxyResult> getProxy(GetProxyArgs args, InvokeOptions options) {
         return Deployment.getInstance().invoke("modal:index:getProxy", TypeShape.of(GetProxyResult.class), args, Utilities.withVersion(options));
     }
     /**
-     * Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+     * Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
      * 
      */
     public static Output<GetProxyResult> getProxy(GetProxyArgs args, InvokeOutputOptions options) {
         return Deployment.getInstance().invoke("modal:index:getProxy", TypeShape.of(GetProxyResult.class), args, Utilities.withVersion(options));
     }
     /**
-     * Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+     * Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
      * 
      */
     public static CompletableFuture<GetProxyResult> getProxyPlain(GetProxyPlainArgs args, InvokeOptions options) {
@@ -361,6 +405,41 @@ public final class ModalFunctions {
         return Deployment.getInstance().invokeAsync("modal:index:getSecret", TypeShape.of(GetSecretResult.class), args, Utilities.withVersion(options));
     }
     /**
+     * Look up an existing Modal service user by name. The token secret is never returned.
+     * 
+     */
+    public static Output<GetServiceUserResult> getServiceUser(GetServiceUserArgs args) {
+        return getServiceUser(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up an existing Modal service user by name. The token secret is never returned.
+     * 
+     */
+    public static CompletableFuture<GetServiceUserResult> getServiceUserPlain(GetServiceUserPlainArgs args) {
+        return getServiceUserPlain(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up an existing Modal service user by name. The token secret is never returned.
+     * 
+     */
+    public static Output<GetServiceUserResult> getServiceUser(GetServiceUserArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getServiceUser", TypeShape.of(GetServiceUserResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up an existing Modal service user by name. The token secret is never returned.
+     * 
+     */
+    public static Output<GetServiceUserResult> getServiceUser(GetServiceUserArgs args, InvokeOutputOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getServiceUser", TypeShape.of(GetServiceUserResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up an existing Modal service user by name. The token secret is never returned.
+     * 
+     */
+    public static CompletableFuture<GetServiceUserResult> getServiceUserPlain(GetServiceUserPlainArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invokeAsync("modal:index:getServiceUser", TypeShape.of(GetServiceUserResult.class), args, Utilities.withVersion(options));
+    }
+    /**
      * Look up an existing Modal Volume by name.
      * 
      */
@@ -394,6 +473,41 @@ public final class ModalFunctions {
      */
     public static CompletableFuture<GetVolumeResult> getVolumePlain(GetVolumePlainArgs args, InvokeOptions options) {
         return Deployment.getInstance().invokeAsync("modal:index:getVolume", TypeShape.of(GetVolumeResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up an existing Modal proxy auth token by name. The secret is never returned.
+     * 
+     */
+    public static Output<GetWebhookTokenResult> getWebhookToken(GetWebhookTokenArgs args) {
+        return getWebhookToken(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up an existing Modal proxy auth token by name. The secret is never returned.
+     * 
+     */
+    public static CompletableFuture<GetWebhookTokenResult> getWebhookTokenPlain(GetWebhookTokenPlainArgs args) {
+        return getWebhookTokenPlain(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up an existing Modal proxy auth token by name. The secret is never returned.
+     * 
+     */
+    public static Output<GetWebhookTokenResult> getWebhookToken(GetWebhookTokenArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getWebhookToken", TypeShape.of(GetWebhookTokenResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up an existing Modal proxy auth token by name. The secret is never returned.
+     * 
+     */
+    public static Output<GetWebhookTokenResult> getWebhookToken(GetWebhookTokenArgs args, InvokeOutputOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getWebhookToken", TypeShape.of(GetWebhookTokenResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up an existing Modal proxy auth token by name. The secret is never returned.
+     * 
+     */
+    public static CompletableFuture<GetWebhookTokenResult> getWebhookTokenPlain(GetWebhookTokenPlainArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invokeAsync("modal:index:getWebhookToken", TypeShape.of(GetWebhookTokenResult.class), args, Utilities.withVersion(options));
     }
     /**
      * Describe the Modal workspace the provider&#39;s token belongs to.

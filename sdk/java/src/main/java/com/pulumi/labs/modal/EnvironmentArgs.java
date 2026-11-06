@@ -6,6 +6,7 @@ package com.pulumi.labs.modal;
 import com.pulumi.core.Output;
 import com.pulumi.core.annotations.Import;
 import com.pulumi.exceptions.MissingRequiredPropertyException;
+import java.lang.Double;
 import java.lang.Integer;
 import java.lang.String;
 import java.util.Objects;
@@ -16,6 +17,21 @@ import javax.annotation.Nullable;
 public final class EnvironmentArgs extends com.pulumi.resources.ResourceArgs {
 
     public static final EnvironmentArgs Empty = new EnvironmentArgs();
+
+    /**
+     * Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+     * 
+     */
+    @Import(name="cycleBudgetDollars")
+    private @Nullable Output<Double> cycleBudgetDollars;
+
+    /**
+     * @return Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+     * 
+     */
+    public Optional<Output<Double>> cycleBudgetDollars() {
+        return Optional.ofNullable(this.cycleBudgetDollars);
+    }
 
     /**
      * Maximum number of GPUs in use at once in this environment. Unlimited when unset.
@@ -110,6 +126,7 @@ public final class EnvironmentArgs extends com.pulumi.resources.ResourceArgs {
     private EnvironmentArgs() {}
 
     private EnvironmentArgs(EnvironmentArgs $) {
+        this.cycleBudgetDollars = $.cycleBudgetDollars;
         this.maxConcurrentGpus = $.maxConcurrentGpus;
         this.maxConcurrentTasks = $.maxConcurrentTasks;
         this.name = $.name;
@@ -134,6 +151,27 @@ public final class EnvironmentArgs extends com.pulumi.resources.ResourceArgs {
 
         public Builder(EnvironmentArgs defaults) {
             $ = new EnvironmentArgs(Objects.requireNonNull(defaults));
+        }
+
+        /**
+         * @param cycleBudgetDollars Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+         * 
+         * @return builder
+         * 
+         */
+        public Builder cycleBudgetDollars(@Nullable Output<Double> cycleBudgetDollars) {
+            $.cycleBudgetDollars = cycleBudgetDollars;
+            return this;
+        }
+
+        /**
+         * @param cycleBudgetDollars Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+         * 
+         * @return builder
+         * 
+         */
+        public Builder cycleBudgetDollars(Double cycleBudgetDollars) {
+            return cycleBudgetDollars(Output.of(cycleBudgetDollars));
         }
 
         /**

@@ -11,10 +11,10 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
-func GetProxy(ctx *pulumi.Context, args *GetProxyArgs, opts ...pulumi.InvokeOption) (*GetProxyResult, error) {
+// Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
+func LookupProxy(ctx *pulumi.Context, args *LookupProxyArgs, opts ...pulumi.InvokeOption) (*LookupProxyResult, error) {
 	opts = internal.PkgInvokeDefaultOpts(opts)
-	var rv GetProxyResult
+	var rv LookupProxyResult
 	err := ctx.Invoke("modal:index:getProxy", args, &rv, opts...)
 	if err != nil {
 		return nil, err
@@ -22,14 +22,14 @@ func GetProxy(ctx *pulumi.Context, args *GetProxyArgs, opts ...pulumi.InvokeOpti
 	return &rv, nil
 }
 
-type GetProxyArgs struct {
+type LookupProxyArgs struct {
 	// The Modal environment to look in. Falls back to the provider-level environment, then the account's default environment.
 	Environment *string `pulumi:"environment"`
 	// The object's name.
 	Name string `pulumi:"name"`
 }
 
-type GetProxyResult struct {
+type LookupProxyResult struct {
 	// The Proxy's static IP addresses.
 	Ips []string `pulumi:"ips"`
 	// The Proxy's name.
@@ -40,60 +40,60 @@ type GetProxyResult struct {
 	Region string `pulumi:"region"`
 }
 
-func GetProxyOutput(ctx *pulumi.Context, args GetProxyOutputArgs, opts ...pulumi.InvokeOption) GetProxyResultOutput {
+func LookupProxyOutput(ctx *pulumi.Context, args LookupProxyOutputArgs, opts ...pulumi.InvokeOption) LookupProxyResultOutput {
 	return pulumi.ToOutputWithContext(ctx.Context(), args).
-		ApplyT(func(v interface{}) (GetProxyResultOutput, error) {
-			args := v.(GetProxyArgs)
+		ApplyT(func(v interface{}) (LookupProxyResultOutput, error) {
+			args := v.(LookupProxyArgs)
 			options := pulumi.InvokeOutputOptions{InvokeOptions: internal.PkgInvokeDefaultOpts(opts)}
-			return ctx.InvokeOutput("modal:index:getProxy", args, GetProxyResultOutput{}, options).(GetProxyResultOutput), nil
-		}).(GetProxyResultOutput)
+			return ctx.InvokeOutput("modal:index:getProxy", args, LookupProxyResultOutput{}, options).(LookupProxyResultOutput), nil
+		}).(LookupProxyResultOutput)
 }
 
-type GetProxyOutputArgs struct {
+type LookupProxyOutputArgs struct {
 	// The Modal environment to look in. Falls back to the provider-level environment, then the account's default environment.
 	Environment pulumi.StringPtrInput `pulumi:"environment"`
 	// The object's name.
 	Name pulumi.StringInput `pulumi:"name"`
 }
 
-func (GetProxyOutputArgs) ElementType() reflect.Type {
-	return reflect.TypeOf((*GetProxyArgs)(nil)).Elem()
+func (LookupProxyOutputArgs) ElementType() reflect.Type {
+	return reflect.TypeOf((*LookupProxyArgs)(nil)).Elem()
 }
 
-type GetProxyResultOutput struct{ *pulumi.OutputState }
+type LookupProxyResultOutput struct{ *pulumi.OutputState }
 
-func (GetProxyResultOutput) ElementType() reflect.Type {
-	return reflect.TypeOf((*GetProxyResult)(nil)).Elem()
+func (LookupProxyResultOutput) ElementType() reflect.Type {
+	return reflect.TypeOf((*LookupProxyResult)(nil)).Elem()
 }
 
-func (o GetProxyResultOutput) ToGetProxyResultOutput() GetProxyResultOutput {
+func (o LookupProxyResultOutput) ToLookupProxyResultOutput() LookupProxyResultOutput {
 	return o
 }
 
-func (o GetProxyResultOutput) ToGetProxyResultOutputWithContext(ctx context.Context) GetProxyResultOutput {
+func (o LookupProxyResultOutput) ToLookupProxyResultOutputWithContext(ctx context.Context) LookupProxyResultOutput {
 	return o
 }
 
 // The Proxy's static IP addresses.
-func (o GetProxyResultOutput) Ips() pulumi.StringArrayOutput {
-	return o.ApplyT(func(v GetProxyResult) []string { return v.Ips }).(pulumi.StringArrayOutput)
+func (o LookupProxyResultOutput) Ips() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v LookupProxyResult) []string { return v.Ips }).(pulumi.StringArrayOutput)
 }
 
 // The Proxy's name.
-func (o GetProxyResultOutput) Name() pulumi.StringOutput {
-	return o.ApplyT(func(v GetProxyResult) string { return v.Name }).(pulumi.StringOutput)
+func (o LookupProxyResultOutput) Name() pulumi.StringOutput {
+	return o.ApplyT(func(v LookupProxyResult) string { return v.Name }).(pulumi.StringOutput)
 }
 
 // The Modal-assigned identifier of the Proxy.
-func (o GetProxyResultOutput) ProxyId() pulumi.StringOutput {
-	return o.ApplyT(func(v GetProxyResult) string { return v.ProxyId }).(pulumi.StringOutput)
+func (o LookupProxyResultOutput) ProxyId() pulumi.StringOutput {
+	return o.ApplyT(func(v LookupProxyResult) string { return v.ProxyId }).(pulumi.StringOutput)
 }
 
 // The region the Proxy runs in.
-func (o GetProxyResultOutput) Region() pulumi.StringOutput {
-	return o.ApplyT(func(v GetProxyResult) string { return v.Region }).(pulumi.StringOutput)
+func (o LookupProxyResultOutput) Region() pulumi.StringOutput {
+	return o.ApplyT(func(v LookupProxyResult) string { return v.Region }).(pulumi.StringOutput)
 }
 
 func init() {
-	pulumi.RegisterOutputType(GetProxyResultOutput{})
+	pulumi.RegisterOutputType(LookupProxyResultOutput{})
 }

@@ -16,6 +16,8 @@ import (
 type Environment struct {
 	pulumi.CustomResourceState
 
+	// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+	CycleBudgetDollars pulumi.Float64PtrOutput `pulumi:"cycleBudgetDollars"`
 	// The Modal-assigned identifier of the environment.
 	EnvironmentId pulumi.StringOutput `pulumi:"environmentId"`
 	// Whether this is the workspace's default environment.
@@ -88,6 +90,8 @@ func (EnvironmentState) ElementType() reflect.Type {
 }
 
 type environmentArgs struct {
+	// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+	CycleBudgetDollars *float64 `pulumi:"cycleBudgetDollars"`
 	// Maximum number of GPUs in use at once in this environment. Unlimited when unset.
 	MaxConcurrentGpus *int `pulumi:"maxConcurrentGpus"`
 	// Maximum number of tasks running at once in this environment. Unlimited when unset.
@@ -104,6 +108,8 @@ type environmentArgs struct {
 
 // The set of arguments for constructing a Environment resource.
 type EnvironmentArgs struct {
+	// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+	CycleBudgetDollars pulumi.Float64PtrInput
 	// Maximum number of GPUs in use at once in this environment. Unlimited when unset.
 	MaxConcurrentGpus pulumi.IntPtrInput
 	// Maximum number of tasks running at once in this environment. Unlimited when unset.
@@ -203,6 +209,11 @@ func (o EnvironmentOutput) ToEnvironmentOutput() EnvironmentOutput {
 
 func (o EnvironmentOutput) ToEnvironmentOutputWithContext(ctx context.Context) EnvironmentOutput {
 	return o
+}
+
+// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+func (o EnvironmentOutput) CycleBudgetDollars() pulumi.Float64PtrOutput {
+	return o.ApplyT(func(v *Environment) pulumi.Float64PtrOutput { return v.CycleBudgetDollars }).(pulumi.Float64PtrOutput)
 }
 
 // The Modal-assigned identifier of the environment.

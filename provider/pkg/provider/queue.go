@@ -101,7 +101,7 @@ func (r *Queue) Create(ctx context.Context, req infer.CreateRequest[QueueArgs]) 
 		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
-		return infer.CreateResponse[QueueState]{ID: args.Name, Output: state}, nil
+		return infer.CreateResponse[QueueState]{ID: "", Output: state}, nil
 	}
 
 	client, err := clientFor(cfg, args.TokenID, args.TokenSecret)

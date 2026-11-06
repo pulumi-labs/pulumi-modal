@@ -5,7 +5,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
 /**
- * Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+ * Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
  */
 export function getProxy(args: GetProxyArgs, opts?: pulumi.InvokeOptions): Promise<GetProxyResult> {
     opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts || {});
@@ -45,7 +45,7 @@ export interface GetProxyResult {
     readonly region: string;
 }
 /**
- * Look up an existing Modal Proxy (static outbound IPs) by name. Proxies are created in the Modal dashboard.
+ * Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.
  */
 export function getProxyOutput(args: GetProxyOutputArgs, opts?: pulumi.InvokeOutputOptions): pulumi.Output<GetProxyResult> {
     opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts || {});

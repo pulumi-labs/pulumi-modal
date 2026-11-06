@@ -17,6 +17,12 @@ namespace Pulumi.Labs.Modal
     public partial class Environment : global::Pulumi.CustomResource
     {
         /// <summary>
+        /// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+        /// </summary>
+        [Output("cycleBudgetDollars")]
+        public Output<double?> CycleBudgetDollars { get; private set; } = null!;
+
+        /// <summary>
         /// The Modal-assigned identifier of the environment.
         /// </summary>
         [Output("environmentId")]
@@ -115,6 +121,12 @@ namespace Pulumi.Labs.Modal
 
     public sealed class EnvironmentArgs : global::Pulumi.ResourceArgs
     {
+        /// <summary>
+        /// Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+        /// </summary>
+        [Input("cycleBudgetDollars")]
+        public Input<double>? CycleBudgetDollars { get; set; }
+
         /// <summary>
         /// Maximum number of GPUs in use at once in this environment. Unlimited when unset.
         /// </summary>

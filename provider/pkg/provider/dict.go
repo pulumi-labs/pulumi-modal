@@ -105,7 +105,7 @@ func (r *Dict) Create(ctx context.Context, req infer.CreateRequest[DictArgs]) (i
 		if env := resolveEnv(args.Environment, withResourceTokens(cfg, args.TokenID, args.TokenSecret)); env != "" {
 			state.Environment = &env
 		}
-		return infer.CreateResponse[DictState]{ID: args.Name, Output: state}, nil
+		return infer.CreateResponse[DictState]{ID: "", Output: state}, nil
 	}
 
 	client, err := clientFor(cfg, args.TokenID, args.TokenSecret)

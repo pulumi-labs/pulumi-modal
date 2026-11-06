@@ -26,9 +26,13 @@ This is the only IaC provider for Modal, built natively on `pulumi-go-provider/i
 | `modal:index:Volume` | A durable, named distributed filesystem volume Modal Functions can mount for persistent storage. Name changes rename in place; environment and `fsVersion` changes force-replace (and delete the volume's data). |
 | `modal:index:Queue` | A durable, named FIFO/LIFO queue for passing data between Modal Functions and external callers. Name and environment changes force-replace. |
 | `modal:index:Dict` | A durable, named distributed key/value store shared between Modal Functions. Name and environment changes force-replace. |
-| `modal:index:Environment` | A workspace-level Modal environment (sub-namespace). Name, web suffix and concurrency limits update in place. |
-| `modal:index:App` | A named, empty Modal App (deploying code is out of scope). Tags update in place; name and environment changes force-replace. |
+| `modal:index:Environment` | A workspace-level Modal environment (sub-namespace). Name, web suffix, concurrency limits and the cycle budget (`cycleBudgetDollars`) update in place. |
+| `modal:index:App` | A named, empty Modal App (to ship code, use `AppDeployment`). Tags update in place; name and environment changes force-replace. |
 | `modal:index:Image` | A Modal Image built from a registry base image plus Dockerfile commands, optionally published under a stable name. Build input changes replace it; the published name updates in place. |
+| `modal:index:Proxy` | A Modal Proxy: static outbound IP addresses for Functions that call allow-listed services (a paid Modal plan feature). `ipCount` adds or releases addresses in place; name, environment and region force-replace. |
+| `modal:index:ServiceUser` | A Modal service user: a non-human workspace identity with its own API token, for CI/CD. The token secret is a write-once secret output; every input change replaces the service user and rotates the token. |
+| `modal:index:WebhookToken` | A proxy auth token (the `Modal-Key` and `Modal-Secret` pair for web endpoints that require proxy auth). The secret is a write-once secret output; `name` updates in place, `scoped` replaces. Attaching a scoped token to environments is not modelled yet. |
+| `modal:index:AppDeployment` | Deploys a Modal App from a Python app file by running `modal deploy` and manages the deployed App: redeploys in place when the source changes, reports its Functions and web endpoint URLs, and stops it on delete. Needs the Modal CLI on the machine that runs Pulumi. |
 
 ### Lookup functions
 
@@ -46,6 +50,9 @@ Existing objects, including ones created outside Pulumi, can be referenced witho
 | `modal:index:getFunction` | A deployed Function's ID and web URL. |
 | `modal:index:getCls` | A deployed Cls's ID and method names. |
 | `modal:index:getProxy` | A Proxy's ID, region and static IPs. |
+| `modal:index:getServiceUser` | A service user's ID, token ID and scope (never the token secret). |
+| `modal:index:getWebhookToken` | A proxy auth token's ID, name and scope by name (never the secret). |
+| `modal:index:getAppDeployment` | A deployed App's ID, Functions and web endpoint URLs by name. |
 | `modal:index:getWorkspace` | The workspace the token belongs to, its default environment and image builder version. |
 
 ## Installation
@@ -163,7 +170,7 @@ automatically; update your programs to use `fsVersion` (`fs_version` in Python).
 
 ### Importing existing resources
 
-Secrets, Volumes, Queues, Dicts, Environments, Apps and Images import by their Modal ID alone (`st-...`, `vo-...`, `qu-...`, `di-...`, `en-...`, `ap-...`, `im-...`):
+Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments import by their Modal ID alone (`st-...`, `vo-...`, `qu-...`, `di-...`, `en-...`, `ap-...`, `im-...`, `pr-...`, `su-...`; a AppDeployment imports by its App ID):
 
 ```bash
 pulumi import modal:index:Volume model-cache vo-AbCdEf123
@@ -177,11 +184,12 @@ an imported Secret records its name, environment and key names, and compares key
 ### Coverage
 
 The provider covers the Modal objects that are infrastructure: Secrets, Volumes, Queues, Dicts,
-Environments, Apps and Images, plus lookups for those and for deployed Functions, Classes, Proxies
-and the workspace. It does not deploy code (`modal deploy` packages Python code, which Pulumi
-cannot do) and has no Sandbox resource yet (Sandboxes expire after at most 24 hours, so they would
-drift). [`research/coverage/modal.md`](../../../research/coverage/modal.md) classifies every Modal SDK service and
-RPC group, with the reason for each decision; service users, proxy auth tokens and workspace settings are planned.
+Environments, Apps, Images, Proxies and Service Users, and it deploys code through `AppDeployment`, plus lookups for those and for deployed Functions, Classes and
+the workspace. `AppDeployment` runs the Modal CLI (`modal deploy`), because Modal builds Function definitions client side and no API
+accepts source code; the CLI and the app's Python dependencies must be installed where Pulumi runs, and an imported AppDeployment
+redeploys on its first update because Modal does not store the app file. There is no Sandbox resource (Sandboxes expire after at most 24 hours, so they would
+drift, and the persistent variant is not in the public SDK). [`research/coverage/modal.md`](../../../research/coverage/modal.md) classifies every Modal SDK service and
+RPC group, with the reason for each decision; Environment budgets and roles, proxy auth tokens, custom domains and workspace settings are planned.
 
 ## Example
 
