@@ -39,6 +39,10 @@ export class Environment extends pulumi.CustomResource {
      */
     declare public readonly cycleBudgetDollars: pulumi.Output<number | undefined>;
     /**
+     * Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+     */
+    declare public readonly defaultMemberRole: pulumi.Output<string | undefined>;
+    /**
      * The Modal-assigned identifier of the environment.
      */
     declare public /*out*/ readonly environmentId: pulumi.Output<string>;
@@ -86,6 +90,7 @@ export class Environment extends pulumi.CustomResource {
                 throw new Error("Missing required property 'name'");
             }
             resourceInputs["cycleBudgetDollars"] = args?.cycleBudgetDollars;
+            resourceInputs["defaultMemberRole"] = args?.defaultMemberRole;
             resourceInputs["maxConcurrentGpus"] = args?.maxConcurrentGpus;
             resourceInputs["maxConcurrentTasks"] = args?.maxConcurrentTasks;
             resourceInputs["name"] = args?.name;
@@ -96,6 +101,7 @@ export class Environment extends pulumi.CustomResource {
             resourceInputs["isDefault"] = undefined /*out*/;
         } else {
             resourceInputs["cycleBudgetDollars"] = undefined /*out*/;
+            resourceInputs["defaultMemberRole"] = undefined /*out*/;
             resourceInputs["environmentId"] = undefined /*out*/;
             resourceInputs["isDefault"] = undefined /*out*/;
             resourceInputs["maxConcurrentGpus"] = undefined /*out*/;
@@ -120,6 +126,10 @@ export interface EnvironmentArgs {
      * Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
      */
     cycleBudgetDollars?: pulumi.Input<number | undefined>;
+    /**
+     * Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+     */
+    defaultMemberRole?: pulumi.Input<string | undefined>;
     /**
      * Maximum number of GPUs in use at once in this environment. Unlimited when unset.
      */

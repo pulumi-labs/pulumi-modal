@@ -34,6 +34,21 @@ public final class EnvironmentArgs extends com.pulumi.resources.ResourceArgs {
     }
 
     /**
+     * Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+     * 
+     */
+    @Import(name="defaultMemberRole")
+    private @Nullable Output<String> defaultMemberRole;
+
+    /**
+     * @return Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+     * 
+     */
+    public Optional<Output<String>> defaultMemberRole() {
+        return Optional.ofNullable(this.defaultMemberRole);
+    }
+
+    /**
      * Maximum number of GPUs in use at once in this environment. Unlimited when unset.
      * 
      */
@@ -127,6 +142,7 @@ public final class EnvironmentArgs extends com.pulumi.resources.ResourceArgs {
 
     private EnvironmentArgs(EnvironmentArgs $) {
         this.cycleBudgetDollars = $.cycleBudgetDollars;
+        this.defaultMemberRole = $.defaultMemberRole;
         this.maxConcurrentGpus = $.maxConcurrentGpus;
         this.maxConcurrentTasks = $.maxConcurrentTasks;
         this.name = $.name;
@@ -172,6 +188,27 @@ public final class EnvironmentArgs extends com.pulumi.resources.ResourceArgs {
          */
         public Builder cycleBudgetDollars(Double cycleBudgetDollars) {
             return cycleBudgetDollars(Output.of(cycleBudgetDollars));
+        }
+
+        /**
+         * @param defaultMemberRole Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+         * 
+         * @return builder
+         * 
+         */
+        public Builder defaultMemberRole(@Nullable Output<String> defaultMemberRole) {
+            $.defaultMemberRole = defaultMemberRole;
+            return this;
+        }
+
+        /**
+         * @param defaultMemberRole Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+         * 
+         * @return builder
+         * 
+         */
+        public Builder defaultMemberRole(String defaultMemberRole) {
+            return defaultMemberRole(Output.of(defaultMemberRole));
         }
 
         /**

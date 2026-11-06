@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-06
+
+### Added
+
+- `Environment`: new optional `defaultMemberRole` input (`viewer`, `contributor` or `no_access`), the role workspace members have in the environment (`EnvironmentSetDefaultMemberRole`/`EnvironmentGetRoles`). It updates in place, is read back on refresh (drift shows as an update) and adopted on import; unset leaves it as is; other values are rejected at preview. Per-principal role bindings and the managed flag are not modelled yet (#1535). Additive, not breaking.
+
+### Fixed
+
+- `Image`: importing an Image no longer records the account's default environment when the Image lives in another one. Modal looks an image up by ID without saying which environment it is in, so import now records the environment the Image is published in (a configured `modal:environment` / `MODAL_ENVIRONMENT` wins when the Image is published there), and the first preview of the matching program plans no replacement. An Image published in several environments with none configured fails with a message naming them; an unpublished Image records the configured or default environment as before. Mirror issue https://github.com/pulumi-labs/pulumi-modal/issues/19 (#1612).
+- `Image`: replacing an Image no longer deletes the replacement. Modal image IDs are content-addressed, so rebuilding an identical definition while the old Image still exists returned the same ID and the engine's delete-replaced step then deleted the new Image. Every replace now deletes the old Image first (`deleteBeforeReplace`), which guarantees a fresh ID; the published name is taken down for the rebuild and republished by the replacement. Deleting or renaming a published name in a non-default environment also targeted the default environment's name, because the name delete was sent without the environment; it is now environment-qualified. Mirror issue https://github.com/pulumi-labs/pulumi-modal/issues/20 (#1613).
+- If the provider schema cannot be loaded during a `Read`, the failure is no longer cached for the life of the process: the next `Read` retries (#1599). The lookup functions were audited: none returns a credential value (`getSecret` returns key names only), so no function output changes.
+
 ## [0.4.0] - 2026-11-05
 
 ### Fixed

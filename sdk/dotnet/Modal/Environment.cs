@@ -23,6 +23,12 @@ namespace Pulumi.Labs.Modal
         public Output<double?> CycleBudgetDollars { get; private set; } = null!;
 
         /// <summary>
+        /// Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+        /// </summary>
+        [Output("defaultMemberRole")]
+        public Output<string?> DefaultMemberRole { get; private set; } = null!;
+
+        /// <summary>
         /// The Modal-assigned identifier of the environment.
         /// </summary>
         [Output("environmentId")]
@@ -126,6 +132,12 @@ namespace Pulumi.Labs.Modal
         /// </summary>
         [Input("cycleBudgetDollars")]
         public Input<double>? CycleBudgetDollars { get; set; }
+
+        /// <summary>
+        /// Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+        /// </summary>
+        [Input("defaultMemberRole")]
+        public Input<string>? DefaultMemberRole { get; set; }
 
         /// <summary>
         /// Maximum number of GPUs in use at once in this environment. Unlimited when unset.

@@ -449,6 +449,10 @@
           "type": "number",
           "description": "Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead."
         },
+        "defaultMemberRole": {
+          "type": "string",
+          "description": "Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet."
+        },
         "environmentId": {
           "type": "string",
           "description": "The Modal-assigned identifier of the environment."
@@ -494,6 +498,10 @@
           "type": "number",
           "description": "Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead."
         },
+        "defaultMemberRole": {
+          "type": "string",
+          "description": "Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet."
+        },
         "maxConcurrentGpus": {
           "type": "integer",
           "description": "Maximum number of GPUs in use at once in this environment. Unlimited when unset."
@@ -526,7 +534,7 @@
       ]
     },
     "modal:index:Image": {
-      "description": "A Modal Image built from a registry base image plus optional Dockerfile commands, optionally published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret or environment builds a new Image and replaces this one. An imported Image keeps whatever it was built from. See https://modal.com/docs/guide/images.",
+      "description": "A Modal Image built from a registry base image plus optional Dockerfile commands, optionally published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret or environment builds a new Image and replaces this one (the old Image is deleted first, because Modal image IDs are content-addressed and a rebuild of an identical definition would otherwise reuse the Image being replaced). An imported Image keeps whatever it was built from, and its environment is detected from where it is published. See https://modal.com/docs/guide/images.",
       "properties": {
         "baseImage": {
           "type": "string",

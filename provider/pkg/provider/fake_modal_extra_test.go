@@ -16,6 +16,8 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
 	"google.golang.org/grpc/codes"
@@ -27,14 +29,15 @@ import (
 // App and Image services and the lookup RPCs behind the data sources.
 
 type fakeEnv struct {
-	id        string
-	name      string
-	isDefault bool
-	suffix    string
-	maxTasks  *int32
-	maxGpus   *int32
-	budget    *float64
-	budgetErr bool
+	id          string
+	name        string
+	isDefault   bool
+	suffix      string
+	maxTasks    *int32
+	maxGpus     *int32
+	budget      *float64
+	budgetErr   bool
+	defaultRole *pb.EnvironmentRole
 }
 
 type fakeApp struct {
@@ -173,6 +176,30 @@ func (f *fakeModal) EnvironmentGetBudget(_ context.Context, req *pb.EnvironmentG
 				return nil, status.Error(codes.PermissionDenied, "budgets are not available on this plan")
 			}
 			return pb.EnvironmentGetBudgetResponse_builder{CycleBudgetDollars: e.budget, CurrentCycleUsage: 1.5}.Build(), nil
+		}
+	}
+	return nil, status.Error(codes.NotFound, "environment not found")
+}
+
+func (f *fakeModal) EnvironmentSetDefaultMemberRole(_ context.Context, req *pb.EnvironmentSetDefaultMemberRoleRequest) (*emptypb.Empty, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, e := range f.envs {
+		if e.id == req.GetEnvironmentId() {
+			r := req.GetDefaultMemberRole()
+			e.defaultRole = &r
+			return &emptypb.Empty{}, nil
+		}
+	}
+	return nil, status.Error(codes.NotFound, "environment not found")
+}
+
+func (f *fakeModal) EnvironmentGetRoles(_ context.Context, req *pb.EnvironmentGetRolesRequest) (*pb.EnvironmentGetRolesResponse, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, e := range f.envs {
+		if e.id == req.GetEnvironmentId() {
+			return pb.EnvironmentGetRolesResponse_builder{Name: e.name, DefaultMemberRole: e.defaultRole}.Build(), nil
 		}
 	}
 	return nil, status.Error(codes.NotFound, "environment not found")
@@ -326,7 +353,22 @@ func (f *fakeModal) ImageGetOrCreate(_ context.Context, req *pb.ImageGetOrCreate
 	if !ok {
 		return nil, status.Error(codes.NotFound, "build app not found")
 	}
+	// Like Modal, image IDs are content-addressed: the same definition gets the
+	// same ID while that image exists, and a new one once it was deleted.
+	content := fmt.Sprintf("%q|%v|%v", req.GetImage().GetDockerfileCommands(), req.GetImage().GetSecretIds(), req.GetImage().HasGpuConfig())
+	if f.imageByContent == nil {
+		f.imageByContent = map[string]string{}
+	}
+	if id, ok := f.imageByContent[content]; ok {
+		if _, alive := f.images[id]; alive {
+			return pb.ImageGetOrCreateResponse_builder{
+				ImageId: id,
+				Result:  pb.GenericResult_builder{Status: pb.GenericResult_GENERIC_STATUS_SUCCESS}.Build(),
+			}.Build(), nil
+		}
+	}
 	img := &fakeImage{id: f.nextID("im"), env: app.env, secrets: req.GetImage().GetSecretIds(), gpu: req.GetImage().HasGpuConfig()}
+	f.imageByContent[content] = img.id
 	for _, c := range req.GetImage().GetDockerfileCommands() {
 		img.commands = append(img.commands, c)
 	}
@@ -390,11 +432,16 @@ func (f *fakeModal) ImageListTags(_ context.Context, req *pb.ImageListTagsReques
 func (f *fakeModal) ImageNameDelete(_ context.Context, req *pb.ImageNameDeleteRequest) (*emptypb.Empty, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	for k := range f.tags {
-		if len(k) > len(req.GetTag()) && k[len(k)-len(req.GetTag()):] == req.GetTag() {
-			delete(f.tags, k)
-			return &emptypb.Empty{}, nil
-		}
+	// The tag is "[environment/]name[:tag]"; without an environment it is the default one.
+	key := req.GetTag()
+	if env, rest, ok := strings.Cut(key, "/"); ok {
+		key = f.tagKey(env, rest)
+	} else {
+		key = f.tagKey("", key)
+	}
+	if _, ok := f.tags[key]; ok {
+		delete(f.tags, key)
+		return &emptypb.Empty{}, nil
 	}
 	return nil, status.Error(codes.NotFound, "tag not found")
 }

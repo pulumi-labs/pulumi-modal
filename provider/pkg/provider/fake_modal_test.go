@@ -63,6 +63,8 @@ type fakeModal struct {
 	apps   map[string]*fakeApp
 	images map[string]*fakeImage
 	tags   map[string]string // image tag (env/name:tag) -> image id
+	// imageByContent maps an image definition to the ID it was built with.
+	imageByContent map[string]string
 
 	proxies       map[string]*fakeProxy
 	serviceUsers  map[string]*fakeServiceUser

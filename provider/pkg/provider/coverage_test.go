@@ -358,6 +358,74 @@ func TestImage_ImportAdoptsTheProgram(t *testing.T) {
 	require.Empty(t, missing.ID)
 }
 
+// An image published only in a non-default environment is imported with that
+// environment recorded, so the first preview of the matching program plans no
+// replacement (#1612).
+func TestImage_ImportRecordsTheEnvironmentTheImageIsPublishedIn(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	urn := modalUrn("Image", "img")
+	fake.mu.Lock()
+	fake.images["im-other"] = &fakeImage{id: "im-other", env: "other"}
+	fake.tags["other/shared:prod"] = "im-other"
+	fake.mu.Unlock()
+
+	imp, err := s.Read(pgp.ReadRequest{ID: "im-other", Urn: urn})
+	require.NoError(t, err)
+	require.Equal(t, "other", getStr(t, imp.Properties, "environment"))
+	require.Equal(t, "other", getStr(t, imp.Inputs, "environment"))
+	require.Equal(t, "shared:prod", getStr(t, imp.Inputs, "name"))
+
+	prog := pm(map[string]property.Value{
+		"baseImage": str("python:3.12"), "name": str("shared:prod"), "environment": str("other"),
+	})
+	d, err := s.Diff(pgp.DiffRequest{ID: "im-other", Urn: urn, State: imp.Properties, Inputs: prog, OldInputs: imp.Inputs})
+	require.NoError(t, err)
+	requireNoChanges(t, d)
+
+	// Reading again from the recorded state is stable.
+	again, err := s.Read(pgp.ReadRequest{ID: "im-other", Urn: urn, Properties: imp.Properties, Inputs: imp.Inputs})
+	require.NoError(t, err)
+	require.Equal(t, "other", getStr(t, again.Properties, "environment"))
+	require.Equal(t, "shared:prod", getStr(t, again.Inputs, "name"))
+}
+
+func TestImage_ImportInSeveralEnvironmentsNeedsTheEnvironmentConfigured(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	urn := modalUrn("Image", "img")
+	fake.mu.Lock()
+	fake.images["im-both"] = &fakeImage{id: "im-both", env: "main"}
+	fake.tags["main/a:latest"] = "im-both"
+	fake.tags["other/b:latest"] = "im-both"
+	fake.mu.Unlock()
+
+	_, err := s.Read(pgp.ReadRequest{ID: "im-both", Urn: urn})
+	require.ErrorContains(t, err, "published in several environments (main, other)")
+	require.ErrorContains(t, err, "modal:environment")
+
+	// Configuring the environment resolves the ambiguity.
+	s2 := serverFor(t, addr, "other")
+	imp, err := s2.Read(pgp.ReadRequest{ID: "im-both", Urn: urn})
+	require.NoError(t, err)
+	require.Equal(t, "other", getStr(t, imp.Properties, "environment"))
+	require.Equal(t, "b:latest", getStr(t, imp.Inputs, "name"))
+}
+
+func TestImage_ImportOfAnUnpublishedImageRecordsTheDefaultEnvironment(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	fake.mu.Lock()
+	fake.images["im-bare"] = &fakeImage{id: "im-bare", env: "main"}
+	fake.mu.Unlock()
+
+	imp, err := s.Read(pgp.ReadRequest{ID: "im-bare", Urn: modalUrn("Image", "img")})
+	require.NoError(t, err)
+	require.Equal(t, "main", getStr(t, imp.Properties, "environment"))
+	_, hasName := imp.Inputs.GetOk("name")
+	require.False(t, hasName)
+}
+
 func TestImage_CheckAndCreateValidation(t *testing.T) {
 	_, addr := startFakeModal(t)
 	s := serverFor(t, addr, "")

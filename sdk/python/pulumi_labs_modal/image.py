@@ -186,7 +186,7 @@ class Image(pulumi.CustomResource):
                  token_secret: Optional[pulumi.Input[_builtins.str]] = None,
                  __props__=None):
         """
-        A Modal Image built from a registry base image plus optional Dockerfile commands, optionally published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret or environment builds a new Image and replaces this one. An imported Image keeps whatever it was built from. See https://modal.com/docs/guide/images.
+        A Modal Image built from a registry base image plus optional Dockerfile commands, optionally published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret or environment builds a new Image and replaces this one (the old Image is deleted first, because Modal image IDs are content-addressed and a rebuild of an identical definition would otherwise reuse the Image being replaced). An imported Image keeps whatever it was built from, and its environment is detected from where it is published. See https://modal.com/docs/guide/images.
 
 
         :param str resource_name: The name of the resource.
@@ -208,7 +208,7 @@ class Image(pulumi.CustomResource):
                  args: Optional[ImageArgs] = None,
                  opts: Optional[pulumi.ResourceOptions] = None):
         """
-        A Modal Image built from a registry base image plus optional Dockerfile commands, optionally published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret or environment builds a new Image and replaces this one. An imported Image keeps whatever it was built from. See https://modal.com/docs/guide/images.
+        A Modal Image built from a registry base image plus optional Dockerfile commands, optionally published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret or environment builds a new Image and replaces this one (the old Image is deleted first, because Modal image IDs are content-addressed and a rebuild of an identical definition would otherwise reuse the Image being replaced). An imported Image keeps whatever it was built from, and its environment is detected from where it is published. See https://modal.com/docs/guide/images.
 
 
         :param str resource_name: The name of the resource.

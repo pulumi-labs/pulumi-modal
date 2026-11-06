@@ -21,6 +21,7 @@ class EnvironmentArgs:
     def __init__(__self__, *,
                  name: pulumi.Input[_builtins.str],
                  cycle_budget_dollars: Optional[pulumi.Input[_builtins.float]] = None,
+                 default_member_role: Optional[pulumi.Input[_builtins.str]] = None,
                  max_concurrent_gpus: Optional[pulumi.Input[_builtins.int]] = None,
                  max_concurrent_tasks: Optional[pulumi.Input[_builtins.int]] = None,
                  token_id: Optional[pulumi.Input[_builtins.str]] = None,
@@ -31,6 +32,7 @@ class EnvironmentArgs:
 
         :param pulumi.Input[_builtins.str] name: The environment's name, unique in the workspace. Changing this renames the environment in place.
         :param pulumi.Input[_builtins.float] cycle_budget_dollars: Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+        :param pulumi.Input[_builtins.str] default_member_role: Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
         :param pulumi.Input[_builtins.int] max_concurrent_gpus: Maximum number of GPUs in use at once in this environment. Unlimited when unset.
         :param pulumi.Input[_builtins.int] max_concurrent_tasks: Maximum number of tasks running at once in this environment. Unlimited when unset.
         :param pulumi.Input[_builtins.str] token_id: Modal API token ID. Overrides the provider-level tokenId.
@@ -40,6 +42,8 @@ class EnvironmentArgs:
         pulumi.set(__self__, "name", name)
         if cycle_budget_dollars is not None:
             pulumi.set(__self__, "cycle_budget_dollars", cycle_budget_dollars)
+        if default_member_role is not None:
+            pulumi.set(__self__, "default_member_role", default_member_role)
         if max_concurrent_gpus is not None:
             pulumi.set(__self__, "max_concurrent_gpus", max_concurrent_gpus)
         if max_concurrent_tasks is not None:
@@ -74,6 +78,18 @@ class EnvironmentArgs:
     @cycle_budget_dollars.setter
     def cycle_budget_dollars(self, value: Optional[pulumi.Input[_builtins.float]]):
         pulumi.set(self, "cycle_budget_dollars", value)
+
+    @_builtins.property
+    @pulumi.getter(name="defaultMemberRole")
+    def default_member_role(self) -> Optional[pulumi.Input[_builtins.str]]:
+        """
+        Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+        """
+        return pulumi.get(self, "default_member_role")
+
+    @default_member_role.setter
+    def default_member_role(self, value: Optional[pulumi.Input[_builtins.str]]):
+        pulumi.set(self, "default_member_role", value)
 
     @_builtins.property
     @pulumi.getter(name="maxConcurrentGpus")
@@ -143,6 +159,7 @@ class Environment(pulumi.CustomResource):
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
                  cycle_budget_dollars: Optional[pulumi.Input[_builtins.float]] = None,
+                 default_member_role: Optional[pulumi.Input[_builtins.str]] = None,
                  max_concurrent_gpus: Optional[pulumi.Input[_builtins.int]] = None,
                  max_concurrent_tasks: Optional[pulumi.Input[_builtins.int]] = None,
                  name: Optional[pulumi.Input[_builtins.str]] = None,
@@ -157,6 +174,7 @@ class Environment(pulumi.CustomResource):
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
         :param pulumi.Input[_builtins.float] cycle_budget_dollars: Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
+        :param pulumi.Input[_builtins.str] default_member_role: Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
         :param pulumi.Input[_builtins.int] max_concurrent_gpus: Maximum number of GPUs in use at once in this environment. Unlimited when unset.
         :param pulumi.Input[_builtins.int] max_concurrent_tasks: Maximum number of tasks running at once in this environment. Unlimited when unset.
         :param pulumi.Input[_builtins.str] name: The environment's name, unique in the workspace. Changing this renames the environment in place.
@@ -190,6 +208,7 @@ class Environment(pulumi.CustomResource):
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
                  cycle_budget_dollars: Optional[pulumi.Input[_builtins.float]] = None,
+                 default_member_role: Optional[pulumi.Input[_builtins.str]] = None,
                  max_concurrent_gpus: Optional[pulumi.Input[_builtins.int]] = None,
                  max_concurrent_tasks: Optional[pulumi.Input[_builtins.int]] = None,
                  name: Optional[pulumi.Input[_builtins.str]] = None,
@@ -206,6 +225,7 @@ class Environment(pulumi.CustomResource):
             __props__ = EnvironmentArgs.__new__(EnvironmentArgs)
 
             __props__.__dict__["cycle_budget_dollars"] = cycle_budget_dollars
+            __props__.__dict__["default_member_role"] = default_member_role
             __props__.__dict__["max_concurrent_gpus"] = max_concurrent_gpus
             __props__.__dict__["max_concurrent_tasks"] = max_concurrent_tasks
             if name is None and not opts.urn:
@@ -241,6 +261,7 @@ class Environment(pulumi.CustomResource):
         __props__ = EnvironmentArgs.__new__(EnvironmentArgs)
 
         __props__.__dict__["cycle_budget_dollars"] = None
+        __props__.__dict__["default_member_role"] = None
         __props__.__dict__["environment_id"] = None
         __props__.__dict__["is_default"] = None
         __props__.__dict__["max_concurrent_gpus"] = None
@@ -258,6 +279,14 @@ class Environment(pulumi.CustomResource):
         Spend limit of this environment per billing cycle, in US dollars (0 or more). Left as is when unset: removing the property does not clear a budget that was set, set it to the new value instead.
         """
         return pulumi.get(self, "cycle_budget_dollars")
+
+    @_builtins.property
+    @pulumi.getter(name="defaultMemberRole")
+    def default_member_role(self) -> pulumi.Output[Optional[_builtins.str]]:
+        """
+        Role every workspace member has in this environment unless set individually: `viewer`, `contributor` or `no_access`. Updates in place. Left as is when unset: removing the property does not reset the role, set it to the new value instead. Per-user and service-user role bindings are not modelled yet.
+        """
+        return pulumi.get(self, "default_member_role")
 
     @_builtins.property
     @pulumi.getter(name="environmentId")

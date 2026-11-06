@@ -25,6 +25,7 @@ import (
 	pb "github.com/modal-labs/modal-client/go/proto/modal_proto"
 	pgp "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ---------------------------------------------------------------------------
@@ -94,7 +95,7 @@ type ImageState struct {
 func (r *Image) Annotate(a infer.Annotator) {
 	a.Describe(&r, "A Modal Image built from a registry base image plus optional Dockerfile commands, optionally "+
 		"published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret "+
-		"or environment builds a new Image and replaces this one. An imported Image keeps whatever it was built from. "+
+		"or environment builds a new Image and replaces this one (the old Image is deleted first, because Modal image IDs are content-addressed and a rebuild of an identical definition would otherwise reuse the Image being replaced). An imported Image keeps whatever it was built from, and its environment is detected from where it is published. "+
 		"See https://modal.com/docs/guide/images.")
 }
 
@@ -195,6 +196,18 @@ func (r *Image) Diff(ctx context.Context, req infer.DiffRequest[ImageArgs, Image
 		}
 		if derefStr(req.Inputs.RegistrySecret) != derefStr(req.State.RegistrySecret) {
 			replace("registrySecret")
+		}
+	}
+	// Modal image IDs are content-addressed: rebuilding an identical
+	// definition while the old image exists returns the same ID, and the
+	// engine's delete-replaced step would then delete the image the
+	// replacement just "created". Deleting first guarantees a fresh ID
+	// (modal-client's TestImageDelete shows a rebuild after ImageDelete gets a
+	// new one). Delete also takes the published name down, and the
+	// replacement republishes it.
+	for _, d := range resp.DetailedDiff {
+		if d.Kind == pgp.UpdateReplace {
+			resp.DeleteBeforeReplace = true
 		}
 	}
 	if namedTag(req.Inputs.Name) != namedTag(req.State.Name) {
@@ -321,22 +334,23 @@ func (r *Image) Read(ctx context.Context, req infer.ReadRequest[ImageArgs, Image
 	importing := req.State.Name == nil && req.State.BaseImage == nil && req.Inputs.BaseImage == nil && req.Inputs.Name == nil
 	state := req.State
 	state.ImageId = req.ID
+	tokenCfg := withResourceTokens(cfg, req.State.TokenID, req.State.TokenSecret)
 	environment := derefStr(state.Environment)
-	if environment == "" {
-		environment = effectiveEnvironment(rpcCtx, client, nil, withResourceTokens(cfg, req.State.TokenID, req.State.TokenSecret))
-	}
-
-	// Published names pointing at this image.
-	tags, err := client.stub.ImageListTags(rpcCtx, pb.ImageListTagsRequest_builder{
-		EnvironmentName: environment,
-		ImageId:         req.ID,
-	}.Build())
-	if err != nil {
-		return empty, fmt.Errorf("modal: list tags of image %q: %w", req.ID, err)
-	}
 	var published []string
-	for _, item := range tags.GetItems() {
-		published = append(published, item.GetTag())
+	if environment == "" && importing {
+		environment, published, err = detectImageEnvironment(rpcCtx, client, req.ID, tokenCfg)
+		if err != nil {
+			return empty, err
+		}
+	} else {
+		if environment == "" {
+			environment = effectiveEnvironment(rpcCtx, client, nil, tokenCfg)
+		}
+		// Published names pointing at this image.
+		published, err = listImageTags(rpcCtx, client, environment, req.ID)
+		if err != nil {
+			return empty, err
+		}
 	}
 	if want := derefStr(state.Name); want != "" {
 		if !slices.Contains(published, imageTag(want)) {
@@ -361,6 +375,76 @@ func (r *Image) Read(ctx context.Context, req infer.ReadRequest[ImageArgs, Image
 		inputs.Name = state.Name
 	}
 	return infer.ReadResponse[ImageArgs, ImageState]{ID: req.ID, Inputs: inputs, State: state}, nil
+}
+
+// listImageTags returns the names published in environment that point at imageID.
+func listImageTags(ctx context.Context, client *modalClient, environment, imageID string) ([]string, error) {
+	tags, err := client.stub.ImageListTags(ctx, pb.ImageListTagsRequest_builder{
+		EnvironmentName: environment,
+		ImageId:         imageID,
+	}.Build())
+	if err != nil {
+		return nil, fmt.Errorf("modal: list tags of image %q: %w", imageID, err)
+	}
+	var published []string
+	for _, item := range tags.GetItems() {
+		published = append(published, item.GetTag())
+	}
+	return published, nil
+}
+
+// detectImageEnvironment picks the environment to record for an imported
+// image. Modal image IDs are account-wide and the lookup by ID does not say
+// which environment an image belongs to, but published names are per
+// environment, so the environment is the one the image is published in:
+//
+//  1. an explicitly configured environment (modal:environment, the resource's
+//     provider config or MODAL_ENVIRONMENT) wins when the image is published there;
+//  2. otherwise the single environment the image is published in;
+//  3. several environments and none configured is an error, since guessing
+//     would make the next preview plan a replacement;
+//  4. an unpublished image has no environment on Modal's side, so the
+//     configured or account default environment is recorded.
+func detectImageEnvironment(ctx context.Context, client *modalClient, imageID string, cfg ProviderConfig) (string, []string, error) {
+	if explicit := resolveEnv(nil, cfg); explicit != "" {
+		published, err := listImageTags(ctx, client, explicit, imageID)
+		if err != nil {
+			return "", nil, err
+		}
+		if len(published) > 0 {
+			return explicit, published, nil
+		}
+	}
+	envs, err := client.stub.EnvironmentList(ctx, &emptypb.Empty{})
+	if err != nil {
+		return effectiveEnvironment(ctx, client, nil, cfg), nil, nil
+	}
+	found := map[string][]string{}
+	for _, item := range envs.GetItems() {
+		published, err := listImageTags(ctx, client, item.GetName(), imageID)
+		if err != nil {
+			return "", nil, err
+		}
+		if len(published) > 0 {
+			found[item.GetName()] = published
+		}
+	}
+	switch len(found) {
+	case 0:
+		return effectiveEnvironment(ctx, client, nil, cfg), nil, nil
+	case 1:
+		for env, published := range found {
+			return env, published, nil
+		}
+	}
+	names := make([]string, 0, len(found))
+	for env := range found {
+		names = append(names, env)
+	}
+	slices.Sort(names)
+	return "", nil, fmt.Errorf("modal: image %q is published in several environments (%s); "+
+		"set the modal:environment provider config (or MODAL_ENVIRONMENT) to the environment to manage and retry the import",
+		imageID, strings.Join(names, ", "))
 }
 
 // Update republishes the image under a new name and removes the old name.
@@ -415,7 +499,13 @@ func deleteImageName(ctx context.Context, client *modalClient, imageID, tag, env
 	if cur.GetImageId() != imageID {
 		return nil
 	}
-	if _, err := client.stub.ImageNameDelete(ctx, pb.ImageNameDeleteRequest_builder{Tag: tag}.Build()); err != nil && !isNotFound(err) {
+	// ImageNameDelete takes "[environment/]name[:tag]": without the
+	// environment it targets the default environment's name.
+	qualified := tag
+	if environment != "" {
+		qualified = environment + "/" + tag
+	}
+	if _, err := client.stub.ImageNameDelete(ctx, pb.ImageNameDeleteRequest_builder{Tag: qualified}.Build()); err != nil && !isNotFound(err) {
 		return fmt.Errorf("modal: delete image name %q: %w", tag, err)
 	}
 	return nil
