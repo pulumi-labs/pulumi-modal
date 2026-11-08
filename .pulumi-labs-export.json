@@ -6,6 +6,6 @@
   "provider": "modal",
   "skill_commit": "6d559827271e2f3b5722cb70fe8e091d6bb041ee",
   "source_repo": "pulumi/autoregistry",
-  "source_sha": "f743f18be4c666d3c34853d0b05751a44333893b",
-  "source_version": "0.5.0"
+  "source_sha": "9c03939de96aad9e37fd6ae2ef0145a29e5d3dd1",
+  "source_version": "0.5.1"
 }
