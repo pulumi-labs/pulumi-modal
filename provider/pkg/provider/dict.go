@@ -148,6 +148,9 @@ func (r *Dict) Read(ctx context.Context, req infer.ReadRequest[DictArgs, DictSta
 	defer cancel()
 	resp, err := client.stub.DictGetById(rpcCtx, pb.DictGetByIdRequest_builder{DictId: req.ID}.Build())
 	if isNotFound(err) {
+		if err := notFoundOnImport("dict", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	if err != nil {

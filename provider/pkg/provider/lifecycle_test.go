@@ -239,10 +239,9 @@ func TestVolume_ImportFromIDAlone(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "other", getStr(t, read.Properties, "environment"))
 
-	// Unknown IDs read as gone.
-	missing, err := s.Read(pgp.ReadRequest{ID: "vo-nope", Urn: urn})
-	require.NoError(t, err)
-	require.Empty(t, missing.ID)
+	// An import of an unknown ID fails instead of storing an empty resource (#1715).
+	_, err = s.Read(pgp.ReadRequest{ID: "vo-nope", Urn: urn})
+	require.ErrorContains(t, err, "does not exist")
 }
 
 // TestVolume_LegacyVersionStateMigrates covers state written by v0.1.0, where

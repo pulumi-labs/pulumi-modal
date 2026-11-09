@@ -331,6 +331,9 @@ func (r *Environment) Read(ctx context.Context, req infer.ReadRequest[Environmen
 		return empty, fmt.Errorf("modal: read environment %q: %w", req.ID, err)
 	}
 	if item == nil {
+		if err := notFoundOnImport("environment", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	importing := req.State.Name == "" && req.Inputs.Name == ""

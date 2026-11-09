@@ -351,11 +351,15 @@ func TestImage_ImportAdoptsTheProgram(t *testing.T) {
 	})
 	d, err := s.Diff(pgp.DiffRequest{ID: "im-ext", Urn: urn, State: imp.Properties, Inputs: prog, OldInputs: imp.Inputs})
 	require.NoError(t, err)
-	requireNoChanges(t, d)
+	// Adopting the program is planned as one in-place update, never a replace (#1674).
+	require.True(t, d.HasChanges)
+	require.False(t, d.DeleteBeforeReplace)
+	require.Equal(t, pgp.Update, d.DetailedDiff["baseImage"].Kind)
+	require.NotContains(t, d.DetailedDiff, "dockerfileCommands")
 
-	missing, err := s.Read(pgp.ReadRequest{ID: "im-nope", Urn: urn})
-	require.NoError(t, err)
-	require.Empty(t, missing.ID)
+	// An import of an unknown ID fails instead of storing an empty resource (#1715).
+	_, err = s.Read(pgp.ReadRequest{ID: "im-nope", Urn: urn})
+	require.ErrorContains(t, err, "does not exist")
 }
 
 // An image published only in a non-default environment is imported with that
@@ -381,7 +385,10 @@ func TestImage_ImportRecordsTheEnvironmentTheImageIsPublishedIn(t *testing.T) {
 	})
 	d, err := s.Diff(pgp.DiffRequest{ID: "im-other", Urn: urn, State: imp.Properties, Inputs: prog, OldInputs: imp.Inputs})
 	require.NoError(t, err)
-	requireNoChanges(t, d)
+	// No replacement: only the one in-place adoption of the build inputs (#1674).
+	require.False(t, d.DeleteBeforeReplace)
+	require.Len(t, d.DetailedDiff, 1)
+	require.Equal(t, pgp.Update, d.DetailedDiff["baseImage"].Kind)
 
 	// Reading again from the recorded state is stable.
 	again, err := s.Read(pgp.ReadRequest{ID: "im-other", Urn: urn, Properties: imp.Properties, Inputs: imp.Inputs})
@@ -653,4 +660,56 @@ func TestApp_FailedTagsLeavesPartialStateWithoutTags(t *testing.T) {
 	d, err := s.Diff(pgp.DiffRequest{ID: created.ID, Urn: urn, State: created.Properties, Inputs: inputs, OldInputs: inputs})
 	require.NoError(t, err)
 	require.Equal(t, pgp.Update, d.DetailedDiff["tags"].Kind)
+}
+
+// An imported Image has no recorded build inputs (#1674). The first update adopts
+// the program's inputs in place, and from then on a change to any of them plans a
+// replace exactly as for an Image the program created.
+func TestImage_ImportThenAdoptThenChangeReplaces(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	urn := modalUrn("Image", "img")
+	fake.mu.Lock()
+	fake.images["im-ext"] = &fakeImage{id: "im-ext", env: "main"}
+	fake.tags["main/shared:prod"] = "im-ext"
+	fake.mu.Unlock()
+
+	imp, err := s.Read(pgp.ReadRequest{ID: "im-ext", Urn: urn})
+	require.NoError(t, err)
+
+	prog := func(cmd, base string) property.Map {
+		return pm(map[string]property.Value{
+			"baseImage": str(base), "dockerfileCommands": strArray(cmd), "name": str("shared:prod"),
+		})
+	}
+	first := prog("RUN echo a", "python:3.12")
+	d, err := s.Diff(pgp.DiffRequest{ID: "im-ext", Urn: urn, State: imp.Properties, Inputs: first, OldInputs: imp.Inputs})
+	require.NoError(t, err)
+	require.True(t, d.HasChanges)
+	require.False(t, d.DeleteBeforeReplace)
+
+	up, err := s.Update(pgp.UpdateRequest{ID: "im-ext", Urn: urn, State: imp.Properties, Inputs: first})
+	require.NoError(t, err)
+	require.Equal(t, "python:3.12", getStr(t, up.Properties, "baseImage"))
+	cmds, ok := up.Properties.GetOk("dockerfileCommands")
+	require.True(t, ok, "the adopted build commands are recorded in state")
+	require.Equal(t, 1, cmds.AsArray().Len())
+
+	// The same program is now a no-op.
+	d, err = s.Diff(pgp.DiffRequest{ID: "im-ext", Urn: urn, State: up.Properties, Inputs: first, OldInputs: first})
+	require.NoError(t, err)
+	requireNoChanges(t, d)
+
+	// A changed build command or base image replaces, deleting first.
+	for _, changed := range []property.Map{prog("RUN echo b", "python:3.12"), prog("RUN echo a", "python:3.13")} {
+		d, err = s.Diff(pgp.DiffRequest{ID: "im-ext", Urn: urn, State: up.Properties, Inputs: changed, OldInputs: first})
+		require.NoError(t, err)
+		require.True(t, d.HasChanges)
+		require.True(t, d.DeleteBeforeReplace)
+		var replaced bool
+		for _, pd := range d.DetailedDiff {
+			replaced = replaced || pd.Kind == pgp.UpdateReplace
+		}
+		require.True(t, replaced)
+	}
 }

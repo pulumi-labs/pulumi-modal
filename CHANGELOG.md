@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-09
+
+### Fixed
+
+- `pulumi import` of an object that does not exist (an App, AppDeployment, Dict, Environment, Image, Proxy, Queue, Secret, ServiceUser, Volume or WebhookToken; an app that was stopped counts as missing) now fails with an error instead of exiting 0 with an empty resource in state. Read returned the empty response that only a refresh treats as deleted. A refresh of a deleted object still drops it from state (#1715, same defect as #1712).
+- `Image`: an imported Image now notices later changes to its build inputs. Modal does not store what an image was built from, so an import recorded no `baseImage`, `dockerfileCommands`, `env`, `gpu` or `registrySecret`, the diff skipped them for the life of the resource and a changed Dockerfile command never rebuilt the Image. When the program declares a `baseImage`, the first update after an import now adopts the declared build inputs in place (planned as one update, never a replace, and it builds nothing); after that a change to any build input plans a replace as for an Image the program created. Previously the first preview after an import showed no changes, now it shows that one adoption update. Mirror issue https://github.com/pulumi-labs/pulumi-modal/issues/23 (#1674).
+
 ## [0.5.1] - 2026-11-08
 
 ### Fixed

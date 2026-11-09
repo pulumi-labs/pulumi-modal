@@ -610,12 +610,18 @@ func (r *AppDeployment) Read(ctx context.Context, req infer.ReadRequest[AppDeplo
 	}
 	info, err := client.stub.AppGetInfo(rpcCtx, pb.AppGetInfoRequest_builder{AppId: appID}.Build())
 	if isNotFound(err) {
+		if err := notFoundOnImport("app deployment", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	if err != nil {
 		return empty, fmt.Errorf("modal: read deployment %q: %w", req.ID, err)
 	}
 	if appStopped(info.GetInfo()) {
+		if err := notFoundOnImport("app deployment", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	environment := info.GetInfo().GetEnvironmentName()
@@ -632,6 +638,9 @@ func (r *AppDeployment) Read(ctx context.Context, req infer.ReadRequest[AppDeplo
 		}
 	}
 	if !found {
+		if err := notFoundOnImport("app deployment", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 

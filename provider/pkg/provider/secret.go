@@ -257,6 +257,9 @@ func (r *Secret) Read(ctx context.Context, req infer.ReadRequest[SecretArgs, Sec
 	resp, err := client.stub.SecretGetInfo(rpcCtx, pb.SecretGetInfoRequest_builder{SecretId: req.ID}.Build())
 	if isNotFound(err) {
 		// Deleted outside Pulumi: signal removal.
+		if err := notFoundOnImport("secret", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	if err != nil {

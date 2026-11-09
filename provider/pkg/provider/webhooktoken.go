@@ -170,6 +170,9 @@ func (r *WebhookToken) Read(ctx context.Context, req infer.ReadRequest[WebhookTo
 		return empty, fmt.Errorf("modal: read webhook token %q: %w", req.ID, err)
 	}
 	if t == nil {
+		if err := notFoundOnImport("webhook token", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 

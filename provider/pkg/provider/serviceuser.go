@@ -203,6 +203,9 @@ func (r *ServiceUser) Read(ctx context.Context, req infer.ReadRequest[ServiceUse
 		return empty, fmt.Errorf("modal: read service user %q: %w", req.ID, err)
 	}
 	if u == nil {
+		if err := notFoundOnImport("service user", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 
