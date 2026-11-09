@@ -95,6 +95,8 @@ functions:
     test: false
     reason: static IPs need a paid plan and QA does not run the Proxy resource, so QA has nothing to look up
 regressions:
+  - "#1715 pulumi import of an ID that does not exist (for example modal:index:Volume v vo-nope, Secret, Queue, Dict, App ap-nope) fails with 'does not exist' and leaves nothing in state; a refresh of a resource deleted outside Pulumi still drops it from state"
+  - "#1674 import an Image (pulumi import modal:index:Image x im-...), then pulumi up once: the first update adopts baseImage and dockerfileCommands in place (no replace, same imageId); then change a dockerfileCommands entry: pulumi preview --diff plans a replace and the next up yields a new imageId"
   - "#1612 import an Image published in a non-default environment (pulumi import modal:index:Image x im-...): the state and inputs record that environment and the next preview plans no replace; an Image published in two environments fails the import naming both"
   - "#1613 change an Image's dockerfileCommands or baseImage and run pulumi up: the new Image exists afterwards (imageId differs from before, getImage by name returns it); with the same name in two environments, deleting one leaves the other's name"
   - "#1577 import then inspect the stack state (pulumi stack export --show-secrets off): every property the schema marks secret on an imported resource is a secret, never plaintext; a refresh of a resource created by the program keeps them secret"

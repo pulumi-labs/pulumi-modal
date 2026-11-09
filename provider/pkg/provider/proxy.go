@@ -267,6 +267,9 @@ func (r *Proxy) Read(ctx context.Context, req infer.ReadRequest[ProxyArgs, Proxy
 		return empty, fmt.Errorf("modal: read proxy %q: %w", req.ID, err)
 	}
 	if p == nil {
+		if err := notFoundOnImport("proxy", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 

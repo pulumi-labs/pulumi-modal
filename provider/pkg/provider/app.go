@@ -222,12 +222,18 @@ func (r *App) Read(ctx context.Context, req infer.ReadRequest[AppArgs, AppState]
 	defer cancel()
 	info, err := client.stub.AppGetInfo(rpcCtx, pb.AppGetInfoRequest_builder{AppId: req.ID}.Build())
 	if isNotFound(err) {
+		if err := notFoundOnImport("app", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	if err != nil {
 		return empty, fmt.Errorf("modal: read app %q: %w", req.ID, err)
 	}
 	if appStopped(info.GetInfo()) {
+		if err := notFoundOnImport("app", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	environment := info.GetInfo().GetEnvironmentName()
@@ -254,6 +260,9 @@ func (r *App) Read(ctx context.Context, req infer.ReadRequest[AppArgs, AppState]
 		}
 	}
 	if !found {
+		if err := notFoundOnImport("app", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 

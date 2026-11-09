@@ -145,6 +145,9 @@ func (r *Queue) Read(ctx context.Context, req infer.ReadRequest[QueueArgs, Queue
 	resp, err := client.stub.QueueGetById(rpcCtx, pb.QueueGetByIdRequest_builder{QueueId: req.ID}.Build())
 	if isNotFound(err) {
 		// Deleted outside Pulumi: signal removal.
+		if err := notFoundOnImport("queue", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	if err != nil {

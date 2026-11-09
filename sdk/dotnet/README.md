@@ -178,7 +178,7 @@ pulumi import modal:index:Volume model-cache vo-AbCdEf123
 
 Modal does not report a Volume's or Queue's environment, so the import looks in the
 `modal:environment` / `MODAL_ENVIRONMENT` environment (or the account default) and fails
-with a clear message if the ID does not live there (Dicts behave like Volumes and Queues; Apps and Secrets report their environment). An imported Image has no build inputs, because Modal does not store them: it adopts whatever the program declares. Modal never returns Secret values:
+with a clear message if the ID does not live there (Dicts behave like Volumes and Queues; Apps and Secrets report their environment). An imported Image has no build inputs, because Modal does not store them: the first update after the import adopts whatever build inputs the program declares (one in-place update, no rebuild), and from then on a change to any of them replaces the Image. Modal never returns Secret values:
 an imported Secret records its name, environment and key names, and compares key names only until your program's values are recorded, so the first `pulumi preview` after an import shows no changes. The values are not written to Modal by the import: change a value (or add or remove a key) to write them.
 
 ### Coverage

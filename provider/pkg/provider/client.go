@@ -42,6 +42,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"reflect"
 	"regexp"
 	"runtime/debug"
 	"strings"
@@ -222,4 +223,18 @@ func streamAuthInterceptor(tokenID, tokenSecret string) grpc.StreamClientInterce
 
 func callCtx() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), 60*time.Second)
+}
+
+// notFoundOnImport reports a missing remote object during an import.
+//
+// The engine treats an empty ID from Read as "deleted" only on refresh; on import the
+// framework accepts the empty response and an empty resource lands in state with exit
+// code 0. An import is recognisable by Read arriving with neither prior inputs nor prior
+// state, so there a missing object is an error. On refresh it returns nil and the caller
+// returns the empty response that drops the resource from state.
+func notFoundOnImport[A, S any](kind, id string, inputs A, state S) error {
+	if reflect.ValueOf(inputs).IsZero() && reflect.ValueOf(state).IsZero() {
+		return fmt.Errorf("cannot import %s %q: it does not exist (or the API key cannot see it); check the import ID", kind, id)
+	}
+	return nil
 }

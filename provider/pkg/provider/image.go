@@ -168,8 +168,11 @@ func (r *Image) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckR
 }
 
 // Diff replaces on any build input change and updates the published name in
-// place. An imported Image (state without a base image) adopts the program
-// as is: Modal does not store what an image was built from.
+// place. Modal does not store what an image was built from, so an imported
+// Image (state without a base image) has nothing to compare against. When the
+// program declares a base image, the first update after the import is planned
+// as an in-place adoption of the build inputs (no replace); from then on the
+// normal replace comparison applies.
 func (r *Image) Diff(ctx context.Context, req infer.DiffRequest[ImageArgs, ImageState]) (infer.DiffResponse, error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	resp := infer.DiffResponse{DetailedDiff: map[string]pgp.PropertyDiff{}}
@@ -181,7 +184,12 @@ func (r *Image) Diff(ctx context.Context, req infer.DiffRequest[ImageArgs, Image
 		replace("environment")
 	}
 	imported := req.State.BaseImage == nil
-	if !imported {
+	if imported {
+		if req.Inputs.BaseImage != nil {
+			resp.DetailedDiff["baseImage"] = pgp.PropertyDiff{Kind: pgp.Update}
+			resp.HasChanges = true
+		}
+	} else {
 		if derefStr(req.Inputs.BaseImage) != derefStr(req.State.BaseImage) {
 			replace("baseImage")
 		}
@@ -326,6 +334,9 @@ func (r *Image) Read(ctx context.Context, req infer.ReadRequest[ImageArgs, Image
 	rpcCtx, cancel := callCtx()
 	defer cancel()
 	if _, err := client.stub.ImageFromId(rpcCtx, pb.ImageFromIdRequest_builder{ImageId: req.ID}.Build()); isNotFound(err) {
+		if err := notFoundOnImport("image", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	} else if err != nil {
 		return empty, fmt.Errorf("modal: read image %q: %w", req.ID, err)
@@ -451,6 +462,13 @@ func detectImageEnvironment(ctx context.Context, client *modalClient, imageID st
 func (r *Image) Update(ctx context.Context, req infer.UpdateRequest[ImageArgs, ImageState]) (infer.UpdateResponse[ImageState], error) {
 	args := req.Inputs
 	state := req.State
+	// Record the build inputs. Diff replaces on any change to them, so this
+	// only ever changes state for an imported Image adopting the program.
+	state.BaseImage = args.BaseImage
+	state.DockerfileCommands = args.DockerfileCommands
+	state.Env = args.Env
+	state.Gpu = args.Gpu
+	state.RegistrySecret = args.RegistrySecret
 	if args.Name != nil || req.State.Name != nil {
 		state.Name = args.Name
 	}

@@ -257,6 +257,9 @@ func (r *Volume) Read(ctx context.Context, req infer.ReadRequest[VolumeArgs, Vol
 	resp, err := client.stub.VolumeGetById(rpcCtx, pb.VolumeGetByIdRequest_builder{VolumeId: req.ID}.Build())
 	if isNotFound(err) {
 		// Deleted outside Pulumi: signal removal.
+		if err := notFoundOnImport("volume", req.ID, req.Inputs, req.State); err != nil {
+			return empty, err
+		}
 		return empty, nil
 	}
 	if err != nil {
