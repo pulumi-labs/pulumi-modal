@@ -198,6 +198,7 @@ func newProvider() (pgp.Provider, error) {
 			infer.Resource[*Proxy, ProxyArgs, ProxyState](&Proxy{}),
 			infer.Resource[*AppDeployment, AppDeploymentArgs, AppDeploymentState](&AppDeployment{}),
 			infer.Resource[*ServiceUser, ServiceUserArgs, ServiceUserState](&ServiceUser{}),
+			infer.Resource[*WorkspaceSettings, WorkspaceSettingsArgs, WorkspaceSettingsState](&WorkspaceSettings{}),
 			infer.Resource[*WebhookToken, WebhookTokenArgs, WebhookTokenState](&WebhookToken{}),
 		).
 		WithFunctions(
@@ -213,6 +214,7 @@ func newProvider() (pgp.Provider, error) {
 			infer.Function[*GetProxy, NamedLookupArgs, GetProxyResult](&GetProxy{}),
 			infer.Function[*GetAppDeployment, NamedLookupArgs, GetAppDeploymentResult](&GetAppDeployment{}),
 			infer.Function[*GetServiceUser, GetServiceUserArgs, GetServiceUserResult](&GetServiceUser{}),
+			infer.Function[*GetWorkspaceSettings, GetWorkspaceSettingsArgs, GetWorkspaceSettingsResult](&GetWorkspaceSettings{}),
 			infer.Function[*GetWebhookToken, GetWebhookTokenArgs, GetWebhookTokenResult](&GetWebhookToken{}),
 			infer.Function[*GetWorkspace, GetWorkspaceArgs, GetWorkspaceResult](&GetWorkspace{}),
 		).

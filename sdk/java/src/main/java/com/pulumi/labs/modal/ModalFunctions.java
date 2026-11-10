@@ -37,6 +37,8 @@ import com.pulumi.labs.modal.inputs.GetWebhookTokenArgs;
 import com.pulumi.labs.modal.inputs.GetWebhookTokenPlainArgs;
 import com.pulumi.labs.modal.inputs.GetWorkspaceArgs;
 import com.pulumi.labs.modal.inputs.GetWorkspacePlainArgs;
+import com.pulumi.labs.modal.inputs.GetWorkspaceSettingsArgs;
+import com.pulumi.labs.modal.inputs.GetWorkspaceSettingsPlainArgs;
 import com.pulumi.labs.modal.outputs.GetAppDeploymentResult;
 import com.pulumi.labs.modal.outputs.GetAppResult;
 import com.pulumi.labs.modal.outputs.GetClsResult;
@@ -51,6 +53,7 @@ import com.pulumi.labs.modal.outputs.GetServiceUserResult;
 import com.pulumi.labs.modal.outputs.GetVolumeResult;
 import com.pulumi.labs.modal.outputs.GetWebhookTokenResult;
 import com.pulumi.labs.modal.outputs.GetWorkspaceResult;
+import com.pulumi.labs.modal.outputs.GetWorkspaceSettingsResult;
 import java.util.concurrent.CompletableFuture;
 
 public final class ModalFunctions {
@@ -557,5 +560,54 @@ public final class ModalFunctions {
      */
     public static CompletableFuture<GetWorkspaceResult> getWorkspacePlain(GetWorkspacePlainArgs args, InvokeOptions options) {
         return Deployment.getInstance().invokeAsync("modal:index:getWorkspace", TypeShape.of(GetWorkspaceResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Read the settings of the Modal workspace the provider&#39;s token belongs to: its default environment and image builder version.
+     * 
+     */
+    public static Output<GetWorkspaceSettingsResult> getWorkspaceSettings() {
+        return getWorkspaceSettings(GetWorkspaceSettingsArgs.Empty, InvokeOptions.Empty);
+    }
+    /**
+     * Read the settings of the Modal workspace the provider&#39;s token belongs to: its default environment and image builder version.
+     * 
+     */
+    public static CompletableFuture<GetWorkspaceSettingsResult> getWorkspaceSettingsPlain() {
+        return getWorkspaceSettingsPlain(GetWorkspaceSettingsPlainArgs.Empty, InvokeOptions.Empty);
+    }
+    /**
+     * Read the settings of the Modal workspace the provider&#39;s token belongs to: its default environment and image builder version.
+     * 
+     */
+    public static Output<GetWorkspaceSettingsResult> getWorkspaceSettings(GetWorkspaceSettingsArgs args) {
+        return getWorkspaceSettings(args, InvokeOptions.Empty);
+    }
+    /**
+     * Read the settings of the Modal workspace the provider&#39;s token belongs to: its default environment and image builder version.
+     * 
+     */
+    public static CompletableFuture<GetWorkspaceSettingsResult> getWorkspaceSettingsPlain(GetWorkspaceSettingsPlainArgs args) {
+        return getWorkspaceSettingsPlain(args, InvokeOptions.Empty);
+    }
+    /**
+     * Read the settings of the Modal workspace the provider&#39;s token belongs to: its default environment and image builder version.
+     * 
+     */
+    public static Output<GetWorkspaceSettingsResult> getWorkspaceSettings(GetWorkspaceSettingsArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getWorkspaceSettings", TypeShape.of(GetWorkspaceSettingsResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Read the settings of the Modal workspace the provider&#39;s token belongs to: its default environment and image builder version.
+     * 
+     */
+    public static Output<GetWorkspaceSettingsResult> getWorkspaceSettings(GetWorkspaceSettingsArgs args, InvokeOutputOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getWorkspaceSettings", TypeShape.of(GetWorkspaceSettingsResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Read the settings of the Modal workspace the provider&#39;s token belongs to: its default environment and image builder version.
+     * 
+     */
+    public static CompletableFuture<GetWorkspaceSettingsResult> getWorkspaceSettingsPlain(GetWorkspaceSettingsPlainArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invokeAsync("modal:index:getWorkspaceSettings", TypeShape.of(GetWorkspaceSettingsResult.class), args, Utilities.withVersion(options));
     }
 }

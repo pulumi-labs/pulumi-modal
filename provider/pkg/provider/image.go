@@ -96,6 +96,7 @@ func (r *Image) Annotate(a infer.Annotator) {
 	a.Describe(&r, "A Modal Image built from a registry base image plus optional Dockerfile commands, optionally "+
 		"published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret "+
 		"or environment builds a new Image and replaces this one (the old Image is deleted first, because Modal image IDs are content-addressed and a rebuild of an identical definition would otherwise reuse the Image being replaced). An imported Image keeps whatever it was built from, and its environment is detected from where it is published. "+
+		"Modal image IDs are content-addressed, so two Images with the same definition share one ID. Destroying one keeps the image while any environment still publishes a name for it; two unpublished Images with the same definition cannot be told apart, so destroying either deletes the image the other uses. "+
 		"See https://modal.com/docs/guide/images.")
 }
 
@@ -413,7 +414,9 @@ func listImageTags(ctx context.Context, client *modalClient, environment, imageI
 //     provider config or MODAL_ENVIRONMENT) wins when the image is published there;
 //  2. otherwise the single environment the image is published in;
 //  3. several environments and none configured is an error, since guessing
-//     would make the next preview plan a replacement;
+//     would make the next preview plan a replacement; a configured environment
+//     the image is not published in is an error that names it (the user is never
+//     told to set what is already set);
 //  4. an unpublished image has no environment on Modal's side, so the
 //     configured or account default environment is recorded.
 func detectImageEnvironment(ctx context.Context, client *modalClient, imageID string, cfg ProviderConfig) (string, []string, error) {
@@ -440,12 +443,18 @@ func detectImageEnvironment(ctx context.Context, client *modalClient, imageID st
 			found[item.GetName()] = published
 		}
 	}
+	explicit := resolveEnv(nil, cfg)
+	if _, ok := found[explicit]; explicit != "" && ok {
+		return explicit, found[explicit], nil
+	}
 	switch len(found) {
 	case 0:
 		return effectiveEnvironment(ctx, client, nil, cfg), nil, nil
 	case 1:
-		for env, published := range found {
-			return env, published, nil
+		if explicit == "" {
+			for env, published := range found {
+				return env, published, nil
+			}
 		}
 	}
 	names := make([]string, 0, len(found))
@@ -453,7 +462,12 @@ func detectImageEnvironment(ctx context.Context, client *modalClient, imageID st
 		names = append(names, env)
 	}
 	slices.Sort(names)
-	return "", nil, fmt.Errorf("modal: image %q is published in several environments (%s); "+
+	if explicit != "" {
+		return "", nil, fmt.Errorf("modal: image %q is not published in the configured environment %q (from modal:environment, MODAL_ENVIRONMENT or the profile); "+
+			"it is published in: %s. Configure one of those environments and retry the import",
+			imageID, explicit, strings.Join(names, ", "))
+	}
+	return "", nil, fmt.Errorf("modal: image %q is published in several environments (%s) and no environment is configured; "+
 		"set the modal:environment provider config (or MODAL_ENVIRONMENT) to the environment to manage and retry the import",
 		imageID, strings.Join(names, ", "))
 }
@@ -529,7 +543,9 @@ func deleteImageName(ctx context.Context, client *modalClient, imageID, tag, env
 	return nil
 }
 
-// Delete removes the published name (if it still points here) and the image.
+// Delete removes the published name (if it still points here) and, unless an
+// environment still publishes a name for it, the image. Two unpublished Images
+// with the same definition still share one ID and cannot be told apart.
 func (r *Image) Delete(ctx context.Context, req infer.DeleteRequest[ImageState]) (infer.DeleteResponse, error) {
 	cfg := infer.GetConfig[ProviderConfig](ctx)
 	client, err := clientFor(cfg, req.State.TokenID, req.State.TokenSecret)
@@ -545,8 +561,43 @@ func (r *Image) Delete(ctx context.Context, req infer.DeleteRequest[ImageState])
 			return infer.DeleteResponse{}, err
 		}
 	}
+	// Image IDs are content-addressed: two Images with the same definition share
+	// one ID, so deleting the image behind one of them would delete the other's
+	// (#1783). Keep the image while any environment still publishes a name for it.
+	keptBy, err := environmentsPublishing(rpcCtx, client, req.ID)
+	if err != nil {
+		return infer.DeleteResponse{}, fmt.Errorf("%w; the image was not deleted, retry the destroy", err)
+	}
+	if len(keptBy) > 0 {
+		pgp.GetLogger(ctx).Warningf("modal: image %q is kept because it is still published in environment(s) %s "+
+			"(another Image with the same definition shares its ID); only this Image's name was removed",
+			req.ID, strings.Join(keptBy, ", "))
+		return infer.DeleteResponse{}, nil
+	}
 	if _, err := client.stub.ImageDelete(rpcCtx, pb.ImageDeleteRequest_builder{ImageId: req.ID}.Build()); err != nil && !isNotFound(err) {
 		return infer.DeleteResponse{}, fmt.Errorf("modal: delete image %q: %w", req.ID, err)
 	}
 	return infer.DeleteResponse{}, nil
+}
+
+// environmentsPublishing returns the environments that still publish a name for
+// the image. A failure to list is an error, never an empty answer: deleting an
+// image another resource still uses loses data.
+func environmentsPublishing(ctx context.Context, client *modalClient, imageID string) ([]string, error) {
+	envs, err := client.stub.EnvironmentList(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, fmt.Errorf("modal: list environments to check whether image %q is still published: %w", imageID, err)
+	}
+	var found []string
+	for _, item := range envs.GetItems() {
+		tags, err := listImageTags(ctx, client, item.GetName(), imageID)
+		if err != nil {
+			return nil, err
+		}
+		if len(tags) > 0 {
+			found = append(found, item.GetName())
+		}
+	}
+	slices.Sort(found)
+	return found, nil
 }

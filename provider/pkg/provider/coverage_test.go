@@ -419,6 +419,45 @@ func TestImage_ImportInSeveralEnvironmentsNeedsTheEnvironmentConfigured(t *testi
 	require.Equal(t, "b:latest", getStr(t, imp.Inputs, "name"))
 }
 
+// The reporter of #1673 configured the account's default environment ("main")
+// through modal:environment and through MODAL_ENVIRONMENT; both must pick it.
+func TestImage_ImportInSeveralEnvironmentsHonoursTheDefaultEnvironment(t *testing.T) {
+	for _, via := range []string{"config", "env"} {
+		t.Run(via, func(t *testing.T) {
+			fake, addr := startFakeModal(t)
+			fake.mu.Lock()
+			fake.images["im-both"] = &fakeImage{id: "im-both", env: "main"}
+			fake.tags["main/a:latest"] = "im-both"
+			fake.tags["other/b:latest"] = "im-both"
+			fake.mu.Unlock()
+			urn := modalUrn("Image", "img")
+
+			s := serverFor(t, addr, "main")
+			if via == "env" {
+				t.Setenv("MODAL_ENVIRONMENT", "main")
+				s = serverForEnvDefaults(t, addr)
+			}
+			imp, err := s.Read(pgp.ReadRequest{ID: "im-both", Urn: urn})
+			require.NoError(t, err)
+			require.Equal(t, "main", getStr(t, imp.Properties, "environment"))
+			require.Equal(t, "a:latest", getStr(t, imp.Inputs, "name"))
+		})
+	}
+}
+
+func TestImage_ImportWithAConfiguredEnvironmentTheImageIsNotPublishedIn(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	fake.mu.Lock()
+	fake.images["im-both"] = &fakeImage{id: "im-both", env: "main"}
+	fake.tags["main/a:latest"] = "im-both"
+	fake.tags["other/b:latest"] = "im-both"
+	fake.mu.Unlock()
+	s := serverFor(t, addr, "third")
+	_, err := s.Read(pgp.ReadRequest{ID: "im-both", Urn: modalUrn("Image", "img")})
+	require.ErrorContains(t, err, `not published in the configured environment "third"`)
+	require.ErrorContains(t, err, "published in: main, other")
+}
+
 func TestImage_ImportOfAnUnpublishedImageRecordsTheDefaultEnvironment(t *testing.T) {
 	fake, addr := startFakeModal(t)
 	s := serverFor(t, addr, "")

@@ -222,3 +222,51 @@ func TestImage_DeleteNameInNonDefaultEnvironmentLeavesTheDefaultEnvironmentName(
 	require.NotContains(t, fake.tags, "other/shared:latest")
 	require.Equal(t, "im-main", fake.tags["main/shared:latest"], "the default environment's name must survive")
 }
+
+// Image IDs are content-addressed, so two Images with one definition in two
+// environments share an ID. Destroying one must not delete the other's image
+// (#1783).
+func TestImage_DeleteKeepsAnImageAnotherEnvironmentStillPublishes(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	urn := modalUrn("Image", "img")
+	fake.mu.Lock()
+	fake.images["im-shared"] = &fakeImage{id: "im-shared", env: "main"}
+	fake.tags["main/shared:latest"] = "im-shared"
+	fake.tags["other/shared:latest"] = "im-shared"
+	fake.mu.Unlock()
+	mainProps := pm(map[string]property.Value{"name": str("shared"), "environment": str("main"), "imageId": str("im-shared")})
+	otherProps := pm(map[string]property.Value{"name": str("shared"), "environment": str("other"), "imageId": str("im-shared")})
+
+	require.NoError(t, s.Delete(pgp.DeleteRequest{ID: "im-shared", Urn: urn, Properties: mainProps}))
+	fake.mu.Lock()
+	require.Contains(t, fake.images, "im-shared", "the other environment still publishes it")
+	require.NotContains(t, fake.tags, "main/shared:latest")
+	require.Equal(t, "im-shared", fake.tags["other/shared:latest"])
+	fake.mu.Unlock()
+
+	// The last Image to go takes the image with it.
+	require.NoError(t, s.Delete(pgp.DeleteRequest{ID: "im-shared", Urn: urn, Properties: otherProps}))
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	require.NotContains(t, fake.images, "im-shared")
+	require.Empty(t, fake.tags)
+}
+
+// If the environments cannot be listed the delete fails and the image stays.
+func TestImage_DeleteFailsSafeWhenEnvironmentsCannotBeListed(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	fake.mu.Lock()
+	fake.images["im-shared"] = &fakeImage{id: "im-shared", env: "main"}
+	fake.tags["main/shared:latest"] = "im-shared"
+	fake.failEnvList = true
+	fake.mu.Unlock()
+	props := pm(map[string]property.Value{"name": str("shared"), "environment": str("main"), "imageId": str("im-shared")})
+
+	err := s.Delete(pgp.DeleteRequest{ID: "im-shared", Urn: modalUrn("Image", "img"), Properties: props})
+	require.ErrorContains(t, err, "the image was not deleted")
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	require.Contains(t, fake.images, "im-shared")
+}

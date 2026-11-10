@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-10
+
+### Added
+
+- `getWorkspaceSettings` lookup and `WorkspaceSettings` resource (#1537): the settings singleton of the workspace the API token belongs to. `defaultEnvironment` (`WorkspaceSetDefaultEnvironment`) and `imageBuilderVersion` (`WorkspaceSetImageBuilderVersion`) update in place, each only when it changed; at least one must be set. The ID and import ID are the workspace ID (a token of another workspace reports it as missing). A refresh reads back the settings the program manages (all of them on import); an unset setting is never a diff. Modal has no call that unsets either setting, so destroy and removing a setting leave the workspace as it is. Declare it once per workspace. `WorkspaceSetDefaultEnvironmentSettings` (block unauthenticated resources) is not modelled because the settings read does not return it. Additive, not breaking; fake control plane tests only, not verified against a live workspace.
+
+### Fixed
+
+- `Image`: destroying an Image no longer deletes the image another Image still uses. Modal image IDs are content-addressed, so two Images with the same definition share one ID, and destroying one of two same-name Images in different environments deleted the shared image and left the other Image pointing at nothing. Delete now removes this Image's name, then checks every environment and keeps the image while any still publishes a name for it (the provider logs which). If the environments cannot be listed the destroy fails and deletes nothing, so retry it. Remaining limitation: two unpublished Images with the same definition still share an ID and cannot be told apart, so destroying either deletes the image the other uses; publish a `name` to avoid it. Mirror issue https://github.com/pulumi-labs/pulumi-modal/issues/26 (#1783).
+- `Image`: importing an Image that is published in several environments now honours the configured environment in every case. `MODAL_ENVIRONMENT` was read only through the config default pass, so a provider configured without it ignored the variable and the import failed asking the user to set it; it is now read directly for every resource, matching the documented precedence (resource, provider config, `MODAL_ENVIRONMENT`, profile). The configured environment is chosen whenever the image is published there, and when it is not, the error names the configured environment and where the image is published instead of telling the user to set what they already set. Mirror issue https://github.com/pulumi-labs/pulumi-modal/issues/22 (#1673). The `modal:environment` stack-config path passes in unit tests; if it still fails on a live import the new error shows the environment the provider received.
+
 ## [0.5.2] - 2026-11-09
 
 ### Fixed

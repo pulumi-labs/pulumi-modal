@@ -62,6 +62,23 @@ func serverFor(t *testing.T, addr, environment string) integration.Server {
 	return s
 }
 
+// serverForEnvDefaults is serverFor without resetting MODAL_ENVIRONMENT or the config's
+// environment, so the environment variable default is what applies.
+func serverForEnvDefaults(t *testing.T, addr string) integration.Server {
+	t.Helper()
+	p, err := New()
+	require.NoError(t, err)
+	s, err := integration.NewServer(t.Context(), "modal", semver.MustParse("0.0.1"), integration.WithProvider(p))
+	require.NoError(t, err)
+	cfg := map[string]property.Value{
+		"tokenId":     str("ak-test"),
+		"tokenSecret": str("as-test"),
+		"serverAddr":  str(addr),
+	}
+	require.NoError(t, s.Configure(pgp.ConfigureRequest{Args: pm(cfg)}))
+	return s
+}
+
 func getStr(t *testing.T, m property.Map, key string) string {
 	t.Helper()
 	v, ok := m.GetOk(key)

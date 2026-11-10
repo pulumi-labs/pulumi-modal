@@ -69,9 +69,14 @@ type fakeModal struct {
 	proxies       map[string]*fakeProxy
 	serviceUsers  map[string]*fakeServiceUser
 	webhookTokens map[string]*fakeWebhookToken
+	// workspace settings; empty means the defaults the fake reports.
+	wsDefaultEnv, wsBuilder string
+	wsSetCalls              []string
+	wsBuilderErr            bool
 
 	// Failure injection.
 	failPublish bool
+	failEnvList bool
 	failSetTags bool
 	// failAppLookup and failLayout break the read-back after a deploy.
 	failAppLookup bool

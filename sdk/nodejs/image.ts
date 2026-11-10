@@ -5,7 +5,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as utilities from "./utilities";
 
 /**
- * A Modal Image built from a registry base image plus optional Dockerfile commands, optionally published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret or environment builds a new Image and replaces this one (the old Image is deleted first, because Modal image IDs are content-addressed and a rebuild of an identical definition would otherwise reuse the Image being replaced). An imported Image keeps whatever it was built from, and its environment is detected from where it is published. See https://modal.com/docs/guide/images.
+ * A Modal Image built from a registry base image plus optional Dockerfile commands, optionally published under a stable name. Changing the base image, commands, environment variables, GPU, registry secret or environment builds a new Image and replaces this one (the old Image is deleted first, because Modal image IDs are content-addressed and a rebuild of an identical definition would otherwise reuse the Image being replaced). An imported Image keeps whatever it was built from, and its environment is detected from where it is published. Modal image IDs are content-addressed, so two Images with the same definition share one ID. Destroying one keeps the image while any environment still publishes a name for it; two unpublished Images with the same definition cannot be told apart, so destroying either deletes the image the other uses. See https://modal.com/docs/guide/images.
  */
 export class Image extends pulumi.CustomResource {
     /**

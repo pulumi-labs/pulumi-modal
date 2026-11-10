@@ -73,6 +73,9 @@ func (f *fakeModal) EnvironmentList(context.Context, *emptypb.Empty) (*pb.Enviro
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.envListed++
+	if f.failEnvList {
+		return nil, status.Error(codes.Unavailable, "environments unavailable")
+	}
 	var items []*pb.EnvironmentListItem
 	for _, e := range f.envs {
 		items = append(items, f.envItem(e))
@@ -511,5 +514,30 @@ func (f *fakeModal) TokenInfoGet(context.Context, *pb.TokenInfoGetRequest) (*pb.
 }
 
 func (f *fakeModal) WorkspaceSettings(context.Context, *emptypb.Empty) (*pb.WorkspaceSettingsResponse, error) {
-	return pb.WorkspaceSettingsResponse_builder{DefaultEnvironmentName: "main", ImageBuilderVersion: "2024.10"}.Build(), nil
+	env, builder := f.wsDefaultEnv, f.wsBuilder
+	if env == "" {
+		env = "main"
+	}
+	if builder == "" {
+		builder = "2024.10"
+	}
+	return pb.WorkspaceSettingsResponse_builder{DefaultEnvironmentName: env, ImageBuilderVersion: builder}.Build(), nil
+}
+
+func (f *fakeModal) WorkspaceSetDefaultEnvironment(_ context.Context, req *pb.WorkspaceSetDefaultEnvironmentRequest) (*emptypb.Empty, error) {
+	if f.envByName(req.GetEnvironmentName()) == nil && req.GetEnvironmentName() != "main" {
+		return nil, status.Error(codes.NotFound, "environment not found")
+	}
+	f.wsDefaultEnv = req.GetEnvironmentName()
+	f.wsSetCalls = append(f.wsSetCalls, "env")
+	return &emptypb.Empty{}, nil
+}
+
+func (f *fakeModal) WorkspaceSetImageBuilderVersion(_ context.Context, req *pb.WorkspaceSetImageBuilderVersionRequest) (*pb.WorkspaceSetImageBuilderVersionResponse, error) {
+	if f.wsBuilderErr {
+		return nil, status.Error(codes.InvalidArgument, "unknown image builder version")
+	}
+	f.wsBuilder = req.GetNewImageBuilderVersion()
+	f.wsSetCalls = append(f.wsSetCalls, "builder")
+	return pb.WorkspaceSetImageBuilderVersionResponse_builder{ImageBuilderVersion: f.wsBuilder}.Build(), nil
 }
