@@ -47,6 +47,11 @@ resources:
     test: true
     update: null
     cost: none
+  - type: modal:index:WorkspaceSettings
+    test: false
+    reason: it changes workspace-wide behaviour (which environment clients without one use, which builder version every image uses) and Modal cannot unset either setting, so an automated QA run must not touch the QA workspace; the set, read-back, import and drift flows are covered by the fake control plane tests. Verify by hand with the values the workspace already has.
+    update: imageBuilderVersion
+    cost: none
   - type: modal:index:WebhookToken
     test: true
     update: name
@@ -78,6 +83,8 @@ functions:
     test: true
   - name: getWorkspace
     test: true
+  - name: getWorkspaceSettings
+    test: true
   - name: getServiceUser
     test: true
   - name: getWebhookToken
@@ -95,10 +102,12 @@ functions:
     test: false
     reason: static IPs need a paid plan and QA does not run the Proxy resource, so QA has nothing to look up
 regressions:
+  - "WorkspaceSettings: verify live, with the values the workspace already reports (getWorkspace), that WorkspaceSetDefaultEnvironment and WorkspaceSetImageBuilderVersion accept them, that the environment name must exist, that WorkspaceSettings (read) reflects a change immediately, and that a token of workspace A reports the import ID of workspace B as missing. Import ID is the workspace ID from getWorkspace."
   - "#1715 pulumi import of an ID that does not exist (for example modal:index:Volume v vo-nope, Secret, Queue, Dict, App ap-nope) fails with 'does not exist' and leaves nothing in state; a refresh of a resource deleted outside Pulumi still drops it from state"
   - "#1674 import an Image (pulumi import modal:index:Image x im-...), then pulumi up once: the first update adopts baseImage and dockerfileCommands in place (no replace, same imageId); then change a dockerfileCommands entry: pulumi preview --diff plans a replace and the next up yields a new imageId"
   - "#1612 import an Image published in a non-default environment (pulumi import modal:index:Image x im-...): the state and inputs record that environment and the next preview plans no replace; an Image published in two environments fails the import naming both"
   - "#1613 change an Image's dockerfileCommands or baseImage and run pulumi up: the new Image exists afterwards (imageId differs from before, getImage by name returns it); with the same name in two environments, deleting one leaves the other's name"
+  - "#1783 create two Images with the same name and definition, one with environment set to another environment and one in the default environment, then pulumi destroy only one of them (pulumi destroy --target <urn>): the other still exists, its name resolves with getImage and pulumi preview --expect-no-changes shows no changes; destroying the second then deletes the image"
   - "#1577 import then inspect the stack state (pulumi stack export --show-secrets off): every property the schema marks secret on an imported resource is a secret, never plaintext; a refresh of a resource created by the program keeps them secret"
   - "#1418/#1440 a Volume with fsVersion set is not replaced on a second up"
   - "#1464 App create succeeds (no 'Invalid object creation type') and a duplicate name still fails"

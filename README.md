@@ -31,6 +31,7 @@ This is the only IaC provider for Modal, built natively on `pulumi-go-provider/i
 | `modal:index:Image` | A Modal Image built from a registry base image plus Dockerfile commands, optionally published under a stable name. Build input changes replace it; the published name updates in place. |
 | `modal:index:Proxy` | A Modal Proxy: static outbound IP addresses for Functions that call allow-listed services (a paid Modal plan feature). `ipCount` adds or releases addresses in place; name, environment and region force-replace. |
 | `modal:index:ServiceUser` | A Modal service user: a non-human workspace identity with its own API token, for CI/CD. The token secret is a write-once secret output; every input change replaces the service user and rotates the token. |
+| `modal:index:WorkspaceSettings` | The settings of the workspace the API token belongs to: `defaultEnvironment` and `imageBuilderVersion`, both updated in place. A singleton (import ID is the workspace ID); an unset setting is left as is, and Modal cannot unset either, so destroy leaves the workspace unchanged. |
 | `modal:index:WebhookToken` | A proxy auth token (the `Modal-Key` and `Modal-Secret` pair for web endpoints that require proxy auth). The secret is a write-once secret output; `name` updates in place, `scoped` replaces. Attaching a scoped token to environments is not modelled yet. |
 | `modal:index:AppDeployment` | Deploys a Modal App from a Python app file by running `modal deploy` and manages the deployed App: redeploys in place when the source changes, reports its Functions and web endpoint URLs, and stops it on delete. Needs the Modal CLI on the machine that runs Pulumi. |
 
@@ -50,6 +51,7 @@ Existing objects, including ones created outside Pulumi, can be referenced witho
 | `modal:index:getFunction` | A deployed Function's ID and web URL. |
 | `modal:index:getCls` | A deployed Cls's ID and method names. |
 | `modal:index:getProxy` | A Proxy's ID, region and static IPs. |
+| `modal:index:getWorkspaceSettings` | The workspace's default environment and image builder version. |
 | `modal:index:getServiceUser` | A service user's ID, token ID and scope (never the token secret). |
 | `modal:index:getWebhookToken` | A proxy auth token's ID, name and scope by name (never the secret). |
 | `modal:index:getAppDeployment` | A deployed App's ID, Functions and web endpoint URLs by name. |

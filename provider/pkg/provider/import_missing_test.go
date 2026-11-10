@@ -28,17 +28,18 @@ func TestImportOfMissingObjectFails(t *testing.T) {
 	_, addr := startFakeModal(t)
 	s := serverFor(t, addr, "")
 	ids := map[string]string{
-		"Secret":        "st-nope",
-		"Volume":        "vo-nope",
-		"Queue":         "qu-nope",
-		"Dict":          "di-nope",
-		"Environment":   "nope",
-		"App":           "ap-nope",
-		"Image":         "im-nope",
-		"Proxy":         "pr-nope",
-		"AppDeployment": "ap-nope",
-		"ServiceUser":   "nope",
-		"WebhookToken":  "nope",
+		"Secret":            "st-nope",
+		"Volume":            "vo-nope",
+		"Queue":             "qu-nope",
+		"Dict":              "di-nope",
+		"Environment":       "nope",
+		"App":               "ap-nope",
+		"Image":             "im-nope",
+		"Proxy":             "pr-nope",
+		"AppDeployment":     "ap-nope",
+		"ServiceUser":       "nope",
+		"WebhookToken":      "nope",
+		"WorkspaceSettings": "ac-nope",
 	}
 	for typ, id := range ids {
 		_, err := s.Read(pgp.ReadRequest{ID: id, Urn: modalUrn(typ, "gone")})

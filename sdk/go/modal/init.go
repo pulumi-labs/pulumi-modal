@@ -43,6 +43,8 @@ func (m *module) Construct(ctx *pulumi.Context, name, typ, urn string) (r pulumi
 		r = &Volume{}
 	case "modal:index:WebhookToken":
 		r = &WebhookToken{}
+	case "modal:index:WorkspaceSettings":
+		r = &WorkspaceSettings{}
 	default:
 		return nil, fmt.Errorf("unknown resource type: %s", typ)
 	}

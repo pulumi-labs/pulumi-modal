@@ -95,6 +95,11 @@ export const getWorkspace: typeof import("./getWorkspace").getWorkspace = null a
 export const getWorkspaceOutput: typeof import("./getWorkspace").getWorkspaceOutput = null as any;
 utilities.lazyLoad(exports, ["getWorkspace","getWorkspaceOutput"], () => require("./getWorkspace"));
 
+export { GetWorkspaceSettingsArgs, GetWorkspaceSettingsResult } from "./getWorkspaceSettings";
+export const getWorkspaceSettings: typeof import("./getWorkspaceSettings").getWorkspaceSettings = null as any;
+export const getWorkspaceSettingsOutput: typeof import("./getWorkspaceSettings").getWorkspaceSettingsOutput = null as any;
+utilities.lazyLoad(exports, ["getWorkspaceSettings","getWorkspaceSettingsOutput"], () => require("./getWorkspaceSettings"));
+
 export { ImageArgs } from "./image";
 export type Image = import("./image").Image;
 export const Image: typeof import("./image").Image = null as any;
@@ -135,6 +140,11 @@ export type WebhookToken = import("./webhookToken").WebhookToken;
 export const WebhookToken: typeof import("./webhookToken").WebhookToken = null as any;
 utilities.lazyLoad(exports, ["WebhookToken"], () => require("./webhookToken"));
 
+export { WorkspaceSettingsArgs } from "./workspaceSettings";
+export type WorkspaceSettings = import("./workspaceSettings").WorkspaceSettings;
+export const WorkspaceSettings: typeof import("./workspaceSettings").WorkspaceSettings = null as any;
+utilities.lazyLoad(exports, ["WorkspaceSettings"], () => require("./workspaceSettings"));
+
 
 // Export sub-modules:
 import * as config from "./config";
@@ -169,6 +179,8 @@ const _module = {
                 return new Volume(name, <any>undefined, { urn })
             case "modal:index:WebhookToken":
                 return new WebhookToken(name, <any>undefined, { urn })
+            case "modal:index:WorkspaceSettings":
+                return new WorkspaceSettings(name, <any>undefined, { urn })
             default:
                 throw new Error(`unknown resource type ${type}`);
         }

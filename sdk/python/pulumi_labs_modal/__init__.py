@@ -24,6 +24,7 @@ from .get_service_user import *
 from .get_volume import *
 from .get_webhook_token import *
 from .get_workspace import *
+from .get_workspace_settings import *
 from .image import *
 from .provider import *
 from .proxy import *
@@ -32,6 +33,7 @@ from .secret import *
 from .service_user import *
 from .volume import *
 from .webhook_token import *
+from .workspace_settings import *
 
 # Make subpackages available:
 if typing.TYPE_CHECKING:
@@ -58,7 +60,8 @@ _utilities.register(
    "modal:index:Secret": "Secret",
    "modal:index:ServiceUser": "ServiceUser",
    "modal:index:Volume": "Volume",
-   "modal:index:WebhookToken": "WebhookToken"
+   "modal:index:WebhookToken": "WebhookToken",
+   "modal:index:WorkspaceSettings": "WorkspaceSettings"
   }
  }
 ]

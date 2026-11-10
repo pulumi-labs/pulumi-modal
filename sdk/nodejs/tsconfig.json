@@ -39,6 +39,7 @@
         "getVolume.ts",
         "getWebhookToken.ts",
         "getWorkspace.ts",
+        "getWorkspaceSettings.ts",
         "image.ts",
         "index.ts",
         "provider.ts",
@@ -48,6 +49,7 @@
         "serviceUser.ts",
         "utilities.ts",
         "volume.ts",
-        "webhookToken.ts"
+        "webhookToken.ts",
+        "workspaceSettings.ts"
     ]
 }

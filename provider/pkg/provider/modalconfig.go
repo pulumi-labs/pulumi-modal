@@ -198,6 +198,12 @@ func resolveEnv(resourceLevel *string, cfg ProviderConfig) string {
 	if env := resolveStr(resourceLevel, cfg.Environment); env != "" {
 		return env
 	}
+	// The config default for MODAL_ENVIRONMENT is applied by CheckConfig; read the
+	// variable again so a provider that was configured without that default
+	// pass (#1673) still honours it.
+	if env := os.Getenv("MODAL_ENVIRONMENT"); env != "" {
+		return env
+	}
 	return profileEnvironment(cfg)
 }
 
