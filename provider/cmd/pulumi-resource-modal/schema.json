@@ -84,6 +84,30 @@
       }
     }
   },
+  "types": {
+    "modal:index:DomainDNSRecord": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The record's name (host)."
+        },
+        "type": {
+          "type": "string",
+          "description": "The DNS record type: a, txt or cname."
+        },
+        "value": {
+          "type": "string",
+          "description": "The record's value."
+        }
+      },
+      "type": "object",
+      "required": [
+        "type",
+        "name",
+        "value"
+      ]
+    }
+  },
   "provider": {
     "properties": {
       "environment": {
@@ -440,6 +464,82 @@
       },
       "requiredInputs": [
         "name"
+      ]
+    },
+    "modal:index:Domain": {
+      "description": "A custom domain registered with the Modal workspace. Create the DNS records listed in dnsRecords at your DNS provider, then set verify to true so Modal checks them and issues the certificate. Modal has no call that deletes a domain: destroying this resource only removes it from Pulumi state and the domain stays registered in Modal (remove it in the Modal dashboard or through Modal support). Creating a domain that is already registered adopts it. See https://modal.com/docs/guide/custom-domain.",
+      "properties": {
+        "certificateStatus": {
+          "type": "string",
+          "description": "The certificate status: `pending`, `issued`, `failed` or `revoked`."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "When the domain was registered, as an RFC 3339 timestamp."
+        },
+        "dnsRecords": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/modal:index:DomainDNSRecord"
+          },
+          "description": "The DNS records to create at the domain's DNS provider so Modal can verify ownership and route traffic."
+        },
+        "domainId": {
+          "type": "string",
+          "description": "The Modal-assigned identifier of the domain."
+        },
+        "domainName": {
+          "type": "string",
+          "description": "The fully qualified domain name to register, such as `api.example.com`. Changing this forces a new resource."
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "True once the domain's certificate has been issued."
+        },
+        "verify": {
+          "type": "boolean",
+          "description": "When true, Modal checks the domain's DNS records and issues its certificate. The check runs on create, update and refresh until the certificate is issued. Defaults to false."
+        }
+      },
+      "required": [
+        "domainName",
+        "domainId",
+        "certificateStatus",
+        "dnsRecords",
+        "verified"
+      ],
+      "inputProperties": {
+        "domainName": {
+          "type": "string",
+          "description": "The fully qualified domain name to register, such as `api.example.com`. Changing this forces a new resource."
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        },
+        "verify": {
+          "type": "boolean",
+          "description": "When true, Modal checks the domain's DNS records and issues its certificate. The check runs on create, update and refresh until the certificate is issued. Defaults to false."
+        }
+      },
+      "requiredInputs": [
+        "domainName"
       ]
     },
     "modal:index:Environment": {
@@ -1289,6 +1389,57 @@
           "dictId",
           "name",
           "environment"
+        ],
+        "type": "object"
+      }
+    },
+    "modal:index:getDomain": {
+      "description": "Look up a custom domain registered with the Modal workspace by name or ID. Use the Domain resource to register one.",
+      "inputs": {
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "description": "The Modal-assigned domain ID. Set this or domainName, not both."
+          },
+          "domainName": {
+            "type": "string",
+            "description": "The domain's fully qualified name. Set this or domainId, not both."
+          }
+        },
+        "type": "object"
+      },
+      "outputs": {
+        "properties": {
+          "certificateStatus": {
+            "description": "The certificate status: `pending`, `issued`, `failed` or `revoked`.",
+            "type": "string"
+          },
+          "dnsRecords": {
+            "description": "The DNS records the domain needs.",
+            "items": {
+              "$ref": "#/types/modal:index:DomainDNSRecord"
+            },
+            "type": "array"
+          },
+          "domainId": {
+            "description": "The Modal-assigned identifier of the domain.",
+            "type": "string"
+          },
+          "domainName": {
+            "description": "The domain's fully qualified name.",
+            "type": "string"
+          },
+          "verified": {
+            "description": "True once the certificate has been issued.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "domainId",
+          "domainName",
+          "certificateStatus",
+          "verified",
+          "dnsRecords"
         ],
         "type": "object"
       }

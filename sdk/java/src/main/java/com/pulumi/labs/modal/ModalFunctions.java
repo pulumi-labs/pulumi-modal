@@ -17,6 +17,8 @@ import com.pulumi.labs.modal.inputs.GetClsArgs;
 import com.pulumi.labs.modal.inputs.GetClsPlainArgs;
 import com.pulumi.labs.modal.inputs.GetDictArgs;
 import com.pulumi.labs.modal.inputs.GetDictPlainArgs;
+import com.pulumi.labs.modal.inputs.GetDomainArgs;
+import com.pulumi.labs.modal.inputs.GetDomainPlainArgs;
 import com.pulumi.labs.modal.inputs.GetEnvironmentArgs;
 import com.pulumi.labs.modal.inputs.GetEnvironmentPlainArgs;
 import com.pulumi.labs.modal.inputs.GetFunctionArgs;
@@ -43,6 +45,7 @@ import com.pulumi.labs.modal.outputs.GetAppDeploymentResult;
 import com.pulumi.labs.modal.outputs.GetAppResult;
 import com.pulumi.labs.modal.outputs.GetClsResult;
 import com.pulumi.labs.modal.outputs.GetDictResult;
+import com.pulumi.labs.modal.outputs.GetDomainResult;
 import com.pulumi.labs.modal.outputs.GetEnvironmentResult;
 import com.pulumi.labs.modal.outputs.GetFunctionResult;
 import com.pulumi.labs.modal.outputs.GetImageResult;
@@ -196,6 +199,55 @@ public final class ModalFunctions {
      */
     public static CompletableFuture<GetDictResult> getDictPlain(GetDictPlainArgs args, InvokeOptions options) {
         return Deployment.getInstance().invokeAsync("modal:index:getDict", TypeShape.of(GetDictResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a custom domain registered with the Modal workspace by name or ID. Use the Domain resource to register one.
+     * 
+     */
+    public static Output<GetDomainResult> getDomain() {
+        return getDomain(GetDomainArgs.Empty, InvokeOptions.Empty);
+    }
+    /**
+     * Look up a custom domain registered with the Modal workspace by name or ID. Use the Domain resource to register one.
+     * 
+     */
+    public static CompletableFuture<GetDomainResult> getDomainPlain() {
+        return getDomainPlain(GetDomainPlainArgs.Empty, InvokeOptions.Empty);
+    }
+    /**
+     * Look up a custom domain registered with the Modal workspace by name or ID. Use the Domain resource to register one.
+     * 
+     */
+    public static Output<GetDomainResult> getDomain(GetDomainArgs args) {
+        return getDomain(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up a custom domain registered with the Modal workspace by name or ID. Use the Domain resource to register one.
+     * 
+     */
+    public static CompletableFuture<GetDomainResult> getDomainPlain(GetDomainPlainArgs args) {
+        return getDomainPlain(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up a custom domain registered with the Modal workspace by name or ID. Use the Domain resource to register one.
+     * 
+     */
+    public static Output<GetDomainResult> getDomain(GetDomainArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getDomain", TypeShape.of(GetDomainResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a custom domain registered with the Modal workspace by name or ID. Use the Domain resource to register one.
+     * 
+     */
+    public static Output<GetDomainResult> getDomain(GetDomainArgs args, InvokeOutputOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getDomain", TypeShape.of(GetDomainResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a custom domain registered with the Modal workspace by name or ID. Use the Domain resource to register one.
+     * 
+     */
+    public static CompletableFuture<GetDomainResult> getDomainPlain(GetDomainPlainArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invokeAsync("modal:index:getDomain", TypeShape.of(GetDomainResult.class), args, Utilities.withVersion(options));
     }
     /**
      * Look up an existing Modal environment by name.

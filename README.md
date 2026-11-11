@@ -30,6 +30,7 @@ This is the only IaC provider for Modal, built natively on `pulumi-go-provider/i
 | `modal:index:App` | A named, empty Modal App (to ship code, use `AppDeployment`). Tags update in place; name and environment changes force-replace. |
 | `modal:index:Image` | A Modal Image built from a registry base image plus Dockerfile commands, optionally published under a stable name. Build input changes replace it; the published name updates in place. |
 | `modal:index:Proxy` | A Modal Proxy: static outbound IP addresses for Functions that call allow-listed services (a paid Modal plan feature). `ipCount` adds or releases addresses in place; name, environment and region force-replace. |
+| `modal:index:Domain` | A custom domain registered with the workspace. The `dnsRecords` output lists the DNS records to create; `verify` (in place) asks Modal to check them and issue the certificate. Changing `domainName` force-replaces. Modal cannot delete a domain: destroy only forgets it (it stays registered, remove it in the Modal dashboard), and creating an already registered name adopts it. |
 | `modal:index:ServiceUser` | A Modal service user: a non-human workspace identity with its own API token, for CI/CD. The token secret is a write-once secret output; every input change replaces the service user and rotates the token. |
 | `modal:index:WorkspaceSettings` | The settings of the workspace the API token belongs to: `defaultEnvironment` and `imageBuilderVersion`, both updated in place. A singleton (import ID is the workspace ID); an unset setting is left as is, and Modal cannot unset either, so destroy leaves the workspace unchanged. |
 | `modal:index:WebhookToken` | A proxy auth token (the `Modal-Key` and `Modal-Secret` pair for web endpoints that require proxy auth). The secret is a write-once secret output; `name` updates in place, `scoped` replaces. Attaching a scoped token to environments is not modelled yet. |
@@ -50,6 +51,7 @@ Existing objects, including ones created outside Pulumi, can be referenced witho
 | `modal:index:getImage` | A published Image's ID by `name[:tag]`. |
 | `modal:index:getFunction` | A deployed Function's ID and web URL. |
 | `modal:index:getCls` | A deployed Cls's ID and method names. |
+| `modal:index:getDomain` | A custom domain by name or ID: its ID, certificate status and DNS records. |
 | `modal:index:getProxy` | A Proxy's ID, region and static IPs. |
 | `modal:index:getWorkspaceSettings` | The workspace's default environment and image builder version. |
 | `modal:index:getServiceUser` | A service user's ID, token ID and scope (never the token secret). |
@@ -191,7 +193,7 @@ the workspace. `AppDeployment` runs the Modal CLI (`modal deploy`), because Moda
 accepts source code; the CLI and the app's Python dependencies must be installed where Pulumi runs, and an imported AppDeployment
 redeploys on its first update because Modal does not store the app file. There is no Sandbox resource (Sandboxes expire after at most 24 hours, so they would
 drift, and the persistent variant is not in the public SDK). [`research/coverage/modal.md`](../../../research/coverage/modal.md) classifies every Modal SDK service and
-RPC group, with the reason for each decision; Environment role bindings and the managed flag, proxy auth tokens, custom domains and workspace settings are planned.
+RPC group, with the reason for each decision; Environment role bindings and the managed flag, proxy auth tokens and workspace settings are planned.
 
 ## Example
 

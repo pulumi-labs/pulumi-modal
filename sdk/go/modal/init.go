@@ -27,6 +27,8 @@ func (m *module) Construct(ctx *pulumi.Context, name, typ, urn string) (r pulumi
 		r = &AppDeployment{}
 	case "modal:index:Dict":
 		r = &Dict{}
+	case "modal:index:Domain":
+		r = &Domain{}
 	case "modal:index:Environment":
 		r = &Environment{}
 	case "modal:index:Image":

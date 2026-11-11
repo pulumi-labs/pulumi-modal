@@ -9,11 +9,13 @@ import typing
 from .app import *
 from .app_deployment import *
 from .dict import *
+from .domain import *
 from .environment import *
 from .get_app import *
 from .get_app_deployment import *
 from .get_cls import *
 from .get_dict import *
+from .get_domain import *
 from .get_environment import *
 from .get_function import *
 from .get_image import *
@@ -34,6 +36,7 @@ from .service_user import *
 from .volume import *
 from .webhook_token import *
 from .workspace_settings import *
+from . import outputs
 
 # Make subpackages available:
 if typing.TYPE_CHECKING:
@@ -53,6 +56,7 @@ _utilities.register(
    "modal:index:App": "App",
    "modal:index:AppDeployment": "AppDeployment",
    "modal:index:Dict": "Dict",
+   "modal:index:Domain": "Domain",
    "modal:index:Environment": "Environment",
    "modal:index:Image": "Image",
    "modal:index:Proxy": "Proxy",

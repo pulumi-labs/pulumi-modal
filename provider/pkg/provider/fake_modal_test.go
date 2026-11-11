@@ -66,9 +66,11 @@ type fakeModal struct {
 	// imageByContent maps an image definition to the ID it was built with.
 	imageByContent map[string]string
 
-	proxies       map[string]*fakeProxy
-	serviceUsers  map[string]*fakeServiceUser
-	webhookTokens map[string]*fakeWebhookToken
+	proxies        map[string]*fakeProxy
+	domains        map[string]*fakeDomain
+	domainDNSReady bool
+	serviceUsers   map[string]*fakeServiceUser
+	webhookTokens  map[string]*fakeWebhookToken
 	// workspace settings; empty means the defaults the fake reports.
 	wsDefaultEnv, wsBuilder string
 	wsSetCalls              []string
@@ -99,6 +101,7 @@ func newFakeModal() *fakeModal {
 		tags:   map[string]string{},
 
 		proxies:       map[string]*fakeProxy{},
+		domains:       map[string]*fakeDomain{},
 		serviceUsers:  map[string]*fakeServiceUser{},
 		webhookTokens: map[string]*fakeWebhookToken{},
 	}

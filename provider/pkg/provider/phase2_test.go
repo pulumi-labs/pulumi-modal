@@ -649,3 +649,35 @@ func TestAppDeployment_UpdateReadBackFailureKeepsState(t *testing.T) {
 	require.ErrorContains(t, err, "resource failed to initialize")
 	require.Equal(t, "never-created", never.ID)
 }
+
+// An App whose own name starts with "ap-" must still be resolved by name when
+// the deploy's read-back failed and the resource ID is the name.
+func TestAppDeployment_ApPrefixedNameResolvesAfterFailedReadBack(t *testing.T) {
+	fake, addr := startFakeModal(t)
+	s := serverFor(t, addr, "")
+	script, _ := fakeCLI(t)
+	_, file := writeApp(t, "app = 1\n")
+	urn := modalUrn("AppDeployment", "d")
+	fake.mu.Lock()
+	fake.apps["ap-real1"] = &fakeApp{id: "ap-real1", name: "ap-weird", env: "main", tags: map[string]string{},
+		functions: map[string]string{"web": "https://weird.modal.run"}}
+	fake.failAppLookup = true
+	fake.mu.Unlock()
+
+	inputs := deployInputs(file, script, map[string]property.Value{"name": str("ap-weird")})
+	created, err := s.Create(pgp.CreateRequest{Urn: urn, Properties: inputs})
+	require.ErrorContains(t, err, "resource failed to initialize")
+	require.Equal(t, "ap-weird", created.ID, "the name stands in for the unknown ID")
+
+	fake.mu.Lock()
+	fake.failAppLookup = false
+	fake.mu.Unlock()
+	read, err := s.Read(pgp.ReadRequest{ID: created.ID, Urn: urn, Properties: created.Properties, Inputs: inputs})
+	require.NoError(t, err)
+	require.Equal(t, "ap-real1", read.ID)
+
+	require.NoError(t, s.Delete(pgp.DeleteRequest{ID: created.ID, Urn: urn, Properties: created.Properties}))
+	fake.mu.Lock()
+	require.True(t, fake.apps["ap-real1"].stopped)
+	fake.mu.Unlock()
+}
