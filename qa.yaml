@@ -61,6 +61,11 @@ resources:
     reason: static IP addresses are a paid Modal plan feature and the QA workspace may not have it; the create, ipCount update and delete flows are covered by the fake control plane tests
     update: ipCount
     cost: "paid plan: static IPs are billed monthly per address"
+  - type: modal:index:Domain
+    test: false
+    reason: Modal has no call that deletes a domain, so a QA run would leave a permanent registration behind, and verification needs real DNS records for a domain QA controls; the create, adopt, verify, import and destroy flows are covered by the fake control plane tests
+    update: verify
+    cost: none
   - type: modal:index:AppDeployment
     test: false
     reason: runs `modal deploy`, which needs the Modal CLI and its Python package on the QA runner and deploys a real app; the argument, environment, redeploy, redaction and read-back behavior is covered by tests that use a fake CLI and a fake control plane
@@ -98,10 +103,14 @@ functions:
   - name: getCls
     test: false
     reason: needs an already deployed Modal Cls; the AppDeployment resource needs the Modal CLI and QA does not run it, so QA has nothing to look up
+  - name: getDomain
+    test: false
+    reason: needs a registered custom domain, and QA does not run the Domain resource (Modal cannot delete a domain), so QA has nothing to look up
   - name: getProxy
     test: false
     reason: static IPs need a paid plan and QA does not run the Proxy resource, so QA has nothing to look up
 regressions:
+  - "Domain: verify live that DomainCreate returns the DNS records to create, that a second Domain with the same domainName adopts the registered domain (destroy then up works, destroy leaves it registered), that verify=true leaves the certificate pending (no error) until the DNS records resolve and then reports issued, and that import by the domain ID (from getDomain) plans no changes."
   - "WorkspaceSettings: verify live, with the values the workspace already reports (getWorkspace), that WorkspaceSetDefaultEnvironment and WorkspaceSetImageBuilderVersion accept them, that the environment name must exist, that WorkspaceSettings (read) reflects a change immediately, and that a token of workspace A reports the import ID of workspace B as missing. Import ID is the workspace ID from getWorkspace."
   - "#1715 pulumi import of an ID that does not exist (for example modal:index:Volume v vo-nope, Secret, Queue, Dict, App ap-nope) fails with 'does not exist' and leaves nothing in state; a refresh of a resource deleted outside Pulumi still drops it from state"
   - "#1674 import an Image (pulumi import modal:index:Image x im-...), then pulumi up once: the first update adopts baseImage and dockerfileCommands in place (no replace, same imageId); then change a dockerfileCommands entry: pulumi preview --diff plans a replace and the next up yields a new imageId"

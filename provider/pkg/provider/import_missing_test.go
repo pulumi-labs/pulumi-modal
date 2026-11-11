@@ -36,6 +36,7 @@ func TestImportOfMissingObjectFails(t *testing.T) {
 		"App":               "ap-nope",
 		"Image":             "im-nope",
 		"Proxy":             "pr-nope",
+		"Domain":            "do-nope",
 		"AppDeployment":     "ap-nope",
 		"ServiceUser":       "nope",
 		"WebhookToken":      "nope",

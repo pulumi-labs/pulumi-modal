@@ -20,6 +20,11 @@ export type Dict = import("./dict").Dict;
 export const Dict: typeof import("./dict").Dict = null as any;
 utilities.lazyLoad(exports, ["Dict"], () => require("./dict"));
 
+export { DomainArgs } from "./domain";
+export type Domain = import("./domain").Domain;
+export const Domain: typeof import("./domain").Domain = null as any;
+utilities.lazyLoad(exports, ["Domain"], () => require("./domain"));
+
 export { EnvironmentArgs } from "./environment";
 export type Environment = import("./environment").Environment;
 export const Environment: typeof import("./environment").Environment = null as any;
@@ -44,6 +49,11 @@ export { GetDictArgs, GetDictResult, GetDictOutputArgs } from "./getDict";
 export const getDict: typeof import("./getDict").getDict = null as any;
 export const getDictOutput: typeof import("./getDict").getDictOutput = null as any;
 utilities.lazyLoad(exports, ["getDict","getDictOutput"], () => require("./getDict"));
+
+export { GetDomainArgs, GetDomainResult, GetDomainOutputArgs } from "./getDomain";
+export const getDomain: typeof import("./getDomain").getDomain = null as any;
+export const getDomainOutput: typeof import("./getDomain").getDomainOutput = null as any;
+utilities.lazyLoad(exports, ["getDomain","getDomainOutput"], () => require("./getDomain"));
 
 export { GetEnvironmentArgs, GetEnvironmentResult, GetEnvironmentOutputArgs } from "./getEnvironment";
 export const getEnvironment: typeof import("./getEnvironment").getEnvironment = null as any;
@@ -148,9 +158,11 @@ utilities.lazyLoad(exports, ["WorkspaceSettings"], () => require("./workspaceSet
 
 // Export sub-modules:
 import * as config from "./config";
+import * as types from "./types";
 
 export {
     config,
+    types,
 };
 
 const _module = {
@@ -163,6 +175,8 @@ const _module = {
                 return new AppDeployment(name, <any>undefined, { urn })
             case "modal:index:Dict":
                 return new Dict(name, <any>undefined, { urn })
+            case "modal:index:Domain":
+                return new Domain(name, <any>undefined, { urn })
             case "modal:index:Environment":
                 return new Environment(name, <any>undefined, { urn })
             case "modal:index:Image":

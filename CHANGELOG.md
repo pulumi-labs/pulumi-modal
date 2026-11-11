@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-11
+
+### Added
+
+- `Domain` resource and `getDomain` lookup (#1538): register a custom domain with the workspace. `dnsRecords` lists the DNS records to create; the optional `verify` input asks Modal to check them and issue the certificate (in place, on create, update and refresh until issued); `domainName` replaces. Modal has no call that deletes a domain, so destroy only forgets it (the domain stays registered, remove it in the Modal dashboard) and creating an already registered name adopts it. Import ID is the domain ID. Additive, not breaking; fake control plane tests only, not verified against a live workspace.
+
+### Fixed
+
+- `AppDeployment`: after an interrupted deploy (the read-back failed, so the resource ID is the App's name), refresh and destroy now find the App by name even when the name starts with `ap-`. They used to treat such an ID as a real App ID, report the App gone and leave it running. Modal is now asked whether the ID is an App ID, and only an unknown ID falls back to the name lookup (#1540, #1534).
+
 ## [0.6.0] - 2026-11-10
 
 ### Added

@@ -570,11 +570,20 @@ func (r *AppDeployment) Update(ctx context.Context, req infer.UpdateRequest[AppD
 
 // resolveAppID turns a resource ID into an App ID. After a deploy whose
 // read-back failed, the ID is the App's name (the ID was not known yet), so
-// look the App up by name in the recorded environment. Real App IDs start with
-// "ap-" and are used as they are.
+// ask Modal whether the ID is a real App ID first; if Modal does not know it
+// as one, look the App up by name in the recorded environment. Asking Modal
+// instead of checking for an "ap-" prefix keeps an App whose own name starts
+// with "ap-" resolvable.
 func resolveAppID(ctx context.Context, client *modalClient, id string, state AppDeploymentState) (string, error) {
-	if strings.HasPrefix(id, "ap-") || state.Name == "" {
+	if state.Name == "" {
 		return id, nil
+	}
+	_, err := client.stub.AppGetInfo(ctx, pb.AppGetInfoRequest_builder{AppId: id}.Build())
+	if err == nil {
+		return id, nil
+	}
+	if c := status.Code(err); c != codes.NotFound && c != codes.InvalidArgument {
+		return "", err
 	}
 	found, ok, err := lookupAppID(ctx, client, state.Name, derefStr(state.Environment))
 	if err != nil {

@@ -235,3 +235,14 @@ Tests in `pkg/provider/provider_test.go`:
 - The fingerprint (`sourceFingerprint`) is computed in Diff as well as Create, so editing source shows as an update at
   preview time. A missing source directory fingerprints to "" and does not diff.
 
+
+## Domain (#1538)
+
+- Modal has only `DomainCreate`, `DomainList` and `DomainCertificateVerify`: no get-by-ID, no update, no delete. Read scans
+  `DomainList` for the ID; `getDomain` scans by name (case-insensitive) or ID.
+- Delete only forgets. So Create adopts a domain that is already registered under the same name (it logs a warning), which
+  keeps destroy followed by up working. Do not add a delete call: there is none.
+- `verify` is the only in-place input. It calls `DomainCertificateVerify` on create, update and refresh while the status is not
+  issued; a failed check on refresh keeps the values just read, a failed check on create keeps the domain in state with
+  `ResourceInitFailedError` so a retry verifies it.
+- The properties are `domainName` and `domainId`, never `domain` (a property named like its resource breaks C# codegen).
