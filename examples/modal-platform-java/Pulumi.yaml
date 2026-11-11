@@ -1,3 +1,0 @@
-name: modal-platform-java
-runtime: java
-description: Provision a Modal environment, App, Dict and published Image with Pulumi (Java)
