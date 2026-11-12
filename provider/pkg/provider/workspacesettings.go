@@ -103,7 +103,7 @@ func (r *WorkspaceSettings) Check(ctx context.Context, req infer.CheckRequest) (
 	if present == 0 {
 		failures = append(failures, pgp.CheckFailure{Property: "defaultEnvironment", Reason: "set at least one of defaultEnvironment and imageBuilderVersion"})
 	}
-	return infer.CheckResponse[WorkspaceSettingsArgs]{Inputs: args, Failures: failures}, nil
+	return infer.CheckResponse[WorkspaceSettingsArgs]{Inputs: args, Failures: dropUnknownFailures(failures, req.NewInputs)}, nil
 }
 
 // Diff compares only the settings the program sets: an unset one leaves the

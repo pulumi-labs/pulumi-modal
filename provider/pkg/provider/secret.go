@@ -119,7 +119,7 @@ func (r *Secret) Check(ctx context.Context, req infer.CheckRequest) (infer.Check
 			failures = append(failures, pgp.CheckFailure{Property: "values", Reason: verr.Error()})
 		}
 	}
-	return infer.CheckResponse[SecretArgs]{Inputs: args, Failures: failures}, nil
+	return infer.CheckResponse[SecretArgs]{Inputs: args, Failures: dropUnknownFailures(failures, req.NewInputs)}, nil
 }
 
 type oldInputsKey struct{}

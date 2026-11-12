@@ -161,7 +161,7 @@ func (r *Volume) Check(ctx context.Context, req infer.CheckRequest) (infer.Check
 	if _, verr := parseFsVersion(args.FsVersion); verr != nil {
 		failures = append(failures, pgp.CheckFailure{Property: "fsVersion", Reason: verr.Error()})
 	}
-	return infer.CheckResponse[VolumeArgs]{Inputs: args, Failures: failures}, nil
+	return infer.CheckResponse[VolumeArgs]{Inputs: args, Failures: dropUnknownFailures(failures, req.NewInputs)}, nil
 }
 
 // Diff renames in place when only the name changed, and replaces when the

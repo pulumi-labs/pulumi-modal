@@ -165,7 +165,7 @@ func (r *Image) Check(ctx context.Context, req infer.CheckRequest) (infer.CheckR
 				Reason: "image name cannot start with 'im-' (reserved for image IDs)"})
 		}
 	}
-	return infer.CheckResponse[ImageArgs]{Inputs: args, Failures: failures}, nil
+	return infer.CheckResponse[ImageArgs]{Inputs: args, Failures: dropUnknownFailures(failures, req.NewInputs)}, nil
 }
 
 // Diff replaces on any build input change and updates the published name in
