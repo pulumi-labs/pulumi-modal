@@ -179,7 +179,7 @@ func (r *Environment) Check(ctx context.Context, req infer.CheckRequest) (infer.
 				Reason: fmt.Sprintf("defaultMemberRole must be one of viewer, contributor or no_access, got %q", *args.DefaultMemberRole)})
 		}
 	}
-	return infer.CheckResponse[EnvironmentArgs]{Inputs: args, Failures: failures}, nil
+	return infer.CheckResponse[EnvironmentArgs]{Inputs: args, Failures: dropUnknownFailures(failures, req.NewInputs)}, nil
 }
 
 // defaultMemberRoles maps the accepted input values to the API's

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-12
+
+### Fixed
+
+- A resource input wired from another resource's output is no longer rejected at preview: `Image`'s name check validated the zero value infer decodes an unknown to, so a program such as `applicationId: ${app.id}` failed with `must not be empty`. Check now skips the validation of values that are unknown at preview (also nested ones) and still validates the known ones; the apply-time Check is unchanged. Same bug class as namespace #1832.
+
 ## [0.7.0] - 2026-11-11
 
 ### Added
