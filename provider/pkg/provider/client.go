@@ -147,7 +147,7 @@ func newModalClient(tokenID, tokenSecret, serverAddr string) (*modalClient, erro
 	conn, err := grpc.NewClient(
 		serverAddr,
 		grpc.WithTransportCredentials(creds),
-		grpc.WithUnaryInterceptor(authInterceptor(tokenID, tokenSecret)),
+		grpc.WithChainUnaryInterceptor(retryInterceptor(), authInterceptor(tokenID, tokenSecret)),
 		grpc.WithStreamInterceptor(streamAuthInterceptor(tokenID, tokenSecret)),
 	)
 	if err != nil {
