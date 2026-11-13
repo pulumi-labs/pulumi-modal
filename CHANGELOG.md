@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-13
+
+### Fixed
+
+- Rate-limited control-plane calls are retried instead of failing the operation (#1876, mirror pulumi-labs/pulumi-modal#30): an `Image` refresh or delete failed with gRPC `ResourceExhausted` from `ImageListTags` because no call was ever retried. Every call is now retried up to 6 attempts in total with exponential backoff (250 ms base, 8 s cap, jitter), honoring a `retry-after` trailer and stopping on context cancellation. `ResourceExhausted` is retried for every call (a rate-limited call was not executed); `Unavailable` only for read-only `Get*`/`List*` calls, since a mutation may already have run. Not breaking.
+
 ## [0.7.1] - 2026-11-12
 
 ### Fixed
