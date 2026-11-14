@@ -4,8 +4,8 @@
   "display_name": "Modal",
   "exclude_platforms": [],
   "provider": "modal",
-  "skill_commit": "17da976cca658dfab4425a727e49859c44e2bdc1",
+  "skill_commit": "313e2f3fe5b0b958c02919e9841e55cefa72a086",
   "source_repo": "pulumi/autoregistry",
-  "source_sha": "551b4071a34b2b704de4e8a836fb870d07b6c510",
-  "source_version": "0.7.2"
+  "source_sha": "83f1b564c0f510ffa5a784bb7665ad50c6fafaea",
+  "source_version": "0.7.3"
 }

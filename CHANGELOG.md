@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-11-13
+
+### Security
+
+- Security: updated OpenTelemetry (`go.opentelemetry.io/otel`, `sdk`, `trace`, `metric`, `log` and the OTLP trace exporters) from 1.45.0 to 1.47.0, which fixes GHSA-q7gw-24fr-5p69 (CVE-2026-128085, `AttributeValueLengthLimit` bypass in opentelemetry-go, vulnerable 1.33.0 to 1.46.x). Clears the pulumi-labs/pulumi-modal Dependabot alerts for it once released (part of #1966). Not breaking.
+
+### Fixed
+
+- `pulumi destroy`, refresh and updates of an imported resource now use `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` and `MODAL_SERVER_ADDR` from the environment: after `pulumi import` the engine reconfigures the provider without running the config defaults, so a provider that relied on them failed with "no Modal credentials found" (#1951, mirror pulumi-labs/pulumi-modal#32; upstream pulumi/pulumi-go-provider#527). Credential precedence is resource, provider config, environment, profile file. Not breaking.
+
 ## [0.7.2] - 2026-11-13
 
 ### Fixed

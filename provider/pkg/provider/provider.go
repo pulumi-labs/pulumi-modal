@@ -16,6 +16,7 @@ package provider
 
 import (
 	"context"
+	"os"
 
 	pgp "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
@@ -127,12 +128,29 @@ func clientFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string)
 }
 
 // credentialsFor resolves the effective API token pair and endpoint override
-// from the resource-level tokens, the provider config and the Modal profile
-// file, in that order.
+// from the resource-level tokens, the provider config, the MODAL_TOKEN_ID /
+// MODAL_TOKEN_SECRET / MODAL_SERVER_ADDR environment variables and the Modal
+// profile file, in that order.
+//
+// The environment is read here as well as through the SetDefault calls in
+// ProviderConfig.Annotate: those defaults only apply when the engine sends the
+// provider through CheckConfig, and a destroy, refresh or update of an imported
+// resource can reach Configure with provider inputs that never saw them
+// (#1951, same shape as MODAL_ENVIRONMENT in #1673). Upstream:
+// https://github.com/pulumi/pulumi-go-provider/issues/527.
 func credentialsFor(cfg ProviderConfig, resourceTokenID, resourceTokenSecret *string) (tokenID, tokenSecret, serverAddr string, err error) {
 	tokenID = resolveStr(resourceTokenID, cfg.TokenID)
 	tokenSecret = resolveStr(resourceTokenSecret, cfg.TokenSecret)
 	serverAddr = resolveStr(nil, cfg.ServerAddr)
+	if tokenID == "" {
+		tokenID = os.Getenv("MODAL_TOKEN_ID")
+	}
+	if tokenSecret == "" {
+		tokenSecret = os.Getenv("MODAL_TOKEN_SECRET")
+	}
+	if serverAddr == "" {
+		serverAddr = os.Getenv("MODAL_SERVER_ADDR")
+	}
 
 	// Last source: the profile file the Modal CLI writes. Only consulted when
 	// nothing above supplied a token.

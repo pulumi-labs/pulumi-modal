@@ -159,7 +159,8 @@ func (p *modalProfile) serverAddr() string {
 // token from a higher source never borrows the environment or endpoint of
 // whichever profile happens to be active.
 func hasProviderCredentials(cfg ProviderConfig) bool {
-	return derefStr(cfg.TokenID) != "" || derefStr(cfg.TokenSecret) != ""
+	return derefStr(cfg.TokenID) != "" || derefStr(cfg.TokenSecret) != "" ||
+		os.Getenv("MODAL_TOKEN_ID") != "" || os.Getenv("MODAL_TOKEN_SECRET") != ""
 }
 
 // withResourceTokens returns cfg with the resource's own token pair laid over
