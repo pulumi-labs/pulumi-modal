@@ -1,3 +1,0 @@
-name: modal-appdeployment-java
-runtime: java
-description: Deploy a Modal App from a Python file and mint a CI service user with Pulumi (Java)

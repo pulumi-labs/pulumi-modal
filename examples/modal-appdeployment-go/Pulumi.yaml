@@ -1,3 +1,0 @@
-name: modal-appdeployment-go
-runtime: go
-description: Deploy a Modal App from a Python file and mint a CI service user with Pulumi (Go)
