@@ -110,6 +110,7 @@ functions:
     test: false
     reason: static IPs need a paid plan and QA does not run the Proxy resource, so QA has nothing to look up
 regressions:
+  - "#1951 on a fresh stack with only MODAL_TOKEN_ID and MODAL_TOKEN_SECRET exported (no modal:tokenId config, no ~/.modal.toml), pulumi import a Volume (modal:index:Volume v vo-...), then pulumi destroy: the destroy succeeds and the volume is gone instead of failing with 'no Modal credentials found'; pulumi refresh after the import works the same"
   - "Domain: verify live that DomainCreate returns the DNS records to create, that a second Domain with the same domainName adopts the registered domain (destroy then up works, destroy leaves it registered), that verify=true leaves the certificate pending (no error) until the DNS records resolve and then reports issued, and that import by the domain ID (from getDomain) plans no changes."
   - "WorkspaceSettings: verify live, with the values the workspace already reports (getWorkspace), that WorkspaceSetDefaultEnvironment and WorkspaceSetImageBuilderVersion accept them, that the environment name must exist, that WorkspaceSettings (read) reflects a change immediately, and that a token of workspace A reports the import ID of workspace B as missing. Import ID is the workspace ID from getWorkspace."
   - "#1715 pulumi import of an ID that does not exist (for example modal:index:Volume v vo-nope, Secret, Queue, Dict, App ap-nope) fails with 'does not exist' and leaves nothing in state; a refresh of a resource deleted outside Pulumi still drops it from state"
