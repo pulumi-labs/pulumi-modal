@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-11-15
+
+### Security
+
+- Security: updated `golang.org/x/crypto` to v0.59.0 (and its `golang.org/x` companions), clearing GO-2026-5932 (the unmaintained `x/crypto/openpgp` package) for scanners; the provider does not import `openpgp`. Not breaking.
+
 ## [0.7.3] - 2026-11-13
 
 ### Security
