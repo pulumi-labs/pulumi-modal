@@ -1,3 +1,0 @@
-name: modal-platform-go
-runtime: go
-description: Provision a Modal environment, App, Dict and published Image with Pulumi (Go)

@@ -1,3 +1,0 @@
-name: modal-python-ml-pipeline
-runtime: python
-description: Provision the Modal Secrets, Volumes, and Queues backing an ML training/inference pipeline (Python)

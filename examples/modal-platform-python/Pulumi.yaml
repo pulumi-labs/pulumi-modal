@@ -1,3 +1,0 @@
-name: modal-platform-python
-runtime: python
-description: Provision a Modal environment, App, Dict and published Image with Pulumi (Python)
