@@ -1,3 +1,0 @@
-name: modal-python
-runtime: python
-description: Provision Modal Secrets, Volumes, and Queues with Pulumi (Python)

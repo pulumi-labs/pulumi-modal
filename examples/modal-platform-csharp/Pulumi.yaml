@@ -1,3 +1,0 @@
-name: modal-platform-csharp
-runtime: dotnet
-description: Provision a Modal environment, App, Dict and published Image with Pulumi (C#)

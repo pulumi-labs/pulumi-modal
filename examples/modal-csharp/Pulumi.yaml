@@ -1,3 +1,0 @@
-name: modal-csharp
-runtime: dotnet
-description: Provision Modal secrets, volumes, and queues for serverless GPU workloads with Pulumi (C#)
