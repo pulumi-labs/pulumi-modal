@@ -71,7 +71,7 @@ const modalSDKModule = "github.com/modal-labs/modal-client/go"
 // fallbackModalSDKVersion is used when build info is unavailable. A unit test
 // keeps it equal to the version in go.mod, so bump both together when
 // upgrading the Modal SDK.
-const fallbackModalSDKVersion = "0.11.1"
+const fallbackModalSDKVersion = "0.11.2"
 
 // modalSDKVersion returns the vendored Modal Go SDK's version without the
 // leading "v".

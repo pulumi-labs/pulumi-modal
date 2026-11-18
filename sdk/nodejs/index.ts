@@ -70,6 +70,11 @@ export const getImage: typeof import("./getImage").getImage = null as any;
 export const getImageOutput: typeof import("./getImage").getImageOutput = null as any;
 utilities.lazyLoad(exports, ["getImage","getImageOutput"], () => require("./getImage"));
 
+export { GetPersistentSandboxArgs, GetPersistentSandboxResult, GetPersistentSandboxOutputArgs } from "./getPersistentSandbox";
+export const getPersistentSandbox: typeof import("./getPersistentSandbox").getPersistentSandbox = null as any;
+export const getPersistentSandboxOutput: typeof import("./getPersistentSandbox").getPersistentSandboxOutput = null as any;
+utilities.lazyLoad(exports, ["getPersistentSandbox","getPersistentSandboxOutput"], () => require("./getPersistentSandbox"));
+
 export { GetProxyArgs, GetProxyResult, GetProxyOutputArgs } from "./getProxy";
 export const getProxy: typeof import("./getProxy").getProxy = null as any;
 export const getProxyOutput: typeof import("./getProxy").getProxyOutput = null as any;
@@ -114,6 +119,11 @@ export { ImageArgs } from "./image";
 export type Image = import("./image").Image;
 export const Image: typeof import("./image").Image = null as any;
 utilities.lazyLoad(exports, ["Image"], () => require("./image"));
+
+export { PersistentSandboxArgs } from "./persistentSandbox";
+export type PersistentSandbox = import("./persistentSandbox").PersistentSandbox;
+export const PersistentSandbox: typeof import("./persistentSandbox").PersistentSandbox = null as any;
+utilities.lazyLoad(exports, ["PersistentSandbox"], () => require("./persistentSandbox"));
 
 export { ProviderArgs } from "./provider";
 export type Provider = import("./provider").Provider;
@@ -181,6 +191,8 @@ const _module = {
                 return new Environment(name, <any>undefined, { urn })
             case "modal:index:Image":
                 return new Image(name, <any>undefined, { urn })
+            case "modal:index:PersistentSandbox":
+                return new PersistentSandbox(name, <any>undefined, { urn })
             case "modal:index:Proxy":
                 return new Proxy(name, <any>undefined, { urn })
             case "modal:index:Queue":

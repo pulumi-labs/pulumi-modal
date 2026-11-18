@@ -177,7 +177,7 @@ func newProvider() (pgp.Provider, error) {
 	prov, err := infer.NewProviderBuilder().
 		WithDisplayName("Modal").
 		WithDescription(
-			"Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments — as infrastructure with Pulumi.",
+			"Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users, Persistent Sandboxes and Deployments — as infrastructure with Pulumi.",
 		).
 		WithHomepage("https://modal.com").
 		WithRepository("https://github.com/pulumi-labs/pulumi-modal").
@@ -186,7 +186,7 @@ func newProvider() (pgp.Provider, error) {
 			"go": map[string]any{"generateResourceContainerTypes": true, "respectSchemaVersion": true},
 			"nodejs": map[string]any{
 				"packageName":          "@pulumi-labs/modal",
-				"packageDescription":   "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments — as infrastructure with Pulumi.",
+				"packageDescription":   "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users, Persistent Sandboxes and Deployments — as infrastructure with Pulumi.",
 				"respectSchemaVersion": true,
 			},
 			"python": map[string]any{
@@ -219,6 +219,7 @@ func newProvider() (pgp.Provider, error) {
 			infer.Resource[*ServiceUser, ServiceUserArgs, ServiceUserState](&ServiceUser{}),
 			infer.Resource[*WorkspaceSettings, WorkspaceSettingsArgs, WorkspaceSettingsState](&WorkspaceSettings{}),
 			infer.Resource[*WebhookToken, WebhookTokenArgs, WebhookTokenState](&WebhookToken{}),
+			infer.Resource[*PersistentSandbox, PersistentSandboxArgs, PersistentSandboxState](&PersistentSandbox{}),
 		).
 		WithFunctions(
 			infer.Function[*GetSecret, NamedLookupArgs, GetSecretResult](&GetSecret{}),
@@ -237,6 +238,7 @@ func newProvider() (pgp.Provider, error) {
 			infer.Function[*GetWorkspaceSettings, GetWorkspaceSettingsArgs, GetWorkspaceSettingsResult](&GetWorkspaceSettings{}),
 			infer.Function[*GetWebhookToken, GetWebhookTokenArgs, GetWebhookTokenResult](&GetWebhookToken{}),
 			infer.Function[*GetWorkspace, GetWorkspaceArgs, GetWorkspaceResult](&GetWorkspace{}),
+			infer.Function[*GetPersistentSandbox, GetPersistentSandboxArgs, GetPersistentSandboxResult](&GetPersistentSandbox{}),
 		).
 		Build()
 	if err != nil {
