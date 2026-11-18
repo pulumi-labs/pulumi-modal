@@ -1,1 +1,0 @@
-Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users, Persistent Sandboxes and Deployments — as infrastructure with Pulumi.
