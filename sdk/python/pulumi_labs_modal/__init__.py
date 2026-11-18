@@ -19,6 +19,7 @@ from .get_domain import *
 from .get_environment import *
 from .get_function import *
 from .get_image import *
+from .get_persistent_sandbox import *
 from .get_proxy import *
 from .get_queue import *
 from .get_secret import *
@@ -28,6 +29,7 @@ from .get_webhook_token import *
 from .get_workspace import *
 from .get_workspace_settings import *
 from .image import *
+from .persistent_sandbox import *
 from .provider import *
 from .proxy import *
 from .queue import *
@@ -59,6 +61,7 @@ _utilities.register(
    "modal:index:Domain": "Domain",
    "modal:index:Environment": "Environment",
    "modal:index:Image": "Image",
+   "modal:index:PersistentSandbox": "PersistentSandbox",
    "modal:index:Proxy": "Proxy",
    "modal:index:Queue": "Queue",
    "modal:index:Secret": "Secret",

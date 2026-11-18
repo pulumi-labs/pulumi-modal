@@ -1,7 +1,7 @@
 {
   "name": "modal",
   "displayName": "Modal",
-  "description": "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments — as infrastructure with Pulumi.",
+  "description": "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users, Persistent Sandboxes and Deployments — as infrastructure with Pulumi.",
   "keywords": [
     "pulumi",
     "modal",
@@ -30,7 +30,7 @@
       "respectSchemaVersion": true
     },
     "nodejs": {
-      "packageDescription": "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments — as infrastructure with Pulumi.",
+      "packageDescription": "Experimental: manage Modal (modal.com) serverless compute resources — Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users, Persistent Sandboxes and Deployments — as infrastructure with Pulumi.",
       "packageName": "@pulumi-labs/modal",
       "respectSchemaVersion": true
     },
@@ -734,6 +734,155 @@
           "secret": true
         }
       }
+    },
+    "modal:index:PersistentSandbox": {
+      "description": "A persistent Modal Sandbox: a long-lived container that Modal pauses when idle and resumes on use, and that exists until it is terminated. Uses Modal's experimental persistent-sandbox API (the Go SDK's `ExperimentalPersistent` option), which Modal may change. A running Sandbox is billed by Modal, so destroy it when you no longer need it. Modal cannot change a Sandbox definition after creation and does not return it, so every input replaces the resource, and an imported Sandbox keeps the live definition until you replace it. Named Sandboxes, GPUs, environment variables, tags and caller-set timeouts are not supported by Modal for persistent Sandboxes; put environment variables in a Secret and pass it in secretIds. See https://modal.com/docs/guide/sandbox.",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "description": "The ID of the Modal App that owns the Sandbox (the appId output of an App). Changing this forces a new resource."
+        },
+        "blockNetwork": {
+          "type": "boolean",
+          "description": "Disable all network access. Changing this forces a new resource."
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The entrypoint command and arguments, for example [\"sleep\", \"infinity\"]. Changing this forces a new resource."
+        },
+        "cpu": {
+          "type": "number",
+          "description": "The CPU request in cores. Changing this forces a new resource."
+        },
+        "imageId": {
+          "type": "string",
+          "description": "The ID of the Image the Sandbox runs (the imageId output of an Image). Changing this forces a new resource."
+        },
+        "memoryMiB": {
+          "type": "integer",
+          "description": "The memory request in MiB. Changing this forces a new resource."
+        },
+        "persistentSandboxId": {
+          "type": "string",
+          "description": "The Modal-assigned ID of the persistent Sandbox. Stable for its whole life, and the ID to import."
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Regions the Sandbox may be scheduled in. Changing this forces a new resource."
+        },
+        "sandboxId": {
+          "type": "string",
+          "description": "The ID of the session running now. It changes each time Modal pauses and resumes the Sandbox, so a refresh can show a new value; it is empty while the Sandbox is paused."
+        },
+        "secretIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "IDs of Modal Secrets injected as environment variables (the secretId output of a Secret). Changing this forces a new resource."
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        },
+        "volumes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Maps a mount path inside the Sandbox to a Volume ID (the volumeId output of a Volume). Changing this forces a new resource."
+        },
+        "workdir": {
+          "type": "string",
+          "description": "The working directory inside the Sandbox. Changing this forces a new resource."
+        }
+      },
+      "required": [
+        "appId",
+        "imageId",
+        "persistentSandboxId",
+        "sandboxId"
+      ],
+      "inputProperties": {
+        "appId": {
+          "type": "string",
+          "description": "The ID of the Modal App that owns the Sandbox (the appId output of an App). Changing this forces a new resource."
+        },
+        "blockNetwork": {
+          "type": "boolean",
+          "description": "Disable all network access. Changing this forces a new resource."
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The entrypoint command and arguments, for example [\"sleep\", \"infinity\"]. Changing this forces a new resource."
+        },
+        "cpu": {
+          "type": "number",
+          "description": "The CPU request in cores. Changing this forces a new resource."
+        },
+        "imageId": {
+          "type": "string",
+          "description": "The ID of the Image the Sandbox runs (the imageId output of an Image). Changing this forces a new resource."
+        },
+        "memoryMiB": {
+          "type": "integer",
+          "description": "The memory request in MiB. Changing this forces a new resource."
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Regions the Sandbox may be scheduled in. Changing this forces a new resource."
+        },
+        "secretIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "IDs of Modal Secrets injected as environment variables (the secretId output of a Secret). Changing this forces a new resource."
+        },
+        "tokenId": {
+          "type": "string",
+          "description": "Modal API token ID. Overrides the provider-level tokenId.",
+          "secret": true
+        },
+        "tokenSecret": {
+          "type": "string",
+          "description": "Modal API token secret. Overrides the provider-level tokenSecret.",
+          "secret": true
+        },
+        "volumes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Maps a mount path inside the Sandbox to a Volume ID (the volumeId output of a Volume). Changing this forces a new resource."
+        },
+        "workdir": {
+          "type": "string",
+          "description": "The working directory inside the Sandbox. Changing this forces a new resource."
+        }
+      },
+      "requiredInputs": [
+        "appId",
+        "imageId"
+      ]
     },
     "modal:index:Proxy": {
       "description": "A Modal Proxy: static outbound IP addresses for Modal Functions, for services that allow-list by source IP. Static IPs are a paid Modal plan feature. Adjust ipCount to add or release addresses in place. See https://modal.com/docs/guide/proxy-ips.",
@@ -1567,6 +1716,48 @@
         "required": [
           "imageId",
           "name"
+        ],
+        "type": "object"
+      }
+    },
+    "modal:index:getPersistentSandbox": {
+      "description": "Look up a persistent Modal Sandbox by ID. Uses Modal's experimental persistent-sandbox API.",
+      "inputs": {
+        "properties": {
+          "persistentSandboxId": {
+            "type": "string",
+            "description": "The Modal-assigned ID of the persistent Sandbox."
+          }
+        },
+        "type": "object",
+        "required": [
+          "persistentSandboxId"
+        ]
+      },
+      "outputs": {
+        "properties": {
+          "persistentSandboxId": {
+            "description": "The Modal-assigned ID of the persistent Sandbox.",
+            "type": "string"
+          },
+          "sandboxId": {
+            "description": "The ID of the session running now; empty while the Sandbox is paused or terminated.",
+            "type": "string"
+          },
+          "terminated": {
+            "description": "Whether the Sandbox has been terminated.",
+            "type": "boolean"
+          },
+          "terminatedAt": {
+            "description": "When the Sandbox was terminated, as an RFC 3339 timestamp; empty while it exists.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "persistentSandboxId",
+          "sandboxId",
+          "terminated",
+          "terminatedAt"
         ],
         "type": "object"
       }

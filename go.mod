@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/modal-labs/modal-client/go v0.11.1
+	github.com/modal-labs/modal-client/go v0.11.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/pulumi/pulumi-go-provider v1.3.1
 	github.com/pulumi/pulumi/sdk/v3 v3.229.0

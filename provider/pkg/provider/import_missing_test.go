@@ -41,6 +41,7 @@ func TestImportOfMissingObjectFails(t *testing.T) {
 		"ServiceUser":       "nope",
 		"WebhookToken":      "nope",
 		"WorkspaceSettings": "ac-nope",
+		"PersistentSandbox": "sp-nope",
 	}
 	for typ, id := range ids {
 		_, err := s.Read(pgp.ReadRequest{ID: id, Urn: modalUrn(typ, "gone")})

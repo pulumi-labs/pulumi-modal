@@ -25,6 +25,8 @@ import com.pulumi.labs.modal.inputs.GetFunctionArgs;
 import com.pulumi.labs.modal.inputs.GetFunctionPlainArgs;
 import com.pulumi.labs.modal.inputs.GetImageArgs;
 import com.pulumi.labs.modal.inputs.GetImagePlainArgs;
+import com.pulumi.labs.modal.inputs.GetPersistentSandboxArgs;
+import com.pulumi.labs.modal.inputs.GetPersistentSandboxPlainArgs;
 import com.pulumi.labs.modal.inputs.GetProxyArgs;
 import com.pulumi.labs.modal.inputs.GetProxyPlainArgs;
 import com.pulumi.labs.modal.inputs.GetQueueArgs;
@@ -49,6 +51,7 @@ import com.pulumi.labs.modal.outputs.GetDomainResult;
 import com.pulumi.labs.modal.outputs.GetEnvironmentResult;
 import com.pulumi.labs.modal.outputs.GetFunctionResult;
 import com.pulumi.labs.modal.outputs.GetImageResult;
+import com.pulumi.labs.modal.outputs.GetPersistentSandboxResult;
 import com.pulumi.labs.modal.outputs.GetProxyResult;
 import com.pulumi.labs.modal.outputs.GetQueueResult;
 import com.pulumi.labs.modal.outputs.GetSecretResult;
@@ -353,6 +356,41 @@ public final class ModalFunctions {
      */
     public static CompletableFuture<GetImageResult> getImagePlain(GetImagePlainArgs args, InvokeOptions options) {
         return Deployment.getInstance().invokeAsync("modal:index:getImage", TypeShape.of(GetImageResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a persistent Modal Sandbox by ID. Uses Modal&#39;s experimental persistent-sandbox API.
+     * 
+     */
+    public static Output<GetPersistentSandboxResult> getPersistentSandbox(GetPersistentSandboxArgs args) {
+        return getPersistentSandbox(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up a persistent Modal Sandbox by ID. Uses Modal&#39;s experimental persistent-sandbox API.
+     * 
+     */
+    public static CompletableFuture<GetPersistentSandboxResult> getPersistentSandboxPlain(GetPersistentSandboxPlainArgs args) {
+        return getPersistentSandboxPlain(args, InvokeOptions.Empty);
+    }
+    /**
+     * Look up a persistent Modal Sandbox by ID. Uses Modal&#39;s experimental persistent-sandbox API.
+     * 
+     */
+    public static Output<GetPersistentSandboxResult> getPersistentSandbox(GetPersistentSandboxArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getPersistentSandbox", TypeShape.of(GetPersistentSandboxResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a persistent Modal Sandbox by ID. Uses Modal&#39;s experimental persistent-sandbox API.
+     * 
+     */
+    public static Output<GetPersistentSandboxResult> getPersistentSandbox(GetPersistentSandboxArgs args, InvokeOutputOptions options) {
+        return Deployment.getInstance().invoke("modal:index:getPersistentSandbox", TypeShape.of(GetPersistentSandboxResult.class), args, Utilities.withVersion(options));
+    }
+    /**
+     * Look up a persistent Modal Sandbox by ID. Uses Modal&#39;s experimental persistent-sandbox API.
+     * 
+     */
+    public static CompletableFuture<GetPersistentSandboxResult> getPersistentSandboxPlain(GetPersistentSandboxPlainArgs args, InvokeOptions options) {
+        return Deployment.getInstance().invokeAsync("modal:index:getPersistentSandbox", TypeShape.of(GetPersistentSandboxResult.class), args, Utilities.withVersion(options));
     }
     /**
      * Look up an existing Modal Proxy (static outbound IPs) by name. Use the Proxy resource to create one.

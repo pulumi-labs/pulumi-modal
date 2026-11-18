@@ -34,6 +34,7 @@ This is the only IaC provider for Modal, built natively on `pulumi-go-provider/i
 | `modal:index:ServiceUser` | A Modal service user: a non-human workspace identity with its own API token, for CI/CD. The token secret is a write-once secret output; every input change replaces the service user and rotates the token. |
 | `modal:index:WorkspaceSettings` | The settings of the workspace the API token belongs to: `defaultEnvironment` and `imageBuilderVersion`, both updated in place. A singleton (import ID is the workspace ID); an unset setting is left as is, and Modal cannot unset either, so destroy leaves the workspace unchanged. |
 | `modal:index:WebhookToken` | A proxy auth token (the `Modal-Key` and `Modal-Secret` pair for web endpoints that require proxy auth). The secret is a write-once secret output; `name` updates in place, `scoped` replaces. Attaching a scoped token to environments is not modelled yet. |
+| `modal:index:PersistentSandbox` | A long-lived Modal Sandbox that Modal pauses when idle and resumes on use, until terminated. Uses Modal's experimental persistent-sandbox API, which Modal may change. Modal cannot edit it: every input (`appId`, `imageId`, `command`, `workdir`, `cpu`, `memoryMiB`, `regions`, `blockNetwork`, `secretIds`, `volumes`) force-replaces, and destroy terminates it. A running Sandbox is billed by Modal. Named Sandboxes, GPUs, environment variables (use a Secret), tags and timeouts are not supported by Modal for persistent Sandboxes. |
 | `modal:index:AppDeployment` | Deploys a Modal App from a Python app file by running `modal deploy` and manages the deployed App: redeploys in place when the source changes, reports its Functions and web endpoint URLs, and stops it on delete. Needs the Modal CLI on the machine that runs Pulumi. |
 
 ### Lookup functions
@@ -57,6 +58,7 @@ Existing objects, including ones created outside Pulumi, can be referenced witho
 | `modal:index:getServiceUser` | A service user's ID, token ID and scope (never the token secret). |
 | `modal:index:getWebhookToken` | A proxy auth token's ID, name and scope by name (never the secret). |
 | `modal:index:getAppDeployment` | A deployed App's ID, Functions and web endpoint URLs by name. |
+| `modal:index:getPersistentSandbox` | A persistent Sandbox by ID: its current session ID and whether and when it was terminated. |
 | `modal:index:getWorkspace` | The workspace the token belongs to, its default environment and image builder version. |
 
 ## Installation
@@ -174,7 +176,7 @@ automatically; update your programs to use `fsVersion` (`fs_version` in Python).
 
 ### Importing existing resources
 
-Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users and Deployments import by their Modal ID alone (`st-...`, `vo-...`, `qu-...`, `di-...`, `en-...`, `ap-...`, `im-...`, `pr-...`, `su-...`; a AppDeployment imports by its App ID):
+Secrets, Volumes, Queues, Dicts, Environments, Apps, Images, Proxies, Service Users, Persistent Sandboxes and Deployments import by their Modal ID alone (`st-...`, `vo-...`, `qu-...`, `di-...`, `en-...`, `ap-...`, `im-...`, `pr-...`, `su-...`, `sp-...`; a AppDeployment imports by its App ID):
 
 ```bash
 pulumi import modal:index:Volume model-cache vo-AbCdEf123

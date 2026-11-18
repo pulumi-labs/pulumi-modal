@@ -43,6 +43,10 @@ resources:
     test: true
     update: name
     cost: "compute: one image build per run, billed as Modal build time"
+  - type: modal:index:PersistentSandbox
+    test: true
+    update: null
+    cost: "compute: a running persistent Sandbox is billed while a session runs (Modal pauses it after 5 idle minutes); the run terminates it in cleanup. Use a small cpu/memoryMiB and command [sleep, infinity]"
   - type: modal:index:ServiceUser
     test: true
     update: null
@@ -94,6 +98,8 @@ functions:
     test: true
   - name: getWebhookToken
     test: true
+  - name: getPersistentSandbox
+    test: true
   - name: getAppDeployment
     test: false
     reason: needs a deployed Modal App, and QA does not run AppDeployment (it needs the Modal CLI), so there is nothing to look up
@@ -110,6 +116,7 @@ functions:
     test: false
     reason: static IPs need a paid plan and QA does not run the Proxy resource, so QA has nothing to look up
 regressions:
+  - "#1539 PersistentSandbox is built from a definition the provider assembles itself, not through the Go SDK, and was only run against a fake control plane. Verify live: (1) create with appId (an App), imageId (an Image built from a Debian or Alpine base) and command [sleep, infinity] succeeds and getPersistentSandbox on the persistentSandboxId reports terminated=false; (2) with secretIds, volumes, cpu, memoryMiB, regions and blockNetwork set the create is accepted, and the Sandbox sees the secret as environment variables and the volume at its mount path (modal sandbox exec or the SDK Sandbox.FromID on sandboxId); (3) pulumi preview --expect-no-changes after create and after pulumi refresh (a changed sandboxId after Modal pauses and resumes is an output-only difference, not a replace); (4) pulumi import modal:index:PersistentSandbox s sp-... then pulumi preview shows no replace; (5) pulumi destroy terminates it: getPersistentSandbox then reports terminated=true and a second destroy or a refresh after an outside termination drops it without error. Record what terminating an already terminated Sandbox returns (the provider checks PersistentSandboxGet first, so it does not rely on it)."
   - "#1951 on a fresh stack with only MODAL_TOKEN_ID and MODAL_TOKEN_SECRET exported (no modal:tokenId config, no ~/.modal.toml), pulumi import a Volume (modal:index:Volume v vo-...), then pulumi destroy: the destroy succeeds and the volume is gone instead of failing with 'no Modal credentials found'; pulumi refresh after the import works the same"
   - "Domain: verify live that DomainCreate returns the DNS records to create, that a second Domain with the same domainName adopts the registered domain (destroy then up works, destroy leaves it registered), that verify=true leaves the certificate pending (no error) until the DNS records resolve and then reports issued, and that import by the domain ID (from getDomain) plans no changes."
   - "WorkspaceSettings: verify live, with the values the workspace already reports (getWorkspace), that WorkspaceSetDefaultEnvironment and WorkspaceSetImageBuilderVersion accept them, that the environment name must exist, that WorkspaceSettings (read) reflects a change immediately, and that a token of workspace A reports the import ID of workspace B as missing. Import ID is the workspace ID from getWorkspace."
@@ -128,5 +135,5 @@ regressions:
   - "#1490 getQueue, getVolume and getDict report the effective environment"
 notes: >-
   An Image build creates the App named pulumi-image-builds in the environment; its intermediate layers are
-  not deleted when the Image is destroyed. Sandbox is deferred. Modal's gRPC control-plane API is not
+  not deleted when the Image is destroyed. Ephemeral Sandboxes are out of scope; PersistentSandbox is built on Modal's experimental persistent-sandbox API. Modal's gRPC control-plane API is not
   formally stable, so a provider release can break against a new server.

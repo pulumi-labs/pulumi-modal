@@ -33,6 +33,8 @@ func (m *module) Construct(ctx *pulumi.Context, name, typ, urn string) (r pulumi
 		r = &Environment{}
 	case "modal:index:Image":
 		r = &Image{}
+	case "modal:index:PersistentSandbox":
+		r = &PersistentSandbox{}
 	case "modal:index:Proxy":
 		r = &Proxy{}
 	case "modal:index:Queue":

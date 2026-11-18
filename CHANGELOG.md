@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-18
+
+### Added
+
+- New resource `modal:index:PersistentSandbox` and lookup `modal:index:getPersistentSandbox` (fixes #1539) for Modal's persistent Sandboxes, new in Modal Go SDK v0.11.2: a long-lived Sandbox that Modal pauses when idle and resumes on use, until it is terminated. Inputs `appId`, `imageId`, `command`, `workdir`, `cpu`, `memoryMiB`, `regions`, `blockNetwork`, `secretIds` and `volumes`; outputs `persistentSandboxId` (the import ID, `sp-...`) and `sandboxId` (the running session, which changes when Modal pauses and resumes it). Modal cannot edit a Sandbox definition, so every input replaces the resource, and an imported Sandbox keeps its live definition until you replace it. Destroy terminates the Sandbox; one terminated or deleted outside Pulumi is dropped on refresh. This is Modal's experimental API and may change; Modal does not support names, GPUs, environment variables, tags or timeouts on persistent Sandboxes. Tested against a fake control plane only, not a live Modal workspace. Additive, not breaking.
+
+### Changed
+
+- Updated the Modal Go SDK (`github.com/modal-labs/modal-client/go`) from v0.11.1 to v0.11.2; the provider now sends `modal-go/0.11.2` as its libmodal version. No behaviour change for existing resources.
+
 ## [0.7.5] - 2026-11-17
 
 ### Security

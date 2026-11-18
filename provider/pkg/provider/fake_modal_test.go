@@ -71,6 +71,7 @@ type fakeModal struct {
 	domainDNSReady bool
 	serviceUsers   map[string]*fakeServiceUser
 	webhookTokens  map[string]*fakeWebhookToken
+	persistent     map[string]*fakePersistentSandbox
 	// workspace settings; empty means the defaults the fake reports.
 	wsDefaultEnv, wsBuilder string
 	wsSetCalls              []string
@@ -104,6 +105,7 @@ func newFakeModal() *fakeModal {
 		domains:       map[string]*fakeDomain{},
 		serviceUsers:  map[string]*fakeServiceUser{},
 		webhookTokens: map[string]*fakeWebhookToken{},
+		persistent:    map[string]*fakePersistentSandbox{},
 	}
 }
 
